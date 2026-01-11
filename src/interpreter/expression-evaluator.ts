@@ -16,6 +16,8 @@ import type {
   BinaryOperator,
 } from '../transformer/ast/st-ast-types';
 
+import { parseTimeLiteral, timeValueToMs } from '../models/plc-types';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -251,7 +253,7 @@ function toBoolean(value: Value): boolean {
  * Convert a value to number.
  * - number: as-is
  * - boolean: true = 1, false = 0
- * - string: parse as number, or 0 if invalid
+ * - string: parse as number, TIME literal to ms, or 0 if invalid
  */
 function toNumber(value: Value): number {
   if (typeof value === 'number') {
@@ -261,6 +263,11 @@ function toNumber(value: Value): number {
     return value ? 1 : 0;
   }
   if (typeof value === 'string') {
+    // Check for TIME literal (e.g., "T#5s", "TIME#100ms", "T#1h30m")
+    if (value.match(/^(T#|TIME#)/i)) {
+      const timeValue = parseTimeLiteral(value);
+      return timeValueToMs(timeValue);
+    }
     const parsed = parseFloat(value);
     return isNaN(parsed) ? 0 : parsed;
   }

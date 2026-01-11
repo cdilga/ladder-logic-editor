@@ -100,6 +100,20 @@ describe('evaluateExpression', () => {
       const result = evaluateExpression(timeLiteral(5000), context);
       expect(result).toBe(5000);
     });
+
+    it('returns time literal from string (as parsed from ST code)', () => {
+      // When the parser reads "T#60s", it stores the string in value
+      // This tests that the evaluator handles string TIME literals correctly
+      const stringTimeLiteral: STLiteral = {
+        type: 'Literal',
+        value: 'T#60s',  // String as stored by parser
+        literalType: 'TIME',
+        rawValue: 'T#60s',
+        loc,
+      };
+      const result = evaluateExpression(stringTimeLiteral, context);
+      expect(result).toBe('T#60s');  // evaluateLiteral returns the raw value
+    });
   });
 
   describe('variables', () => {
