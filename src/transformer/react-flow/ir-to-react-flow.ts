@@ -61,6 +61,8 @@ function getNodeType(data: LayoutNode['data']): string {
       return 'coil';
     case 'timer':
       return 'timer';
+    case 'counter':
+      return 'counter';
     case 'comparator':
       return 'comparator';
     case 'powerRail':
@@ -103,6 +105,15 @@ function convertNodeData(layoutNode: LayoutNode): LadderNodeData {
         instanceName: data.instanceName,
         timerType: data.timerType,
         presetTime: data.presetTime,
+      };
+
+    case 'counter':
+      return {
+        ...baseData,
+        elementType: 'counter',
+        instanceName: data.instanceName,
+        counterType: data.counterType,
+        presetValue: data.presetValue,
       };
 
     case 'comparator':

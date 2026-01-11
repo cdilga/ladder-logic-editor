@@ -5,17 +5,100 @@
  * Integrates the ST -> Ladder transformer for bidirectional sync.
  */
 
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { LadderCanvas } from '../ladder-editor/LadderCanvas';
 import { STEditor } from '../st-editor/STEditor';
-import { useProjectStore } from '../../store';
+import { VariableWatch } from '../variable-watch/VariableWatch';
+import { useProjectStore, useSimulationStore } from '../../store';
+import {
+  saveToLocalStorage,
+  loadFromLocalStorage,
+  downloadProject,
+  openProjectFile,
+  scheduleAutoSave,
+} from '../../services/file-service';
 
 import './MainLayout.css';
 
 export function MainLayout() {
   const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error'>('synced');
   const [errorCount, setErrorCount] = useState(0);
+  const [watchPanelCollapsed, setWatchPanelCollapsed] = useState(false);
+
+  // Simulation state and actions
+  const simulationStatus = useSimulationStore((state) => state.status);
+  const scanTime = useSimulationStore((state) => state.scanTime);
+  const elapsedTime = useSimulationStore((state) => state.elapsedTime);
+  const scanCount = useSimulationStore((state) => state.scanCount);
+  const startSimulation = useSimulationStore((state) => state.start);
+  const pauseSimulation = useSimulationStore((state) => state.pause);
+  const stopSimulation = useSimulationStore((state) => state.stop);
+  const resetSimulation = useSimulationStore((state) => state.reset);
+  const stepSimulation = useSimulationStore((state) => state.step);
+  const updateTimer = useSimulationStore((state) => state.updateTimer);
+  const timers = useSimulationStore((state) => state.timers);
+
+  // Ref to track animation frame
+  const animationFrameRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number>(0);
+
+  // Simulation loop
+  useEffect(() => {
+    if (simulationStatus !== 'running') {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      return;
+    }
+
+    const runSimulationLoop = (timestamp: number) => {
+      if (lastTimeRef.current === 0) {
+        lastTimeRef.current = timestamp;
+      }
+
+      const deltaTime = timestamp - lastTimeRef.current;
+
+      // Run scan cycle at configured scan time (default 100ms)
+      if (deltaTime >= scanTime) {
+        lastTimeRef.current = timestamp;
+
+        // Step simulation
+        stepSimulation();
+
+        // Update all running timers
+        Object.keys(timers).forEach((timerName) => {
+          updateTimer(timerName, scanTime);
+        });
+      }
+
+      animationFrameRef.current = requestAnimationFrame(runSimulationLoop);
+    };
+
+    lastTimeRef.current = 0;
+    animationFrameRef.current = requestAnimationFrame(runSimulationLoop);
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [simulationStatus, scanTime, stepSimulation, updateTimer, timers]);
+
+  // Simulation control handlers
+  const handleRun = useCallback(() => {
+    startSimulation();
+  }, [startSimulation]);
+
+  const handlePause = useCallback(() => {
+    pauseSimulation();
+  }, [pauseSimulation]);
+
+  const handleStop = useCallback(() => {
+    stopSimulation();
+    resetSimulation();
+  }, [stopSimulation, resetSimulation]);
 
   const currentProgram = useProjectStore((state) => {
     const project = state.project;
@@ -27,6 +110,70 @@ export function MainLayout() {
   const transformCurrentProgram = useProjectStore((state) => state.transformCurrentProgram);
   const transformedNodes = useProjectStore((state) => state.transformedNodes);
   const transformedEdges = useProjectStore((state) => state.transformedEdges);
+
+  // Project store state for file operations
+  const project = useProjectStore((state) => state.project);
+  const isDirty = useProjectStore((state) => state.isDirty);
+  const newProject = useProjectStore((state) => state.newProject);
+  const loadProject = useProjectStore((state) => state.loadProject);
+  const saveProject = useProjectStore((state) => state.saveProject);
+
+  // Load saved project from localStorage on mount
+  useEffect(() => {
+    const saved = loadFromLocalStorage();
+    if (saved) {
+      loadProject(saved);
+    } else {
+      // Create a new project if none exists
+      newProject('New Project');
+    }
+  }, [loadProject, newProject]);
+
+  // Auto-save when project changes
+  useEffect(() => {
+    if (project && isDirty) {
+      scheduleAutoSave(project);
+    }
+  }, [project, isDirty]);
+
+  // File operation handlers
+  const handleNew = useCallback(() => {
+    if (isDirty) {
+      const confirmed = window.confirm(
+        'You have unsaved changes. Are you sure you want to create a new project?'
+      );
+      if (!confirmed) return;
+    }
+    newProject('New Project');
+  }, [isDirty, newProject]);
+
+  const handleOpen = useCallback(async () => {
+    if (isDirty) {
+      const confirmed = window.confirm(
+        'You have unsaved changes. Are you sure you want to open a different project?'
+      );
+      if (!confirmed) return;
+    }
+
+    try {
+      const loadedProject = await openProjectFile();
+      loadProject(loadedProject);
+    } catch (error) {
+      // User cancelled or error opening file
+      if ((error as Error).message !== 'File selection cancelled') {
+        console.error('Error opening project:', error);
+        alert(`Failed to open project: ${(error as Error).message}`);
+      }
+    }
+  }, [isDirty, loadProject]);
+
+  const handleSave = useCallback(() => {
+    const projectToSave = saveProject();
+    if (projectToSave) {
+      saveToLocalStorage(projectToSave);
+      downloadProject(projectToSave);
+    }
+  }, [saveProject]);
 
   // Transform when ST code changes
   useEffect(() => {
@@ -90,36 +237,67 @@ export function MainLayout() {
       {/* Toolbar */}
       <div className="toolbar">
         <div className="toolbar-group">
-          <button className="toolbar-btn" title="New Project">
+          <button className="toolbar-btn" title="New Project" onClick={handleNew}>
             <span className="toolbar-icon">📄</span>
             <span className="toolbar-label">New</span>
           </button>
-          <button className="toolbar-btn" title="Open Project">
+          <button className="toolbar-btn" title="Open Project" onClick={handleOpen}>
             <span className="toolbar-icon">📂</span>
             <span className="toolbar-label">Open</span>
           </button>
-          <button className="toolbar-btn" title="Save Project">
+          <button
+            className={`toolbar-btn ${isDirty ? 'dirty' : ''}`}
+            title={isDirty ? 'Save Project (unsaved changes)' : 'Save Project'}
+            onClick={handleSave}
+          >
             <span className="toolbar-icon">💾</span>
-            <span className="toolbar-label">Save</span>
+            <span className="toolbar-label">Save{isDirty ? '*' : ''}</span>
           </button>
         </div>
 
         <div className="toolbar-separator" />
 
         <div className="toolbar-group">
-          <button className="toolbar-btn" title="Run Simulation">
+          <button
+            className={`toolbar-btn ${simulationStatus === 'running' ? 'active' : ''}`}
+            title="Run Simulation"
+            onClick={handleRun}
+            disabled={simulationStatus === 'running'}
+          >
             <span className="toolbar-icon">▶️</span>
             <span className="toolbar-label">Run</span>
           </button>
-          <button className="toolbar-btn" title="Pause Simulation">
+          <button
+            className={`toolbar-btn ${simulationStatus === 'paused' ? 'active' : ''}`}
+            title="Pause Simulation"
+            onClick={handlePause}
+            disabled={simulationStatus !== 'running'}
+          >
             <span className="toolbar-icon">⏸️</span>
             <span className="toolbar-label">Pause</span>
           </button>
-          <button className="toolbar-btn" title="Stop Simulation">
+          <button
+            className="toolbar-btn"
+            title="Stop Simulation"
+            onClick={handleStop}
+            disabled={simulationStatus === 'stopped'}
+          >
             <span className="toolbar-icon">⏹️</span>
             <span className="toolbar-label">Stop</span>
           </button>
         </div>
+
+        {/* Simulation status display */}
+        {simulationStatus !== 'stopped' && (
+          <div className="toolbar-group simulation-info">
+            <span className="simulation-status">
+              {simulationStatus === 'running' ? '● Running' : '◐ Paused'}
+            </span>
+            <span className="simulation-time">
+              {(elapsedTime / 1000).toFixed(1)}s | {scanCount} scans
+            </span>
+          </div>
+        )}
 
         <div className="toolbar-spacer" />
 
@@ -131,24 +309,32 @@ export function MainLayout() {
 
       {/* Main Content */}
       <div className="workspace">
-        <PanelGroup orientation="vertical">
-          {/* Top: Ladder Diagram */}
-          <Panel defaultSize={50} minSize={25}>
-            <LadderCanvas
-              initialNodes={transformedNodes}
-              initialEdges={transformedEdges}
-              onNodesChange={handleNodesChange}
-              onEdgesChange={handleEdgesChange}
-            />
-          </Panel>
+        <div className="workspace-main">
+          <PanelGroup orientation="vertical">
+            {/* Top: Ladder Diagram */}
+            <Panel defaultSize={50} minSize={25}>
+              <LadderCanvas
+                initialNodes={transformedNodes}
+                initialEdges={transformedEdges}
+                onNodesChange={handleNodesChange}
+                onEdgesChange={handleEdgesChange}
+              />
+            </Panel>
 
-          <PanelResizeHandle className="resize-handle horizontal" />
+            <PanelResizeHandle className="resize-handle horizontal" />
 
-          {/* Bottom: ST Editor */}
-          <Panel defaultSize={50} minSize={25}>
-            <STEditor />
-          </Panel>
-        </PanelGroup>
+            {/* Bottom: ST Editor */}
+            <Panel defaultSize={50} minSize={25}>
+              <STEditor />
+            </Panel>
+          </PanelGroup>
+        </div>
+
+        {/* Variable Watch Panel */}
+        <VariableWatch
+          collapsed={watchPanelCollapsed}
+          onToggleCollapse={() => setWatchPanelCollapsed(!watchPanelCollapsed)}
+        />
       </div>
 
       {/* Status Bar */}

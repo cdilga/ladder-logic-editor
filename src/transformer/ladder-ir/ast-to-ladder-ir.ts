@@ -44,6 +44,7 @@ import {
   createComparator,
   createCoil,
   createTimerOutput,
+  createCounterOutput,
   createRung,
   createLadderIR,
 } from './ladder-ir-types';
@@ -218,8 +219,42 @@ function functionBlockCallToRung(
     );
   }
 
-  // Handle counter types (not fully implemented in this phase)
-  // For now, create a simple representation
+  // Handle counter types (CTU, CTD, CTUD)
+  if (fbInfo.type === 'CTU' || fbInfo.type === 'CTD' || fbInfo.type === 'CTUD') {
+    const pvArg = stmt.arguments.find(a => a.name.toUpperCase() === 'PV');
+    const cuArg = stmt.arguments.find(a => a.name.toUpperCase() === 'CU');
+    const cdArg = stmt.arguments.find(a => a.name.toUpperCase() === 'CD');
+
+    // Parse preset value (default to 10)
+    let presetValue = 10;
+    if (pvArg && pvArg.expression.type === 'Literal') {
+      const pvExpr = pvArg.expression as STLiteral;
+      presetValue = typeof pvExpr.value === 'number' ? pvExpr.value : parseInt(String(pvExpr.value), 10) || 10;
+    }
+
+    // Build input network from CU or CD argument based on counter type
+    let counterInput: ContactNetwork = inputNetwork;
+    if (fbInfo.type === 'CTU' && cuArg) {
+      counterInput = expressionToContactNetwork(cuArg.expression);
+    } else if (fbInfo.type === 'CTD' && cdArg) {
+      counterInput = expressionToContactNetwork(cdArg.expression);
+    } else if (fbInfo.type === 'CTUD') {
+      // For CTUD, prefer CU if available, otherwise use the existing input
+      if (cuArg) {
+        counterInput = expressionToContactNetwork(cuArg.expression);
+      }
+    }
+
+    return createRung(
+      `rung_${index}`,
+      index,
+      stmt,
+      counterInput,
+      createCounterOutput(stmt.instanceName, fbInfo.type, presetValue, counterInput)
+    );
+  }
+
+  // Fallback for unknown function block types
   return createRung(
     `rung_${index}`,
     index,

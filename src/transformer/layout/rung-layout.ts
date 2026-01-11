@@ -14,6 +14,7 @@ import type {
   LadderRungIR,
   RungOutput,
   TimerOutput,
+  CounterOutput,
   CoilOutput,
 } from '../ladder-ir';
 
@@ -27,6 +28,8 @@ export const COIL_WIDTH = 80;
 export const COIL_HEIGHT = 60;
 export const TIMER_WIDTH = 120;
 export const TIMER_HEIGHT = 100;
+export const COUNTER_WIDTH = 120;
+export const COUNTER_HEIGHT = 120;
 export const COMPARATOR_WIDTH = 100;
 export const COMPARATOR_HEIGHT = 60;
 export const RAIL_WIDTH = 30;
@@ -51,6 +54,7 @@ export type LayoutNodeData =
   | ContactLayoutData
   | CoilLayoutData
   | TimerLayoutData
+  | CounterLayoutData
   | ComparatorLayoutData
   | PowerRailLayoutData;
 
@@ -73,6 +77,14 @@ export interface TimerLayoutData {
   instanceName: string;
   timerType: 'TON' | 'TOF' | 'TP';
   presetTime: string;
+  rungIndex: number;
+}
+
+export interface CounterLayoutData {
+  type: 'counter';
+  instanceName: string;
+  counterType: 'CTU' | 'CTD' | 'CTUD';
+  presetValue: number;
   rungIndex: number;
 }
 
@@ -472,14 +484,7 @@ function layoutOutput(
     case 'timer':
       return layoutTimer(output, x, y, rungId, rungIndex);
     case 'counter':
-      // For now, treat counters like coils
-      return layoutCoil(
-        { type: 'coil', variable: `${output.instanceName}.Q`, coilType: 'standard' },
-        x,
-        y,
-        rungId,
-        rungIndex
-      );
+      return layoutCounter(output, x, y, rungId, rungIndex);
     case 'multi':
       // For multi-output, just layout the first one for now
       if (output.outputs.length > 0) {
@@ -539,6 +544,32 @@ function layoutTimer(
       instanceName: timer.instanceName,
       timerType: timer.timerType,
       presetTime: timer.presetTime,
+      rungIndex,
+    },
+  };
+
+  return { node };
+}
+
+function layoutCounter(
+  counter: CounterOutput,
+  x: number,
+  y: number,
+  rungId: string,
+  rungIndex: number
+): OutputLayoutResult {
+  const id = generateNodeId(rungId);
+  const node: LayoutNode = {
+    id,
+    x,
+    y,
+    width: COUNTER_WIDTH,
+    height: COUNTER_HEIGHT,
+    data: {
+      type: 'counter',
+      instanceName: counter.instanceName,
+      counterType: counter.counterType,
+      presetValue: counter.presetValue,
       rungIndex,
     },
   };

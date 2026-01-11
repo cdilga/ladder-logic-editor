@@ -281,6 +281,30 @@ export function createTimer(
   };
 }
 
+export function createCounter(
+  instanceName: string,
+  counterType: CounterType,
+  presetValue: number,
+  rungIndex: number,
+  columnIndex: number
+): LadderNode {
+  const id = generateNodeId();
+  return {
+    id,
+    type: 'counter',
+    position: { x: columnIndex * 150, y: rungIndex * 100 },
+    data: {
+      id,
+      elementType: 'counter',
+      instanceName,
+      counterType,
+      presetValue,
+      rungIndex,
+      columnIndex,
+    },
+  };
+}
+
 export function createPowerRail(
   railType: 'left' | 'right',
   rungIndex: number,

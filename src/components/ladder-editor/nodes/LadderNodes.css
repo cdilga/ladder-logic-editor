@@ -236,6 +236,80 @@
 }
 
 /* ============================================================================
+   Counter Node
+   ============================================================================ */
+
+.counter-node {
+  min-width: 100px;
+  padding: 0;
+}
+
+.counter-body {
+  width: 100%;
+  background: #1e1e1e;
+  border-radius: 2px;
+}
+
+.counter-header {
+  background: #e74c3c;
+  color: white;
+  padding: 4px 8px;
+  font-weight: bold;
+  text-align: center;
+  border-radius: 2px 2px 0 0;
+}
+
+.counter-node.ctu .counter-header {
+  background: #e74c3c;
+}
+
+.counter-node.ctd .counter-header {
+  background: #9b59b6;
+}
+
+.counter-node.ctud .counter-header {
+  background: #e67e22;
+}
+
+.counter-instance {
+  padding: 4px 8px;
+  font-size: 11px;
+  color: #9cdcfe;
+  text-align: center;
+  border-bottom: 1px solid #404040;
+}
+
+.counter-params {
+  padding: 4px 8px;
+}
+
+.counter-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #808080;
+  line-height: 1.6;
+}
+
+.counter-pin-label.right {
+  text-align: right;
+}
+
+.counter-preset {
+  padding: 4px 8px;
+  font-size: 10px;
+  color: #b5cea8;
+  text-align: center;
+  background: #252526;
+  border-radius: 0 0 2px 2px;
+}
+
+.counter-handle {
+  width: 8px;
+  height: 8px;
+}
+
+/* ============================================================================
    Power Rail Node
    ============================================================================ */
 

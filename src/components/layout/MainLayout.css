@@ -52,6 +52,32 @@
   background: #5a5a5a;
 }
 
+.toolbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbar-btn:disabled:hover {
+  background: transparent;
+}
+
+.toolbar-btn.active {
+  background: #007acc;
+  color: white;
+}
+
+.toolbar-btn.active:hover {
+  background: #006bb3;
+}
+
+.toolbar-btn.dirty {
+  color: #f1c40f;
+}
+
+.toolbar-btn.dirty .toolbar-label {
+  font-weight: 600;
+}
+
 .toolbar-icon {
   font-size: 14px;
 }
@@ -106,11 +132,39 @@
   50% { opacity: 0.5; }
 }
 
+/* Simulation info display */
+.simulation-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 12px;
+  background: #252526;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: 'SF Mono', 'Consolas', monospace;
+}
+
+.simulation-status {
+  color: #27ae60;
+  font-weight: 500;
+}
+
+.simulation-time {
+  color: #808080;
+}
+
 /* ============================================================================
    Workspace
    ============================================================================ */
 
 .workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+.workspace-main {
   flex: 1;
   overflow: hidden;
   padding: 8px;
