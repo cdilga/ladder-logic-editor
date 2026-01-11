@@ -3,8 +3,10 @@
 ## Workflow: TDD First
 
 ```
-1. Write test → 2. Run test (fail) → 3. Implement → 4. Run test (pass) → 5. Commit
+1. Write test → 2. Build → 3. Run test (fail) → 4. Implement → 5. Build → 6. Run test (pass) → 7. Commit
 ```
+
+**IMPORTANT: Always build before running tests!** The build step catches TypeScript errors that tests might miss.
 
 ## Commands
 
@@ -21,9 +23,13 @@ npm run dev           # Dev server
 
 1. Create test file in `src/__tests__/`
 2. Write failing test for expected behavior
-3. Implement minimum code to pass
-4. Refactor if needed
-5. Commit with `./scripts/commit.sh`
+3. Run `npm run build` - verify it compiles
+4. Run `npm test` - verify test fails as expected
+5. Implement minimum code to pass
+6. Run `npm run build` - verify no type errors
+7. Run `npm test` - verify test passes
+8. **Commit immediately** with `./scripts/commit.sh`
+9. Refactor if needed, then commit again
 
 ## Test Patterns
 
@@ -37,11 +43,19 @@ describe('Counter IR', () => {
 });
 ```
 
-## Commit Frequently
+## Commit Frequently - CRITICAL
+
+**DO NOT batch up changes. Commit after each logical subunit:**
 
 - After each passing test
-- After each feature slice
-- Use `./scripts/commit.sh` for validation
+- After each feature slice completes
+- After refactoring a component
+- After fixing a bug
+- Before moving to a different area of the codebase
+
+Use `./scripts/commit.sh` for validation - it runs tests and build before committing.
+
+**If you've made changes to 2+ unrelated areas without committing, STOP and commit now.**
 
 ## Project Structure
 
