@@ -167,7 +167,8 @@ function extractRealValue(expr: STVariableDecl['initialValue']): number {
 function extractTimeValue(expr: STVariableDecl['initialValue']): number {
   if (!expr) return 0;
   if (expr.type === 'Literal' && expr.literalType === 'TIME') {
-    return expr.value as number;
+    // TIME literals are stored as strings like "T#5000ms" - need to parse them
+    return parseTimeString(String(expr.value));
   }
   // Try to parse from raw value if available
   if (expr.type === 'Literal') {
@@ -205,7 +206,8 @@ function initializeFromValue(name: string, expr: STVariableDecl['initialValue'],
       store.setReal(name, literal.value as number);
       break;
     case 'TIME':
-      store.setTime(name, literal.value as number);
+      // TIME literals are stored as strings - need to parse them
+      store.setTime(name, parseTimeString(String(literal.value)));
       break;
   }
 }
