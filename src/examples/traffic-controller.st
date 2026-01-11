@@ -56,48 +56,26 @@ IF STOP_BTN OR ESTOP THEN
     CurrentPhase := 0;
 END_IF;
 
-(* Phase State Machine - Only when running *)
-IF Running THEN
-    CASE CurrentPhase OF
-        0: (* North-South Green *)
-            Phase1Timer(IN := TRUE, PT := GreenTime);
-            IF Phase1Timer.Q THEN
-                Phase1Timer(IN := FALSE);
-                CurrentPhase := 1;
-            END_IF;
+(* Phase Timers - Each timer runs only during its phase *)
+(* Timer auto-resets when Q goes high (NOT Q turns off IN) *)
+Phase1Timer(IN := Running AND CurrentPhase = 0 AND NOT Phase1Timer.Q, PT := GreenTime);
+Phase2Timer(IN := Running AND CurrentPhase = 1 AND NOT Phase2Timer.Q, PT := YellowTime);
+Phase3Timer(IN := Running AND CurrentPhase = 2 AND NOT Phase3Timer.Q, PT := GreenTime);
+Phase4Timer(IN := Running AND CurrentPhase = 3 AND NOT Phase4Timer.Q, PT := YellowTime);
 
-        1: (* North-South Yellow *)
-            Phase2Timer(IN := TRUE, PT := YellowTime);
-            IF Phase2Timer.Q THEN
-                Phase2Timer(IN := FALSE);
-                CurrentPhase := 2;
-            END_IF;
+(* Phase transitions - advance when timer completes *)
+IF Phase1Timer.Q THEN CurrentPhase := 1; END_IF;
+IF Phase2Timer.Q THEN CurrentPhase := 2; END_IF;
+IF Phase3Timer.Q THEN CurrentPhase := 3; END_IF;
+IF Phase4Timer.Q THEN CurrentPhase := 0; END_IF;
 
-        2: (* East-West Green *)
-            Phase3Timer(IN := TRUE, PT := GreenTime);
-            IF Phase3Timer.Q THEN
-                Phase3Timer(IN := FALSE);
-                CurrentPhase := 3;
-            END_IF;
-
-        3: (* East-West Yellow *)
-            Phase4Timer(IN := TRUE, PT := YellowTime);
-            IF Phase4Timer.Q THEN
-                Phase4Timer(IN := FALSE);
-                CurrentPhase := 0;
-            END_IF;
-    END_CASE;
+(* Safety Flash Timer - Runs when not in normal operation *)
+(* Timer auto-resets when Q goes high by toggling FlashState *)
+FlashTimer(IN := NOT Running AND NOT FlashTimer.Q, PT := FlashTime);
+IF FlashTimer.Q THEN
+    FlashState := NOT FlashState;
 END_IF;
-
-(* Safety Flash Timer - Always runs when not running *)
-IF NOT Running THEN
-    FlashTimer(IN := TRUE, PT := FlashTime);
-    IF FlashTimer.Q THEN
-        FlashTimer(IN := FALSE);
-        FlashState := NOT FlashState;
-    END_IF;
-ELSE
-    FlashTimer(IN := FALSE);
+IF Running THEN
     FlashState := FALSE;
 END_IF;
 
