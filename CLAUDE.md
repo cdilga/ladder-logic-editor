@@ -1,5 +1,22 @@
 # Ladder Logic Editor - Development Guide
 
+## Debugging Interpreter Issues
+
+When simulation behavior is wrong, use the debug script for fast iteration:
+
+```bash
+npx tsx scripts/debug-simulation.ts
+```
+
+This runs the interpreter directly without the browser, printing state each scan cycle. Edit the ST code in the script to isolate the issue.
+
+**Pattern for fixing interpreter bugs:**
+1. Reproduce in debug script (not browser)
+2. Add state logging at suspected locations
+3. Fix and verify with script (instant feedback)
+4. Run `npm test` to ensure no regressions
+5. Test in browser only after script works
+
 ## Workflow: TDD First
 
 ```
