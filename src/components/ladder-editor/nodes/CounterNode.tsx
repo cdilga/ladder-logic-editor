@@ -31,17 +31,15 @@ export const CounterNode = memo(function CounterNode({
       }`}
     >
       {/* Input handles (left side) */}
-      {/* CU - Count Up input (CTU and CTUD) */}
-      {!isCTD && (
-        <Handle
-          type="target"
-          position={Position.Left}
-          id="CU"
-          className="ladder-handle counter-handle"
-          style={{ top: '25%' }}
-        />
-      )}
-      {/* CD - Count Down input (CTD and CTUD) */}
+      {/* Main power input - use 'power-in' for compatibility with layout */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="power-in"
+        className="ladder-handle counter-handle"
+        style={{ top: '25%' }}
+      />
+      {/* CD - Count Down input (CTD and CTUD) - additional handle */}
       {(isCTD || isCTUD) && (
         <Handle
           type="target"
@@ -97,17 +95,15 @@ export const CounterNode = memo(function CounterNode({
       </div>
 
       {/* Output handles (right side) */}
-      {/* QU - Count Up output (CTU and CTUD) */}
-      {!isCTD && (
-        <Handle
-          type="source"
-          position={Position.Right}
-          id="QU"
-          className="ladder-handle counter-handle"
-          style={{ top: '25%' }}
-        />
-      )}
-      {/* QD - Count Down output (CTD and CTUD) */}
+      {/* Main power output - use 'power-out' for compatibility with layout */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="power-out"
+        className="ladder-handle counter-handle"
+        style={{ top: '25%' }}
+      />
+      {/* QD - Count Down output (CTD and CTUD) - additional handle */}
       {(isCTD || isCTUD) && (
         <Handle
           type="source"

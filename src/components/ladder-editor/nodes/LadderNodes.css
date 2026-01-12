@@ -212,6 +212,7 @@
 .timer-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 10px;
   color: #808080;
   line-height: 1.6;
@@ -219,6 +220,22 @@
 
 .timer-pin-label.right {
   text-align: right;
+}
+
+.timer-value {
+  font-family: 'Consolas', monospace;
+  font-size: 9px;
+  color: #b5cea8;
+  background: #1e1e1e;
+  padding: 1px 4px;
+  border-radius: 2px;
+  min-width: 30px;
+  text-align: center;
+}
+
+.timer-value.active {
+  color: #4ec9b0;
+  background: #1e3a2f;
 }
 
 .timer-preset {
