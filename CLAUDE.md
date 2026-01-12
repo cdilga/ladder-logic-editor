@@ -1,5 +1,15 @@
 # Ladder Logic Editor - Development Guide
 
+## Deployment
+
+GitHub Pages deployment is automatic on push to `main` via GitHub Actions.
+
+- **Live site:** https://cdilga.github.io/ladder-logic-editor/
+- **Workflow:** `.github/workflows/deploy.yml`
+- **Base URL:** Configured in `vite.config.ts` as `/ladder-logic-editor/`
+
+No build artifacts are committed - GitHub Actions builds and deploys directly.
+
 ## Debugging Interpreter Issues
 
 When simulation behavior is wrong, use the debug script for fast iteration:

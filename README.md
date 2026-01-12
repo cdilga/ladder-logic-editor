@@ -146,6 +146,14 @@ END_IF;
 END_PROGRAM
 ```
 
+## Deployment
+
+The app is automatically deployed to GitHub Pages on every push to `main`.
+
+**Live site:** https://cdilga.github.io/ladder-logic-editor/
+
+Deployment uses GitHub Actions (`.github/workflows/deploy.yml`) - no build artifacts are committed to the repo.
+
 ## Tech Stack
 
 - **React 19** - UI framework
