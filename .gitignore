@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 .flow
+# Playwright
+playwright-report/
+test-results/

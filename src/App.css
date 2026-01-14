@@ -12,6 +12,17 @@ html, body, #root {
   height: 100%;
   width: 100%;
   overflow: hidden;
+  /* Prevent overscroll/rubber-band on all devices */
+  overscroll-behavior: none;
+}
+
+/* Mobile scroll prevention - Phase 1 Foundation */
+/* CRITICAL: Prevent pull-to-refresh and other touch gestures on mobile */
+@media (max-width: 768px) {
+  html, body, #root {
+    /* Disable pinch-zoom and double-tap-zoom while allowing single taps and scrolling in designated areas */
+    touch-action: manipulation;
+  }
 }
 
 body {

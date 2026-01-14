@@ -54,6 +54,17 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* Inner scrollable regions - These are allowed to scroll on mobile */
+.ladder-canvas,
+.st-editor-scroll,
+.variable-watch-list,
+.properties-content {
+  overflow: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
