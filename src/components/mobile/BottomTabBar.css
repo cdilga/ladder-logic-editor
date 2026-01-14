@@ -1,0 +1,206 @@
+/**
+ * Bottom Tab Bar Styles
+ *
+ * Precision-engineered tab navigation with sliding indicator.
+ * Touch-optimized with 56px height and smooth mechanical animations.
+ *
+ * Phase 3: Mobile Layout
+ */
+
+/* ============================================================================
+   Tab Bar Container
+   ========================================================================= */
+
+.bottom-tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--mobile-tabbar-height) + var(--mobile-safe-bottom));
+  padding-bottom: var(--mobile-safe-bottom);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--mobile-bg-surface);
+  border-top: 1px solid var(--mobile-border);
+  z-index: 100;
+
+  /* Technical grid accent - subtle cyan glow */
+  box-shadow:
+    inset 0 1px 0 var(--mobile-border-accent),
+    0 -1px 0 rgba(0, 212, 255, 0.05),
+    0 -4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Safe area handling */
+.bottom-tab-bar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--mobile-safe-bottom);
+  background: var(--mobile-bg-surface);
+  pointer-events: none;
+}
+
+/* ============================================================================
+   Active Indicator
+   ========================================================================= */
+
+.tab-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 25%; /* 100% / 4 tabs */
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--mobile-accent-primary) 20%,
+    var(--mobile-accent-primary) 80%,
+    transparent
+  );
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.6);
+  transition: transform var(--mobile-transition-indicator);
+  will-change: transform;
+}
+
+/* ============================================================================
+   Tab Buttons
+   ========================================================================= */
+
+.tab-button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: var(--mobile-tabbar-height);
+  background: transparent;
+  border: none;
+  color: var(--mobile-text-tertiary);
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--mobile-transition-fast);
+  -webkit-tap-highlight-color: transparent;
+
+  /* Ensure minimum touch target */
+  min-height: 48px;
+}
+
+/* Technical grid background on active */
+.tab-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 212, 255, 0.03),
+    transparent 50%
+  );
+  opacity: 0;
+  transition: opacity var(--mobile-transition-fast);
+}
+
+.tab-button:active {
+  transform: scale(0.94);
+}
+
+.tab-button.active {
+  color: var(--mobile-accent-primary);
+}
+
+.tab-button.active::before {
+  opacity: 1;
+}
+
+/* Icon styling */
+.tab-icon {
+  font-size: 22px;
+  line-height: 1;
+  transition: all var(--mobile-transition-fast);
+  font-style: normal;
+  font-weight: normal;
+}
+
+.tab-button.active .tab-icon {
+  filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.4));
+  transform: translateY(-1px);
+}
+
+/* Label styling */
+.tab-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: all var(--mobile-transition-fast);
+}
+
+.tab-button.active .tab-label {
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+}
+
+/* ============================================================================
+   Accessibility & States
+   ========================================================================= */
+
+.tab-button:focus-visible {
+  outline: 2px solid var(--mobile-accent-primary);
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .tab-indicator,
+  .tab-button,
+  .tab-icon,
+  .tab-label {
+    transition-duration: 0ms;
+  }
+}
+
+/* ============================================================================
+   Landscape Adjustments
+   ========================================================================= */
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .bottom-tab-bar {
+    height: calc(48px + var(--mobile-safe-bottom));
+  }
+
+  .tab-button {
+    height: 48px;
+    min-height: 44px;
+    gap: 2px;
+  }
+
+  .tab-icon {
+    font-size: 18px;
+  }
+
+  .tab-label {
+    font-size: 9px;
+  }
+}
+
+/* ============================================================================
+   Keyboard Visible State
+   ========================================================================= */
+
+/* Hide tab bar when keyboard is visible (optional behavior) */
+.mobile-layout[data-keyboard="visible"] .bottom-tab-bar {
+  /* Option 1: Slide up with keyboard */
+  /* transform: translateY(calc(-1 * var(--keyboard-height))); */
+
+  /* Option 2: Hide completely (cleaner for editor) */
+  /* display: none; */
+
+  /* Current: Stay visible */
+}
