@@ -6,7 +6,9 @@
 
 import { useEffect } from 'react';
 import { MainLayout } from './components/layout/MainLayout';
+import { MobileLayout } from './components/mobile/MobileLayout';
 import { useProjectStore } from './store';
+import { useMobileStore } from './store/mobile-store';
 
 import './App.css';
 
@@ -15,6 +17,7 @@ function App() {
     (state) => state.newTrafficControllerProject
   );
   const project = useProjectStore((state) => state.project);
+  const isMobile = useMobileStore((state) => state.isMobile);
 
   // Initialize with a traffic controller project on first load
   useEffect(() => {
@@ -25,7 +28,7 @@ function App() {
 
   return (
     <div className="app">
-      <MainLayout />
+      {isMobile ? <MobileLayout /> : <MainLayout />}
     </div>
   );
 }
