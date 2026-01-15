@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { DocsSearch } from './DocsSearch';
 import './DocsSidebar.css';
 
 // ============================================================================
@@ -130,6 +131,10 @@ export function DocsSidebar({ isOpen, onClose }: DocsSidebarProps) {
             <path d="M5 5l10 10M15 5L5 15" />
           </svg>
         </button>
+      </div>
+
+      <div className="docs-sidebar__search">
+        <DocsSearch onResultClick={onClose} />
       </div>
 
       <nav className="docs-sidebar__nav">

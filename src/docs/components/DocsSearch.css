@@ -1,0 +1,119 @@
+/**
+ * Documentation Search Styles
+ */
+
+.docs-search {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+}
+
+.docs-search__input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.docs-search__icon {
+  position: absolute;
+  left: 12px;
+  color: #6c7086;
+  pointer-events: none;
+}
+
+.docs-search__input {
+  width: 100%;
+  padding: 8px 36px;
+  border: 1px solid #313244;
+  border-radius: 8px;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  font-size: 14px;
+  transition: border-color 150ms, background-color 150ms;
+}
+
+.docs-search__input::placeholder {
+  color: #6c7086;
+}
+
+.docs-search__input:focus {
+  outline: none;
+  border-color: #89b4fa;
+  background: #181825;
+}
+
+.docs-search__clear {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #6c7086;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.docs-search__clear:hover {
+  background: #313244;
+  color: #cdd6f4;
+}
+
+/* Results Dropdown */
+.docs-search__results {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  max-height: 400px;
+  overflow-y: auto;
+  background: #181825;
+  border: 1px solid #313244;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+}
+
+.docs-search__result {
+  display: block;
+  padding: 12px 16px;
+  text-decoration: none;
+  border-bottom: 1px solid #313244;
+  transition: background-color 150ms;
+}
+
+.docs-search__result:last-child {
+  border-bottom: none;
+}
+
+.docs-search__result:hover,
+.docs-search__result--selected {
+  background: rgba(137, 180, 250, 0.1);
+}
+
+.docs-search__result-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #cdd6f4;
+  margin-bottom: 4px;
+}
+
+.docs-search__result-match {
+  font-size: 12px;
+  color: #a6adc8;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docs-search__no-results {
+  padding: 16px;
+  text-align: center;
+  color: #6c7086;
+  font-size: 14px;
+}
