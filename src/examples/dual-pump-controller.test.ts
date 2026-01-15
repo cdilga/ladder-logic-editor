@@ -179,6 +179,13 @@ describe('Lead Pump Control', () => {
     // Set HOA to AUTO mode (2)
     store.setInt('HOA_1', 2);
     store.setInt('HOA_2', 2);
+    // Normal operating conditions
+    store.setBool('MOTOR_OL_1', true);
+    store.setBool('MOTOR_OL_2', true);
+    store.setBool('FLOW_1', true);
+    store.setBool('FLOW_2', true);
+    store.setInt('TEMP_1', 50);
+    store.setInt('TEMP_2', 50);
   });
 
   it('should start lead pump when level exceeds HIGH setpoint', () => {
@@ -242,6 +249,12 @@ describe('Lag Pump Assist', () => {
     runtimeState = createRuntimeState(ast);
     store.setInt('HOA_1', 2);
     store.setInt('HOA_2', 2);
+    store.setBool('MOTOR_OL_1', true);
+    store.setBool('MOTOR_OL_2', true);
+    store.setBool('FLOW_1', true);
+    store.setBool('FLOW_2', true);
+    store.setInt('TEMP_1', 50);
+    store.setInt('TEMP_2', 50);
   });
 
   it('should start lag pump when level exceeds HIGH_HIGH setpoint', () => {
@@ -314,6 +327,12 @@ describe('HOA Mode Control', () => {
     ast = parseSTToAST(code);
     initializeVariables(ast, store);
     runtimeState = createRuntimeState(ast);
+    store.setBool('MOTOR_OL_1', true);
+    store.setBool('MOTOR_OL_2', true);
+    store.setBool('FLOW_1', true);
+    store.setBool('FLOW_2', true);
+    store.setInt('TEMP_1', 50);
+    store.setInt('TEMP_2', 50);
   });
 
   it('should NOT start pump in OFF mode (HOA=0)', () => {
@@ -356,6 +375,12 @@ describe('Emergency Stop', () => {
     runtimeState = createRuntimeState(ast);
     store.setInt('HOA_1', 2);
     store.setInt('HOA_2', 2);
+    store.setBool('MOTOR_OL_1', true);
+    store.setBool('MOTOR_OL_2', true);
+    store.setBool('FLOW_1', true);
+    store.setBool('FLOW_2', true);
+    store.setInt('TEMP_1', 50);
+    store.setInt('TEMP_2', 50);
   });
 
   it('should stop all pumps on E_STOP', () => {
@@ -445,6 +470,10 @@ describe('Dry Run Protection', () => {
     runtimeState = createRuntimeState(ast);
     store.setInt('HOA_1', 2);
     store.setInt('HOA_2', 2);
+    store.setBool('MOTOR_OL_1', true); // Normal = no overload
+    store.setBool('MOTOR_OL_2', true);
+    store.setInt('TEMP_1', 50); // Normal temperature
+    store.setInt('TEMP_2', 50);
   });
 
   it('should NOT fault when pump running with flow detected', () => {
@@ -494,5 +523,181 @@ describe('Dry Run Protection', () => {
 
     expect(store.getBool('ALM_DRY_RUN_1')).toBe(false);
     expect(store.getBool('PUMP_1_RUN')).toBe(true);
+  });
+});
+
+// ============================================================================
+// Motor Overload Protection Tests
+// ============================================================================
+
+describe('Motor Overload Protection', () => {
+  let store: SimulationStoreInterface;
+  let ast: ReturnType<typeof parseSTToAST>;
+  let runtimeState: ReturnType<typeof createRuntimeState>;
+
+  beforeEach(() => {
+    store = createTestStore();
+    const code = loadPumpControllerCode();
+    ast = parseSTToAST(code);
+    initializeVariables(ast, store);
+    runtimeState = createRuntimeState(ast);
+    store.setInt('HOA_1', 2);
+    store.setInt('HOA_2', 2);
+    store.setBool('MOTOR_OL_1', true); // Normal = TRUE (no overload)
+    store.setBool('MOTOR_OL_2', true);
+    store.setBool('FLOW_1', true);
+    store.setBool('FLOW_2', true);
+  });
+
+  it('should NOT fault when motor overload is normal', () => {
+    store.setInt('LEVEL_1', 75);
+    store.setInt('LEVEL_2', 75);
+    store.setInt('LEVEL_3', 75);
+    store.setBool('MOTOR_OL_1', true); // Normal
+
+    runScanCycle(ast, store, runtimeState);
+
+    expect(store.getBool('PUMP_1_RUN')).toBe(true);
+    expect(store.getBool('ALM_MOTOR_OL_1')).toBe(false);
+  });
+
+  it('should stop pump and set alarm when motor overload trips', () => {
+    // Start pump first
+    store.setInt('LEVEL_1', 75);
+    store.setInt('LEVEL_2', 75);
+    store.setInt('LEVEL_3', 75);
+    runScanCycle(ast, store, runtimeState);
+    expect(store.getBool('PUMP_1_RUN')).toBe(true);
+
+    // Trip overload (FALSE = tripped)
+    store.setBool('MOTOR_OL_1', false);
+    runScanCycle(ast, store, runtimeState);
+
+    expect(store.getBool('ALM_MOTOR_OL_1')).toBe(true);
+    expect(store.getBool('PUMP_1_RUN')).toBe(false);
+  });
+});
+
+// ============================================================================
+// Temperature Protection Tests
+// ============================================================================
+
+describe('Temperature Protection', () => {
+  let store: SimulationStoreInterface;
+  let ast: ReturnType<typeof parseSTToAST>;
+  let runtimeState: ReturnType<typeof createRuntimeState>;
+
+  beforeEach(() => {
+    store = createTestStore();
+    const code = loadPumpControllerCode();
+    ast = parseSTToAST(code);
+    initializeVariables(ast, store);
+    runtimeState = createRuntimeState(ast);
+    store.setInt('HOA_1', 2);
+    store.setInt('HOA_2', 2);
+    store.setBool('MOTOR_OL_1', true);
+    store.setBool('MOTOR_OL_2', true);
+    store.setBool('FLOW_1', true);
+    store.setBool('FLOW_2', true);
+    store.setInt('TEMP_1', 50); // Normal temperature
+    store.setInt('TEMP_2', 50);
+  });
+
+  it('should NOT fault at normal temperature', () => {
+    store.setInt('LEVEL_1', 75);
+    store.setInt('LEVEL_2', 75);
+    store.setInt('LEVEL_3', 75);
+    store.setInt('TEMP_1', 50);
+
+    runScanCycle(ast, store, runtimeState);
+
+    expect(store.getBool('PUMP_1_RUN')).toBe(true);
+    expect(store.getBool('ALM_OVERTEMP_1')).toBe(false);
+  });
+
+  it('should stop pump on critical overtemperature', () => {
+    // Start pump
+    store.setInt('LEVEL_1', 75);
+    store.setInt('LEVEL_2', 75);
+    store.setInt('LEVEL_3', 75);
+    runScanCycle(ast, store, runtimeState);
+    expect(store.getBool('PUMP_1_RUN')).toBe(true);
+
+    // Critical temperature (> 95C)
+    store.setInt('TEMP_1', 100);
+    runScanCycle(ast, store, runtimeState);
+
+    expect(store.getBool('ALM_OVERTEMP_1')).toBe(true);
+    expect(store.getBool('PUMP_1_RUN')).toBe(false);
+  });
+});
+
+// ============================================================================
+// Fault Reset Tests
+// ============================================================================
+
+describe('Fault Reset', () => {
+  let store: SimulationStoreInterface;
+  let ast: ReturnType<typeof parseSTToAST>;
+  let runtimeState: ReturnType<typeof createRuntimeState>;
+
+  beforeEach(() => {
+    store = createTestStore();
+    const code = loadPumpControllerCode();
+    ast = parseSTToAST(code);
+    initializeVariables(ast, store);
+    runtimeState = createRuntimeState(ast);
+    store.setInt('HOA_1', 2);
+    store.setInt('HOA_2', 2);
+    store.setBool('MOTOR_OL_1', true);
+    store.setBool('MOTOR_OL_2', true);
+    store.setBool('FLOW_1', true);
+    store.setBool('FLOW_2', true);
+    store.setInt('TEMP_1', 50);
+    store.setInt('TEMP_2', 50);
+  });
+
+  it('should clear fault and restart pump on FAULT_RESET', () => {
+    // Create overtemp fault
+    store.setInt('LEVEL_1', 75);
+    store.setInt('LEVEL_2', 75);
+    store.setInt('LEVEL_3', 75);
+    store.setInt('TEMP_1', 100); // Overtemp
+    runScanCycle(ast, store, runtimeState);
+    expect(store.getBool('ALM_OVERTEMP_1')).toBe(true);
+    expect(store.getBool('PUMP_1_RUN')).toBe(false);
+
+    // Cool down and reset
+    store.setInt('TEMP_1', 50);
+    store.setBool('FAULT_RESET', true);
+    runScanCycle(ast, store, runtimeState);
+
+    // Fault should be cleared
+    expect(store.getBool('ALM_OVERTEMP_1')).toBe(false);
+
+    // Release reset button
+    store.setBool('FAULT_RESET', false);
+    runScanCycle(ast, store, runtimeState);
+
+    // Pump should restart (level still high)
+    expect(store.getBool('PUMP_1_RUN')).toBe(true);
+  });
+
+  it('should NOT clear fault if condition still present', () => {
+    // Create overtemp fault
+    store.setInt('LEVEL_1', 75);
+    store.setInt('LEVEL_2', 75);
+    store.setInt('LEVEL_3', 75);
+    store.setInt('TEMP_1', 100);
+    runScanCycle(ast, store, runtimeState);
+    expect(store.getBool('ALM_OVERTEMP_1')).toBe(true);
+
+    // Try to reset while still overtemp
+    store.setBool('FAULT_RESET', true);
+    runScanCycle(ast, store, runtimeState);
+
+    // Fault should NOT clear (temperature still high)
+    expect(store.getBool('ALM_OVERTEMP_1')).toBe(true);
+    expect(store.getBool('PUMP_1_RUN')).toBe(false);
   });
 });

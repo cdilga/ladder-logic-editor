@@ -14,10 +14,19 @@ VAR_INPUT
     FLOW_1 : BOOL;          (* TRUE = flow detected *)
     FLOW_2 : BOOL;
 
+    (* Temperature Sensors *)
+    TEMP_1 : INT;           (* Celsius *)
+    TEMP_2 : INT;
+
+    (* Motor Feedback *)
+    MOTOR_OL_1 : BOOL;      (* FALSE = overload tripped *)
+    MOTOR_OL_2 : BOOL;
+
     (* Operator Controls *)
     HOA_1 : INT;            (* 0=OFF, 1=HAND, 2=AUTO *)
     HOA_2 : INT;
     E_STOP : BOOL;          (* TRUE = emergency stop *)
+    FAULT_RESET : BOOL;     (* Rising edge resets latched faults *)
 END_VAR
 
 VAR_OUTPUT
@@ -35,6 +44,10 @@ VAR_OUTPUT
     ALM_OVERFLOW : BOOL;
     ALM_DRY_RUN_1 : BOOL;
     ALM_DRY_RUN_2 : BOOL;
+    ALM_MOTOR_OL_1 : BOOL;
+    ALM_MOTOR_OL_2 : BOOL;
+    ALM_OVERTEMP_1 : BOOL;
+    ALM_OVERTEMP_2 : BOOL;
 END_VAR
 
 VAR
@@ -55,6 +68,7 @@ VAR
     SP_HIGH : INT := 70;
     SP_HIGH_HIGH : INT := 85;
     SP_CRITICAL : INT := 95;
+    TEMP_CRITICAL : INT := 95;  (* Critical temperature threshold *)
 
     (* Internal state *)
     LeadPumpCmd : BOOL;
@@ -66,6 +80,8 @@ VAR
     DryRunTimer1 : TON;
     DryRunTimer2 : TON;
     DryRunDelay : TIME := T#5s;
+
+    (* Fault state - latched *)
     Pump1Faulted : BOOL := FALSE;
     Pump2Faulted : BOOL := FALSE;
 END_VAR
@@ -86,13 +102,10 @@ END_IF;
 
 (* Step 2: Find median using third value *)
 IF LEVEL_3 < Min12 THEN
-    (* L3 is smallest: median is Min12 *)
     Median := Min12;
 ELSIF LEVEL_3 > Max12 THEN
-    (* L3 is largest: median is Max12 *)
     Median := Max12;
 ELSE
-    (* L3 is in between: L3 is median *)
     Median := LEVEL_3;
 END_IF;
 
@@ -141,6 +154,56 @@ ALM_HIGH_LEVEL := EFFECTIVE_LEVEL >= SP_HIGH_HIGH;
 ALM_OVERFLOW := EFFECTIVE_LEVEL >= SP_CRITICAL;
 
 (* ========================================================================== *)
+(* Motor Overload Detection                                                   *)
+(* ========================================================================== *)
+
+(* Motor overload contact is normally closed - FALSE means tripped *)
+IF NOT MOTOR_OL_1 THEN
+    ALM_MOTOR_OL_1 := TRUE;
+    Pump1Faulted := TRUE;
+END_IF;
+
+IF NOT MOTOR_OL_2 THEN
+    ALM_MOTOR_OL_2 := TRUE;
+    Pump2Faulted := TRUE;
+END_IF;
+
+(* ========================================================================== *)
+(* Temperature Protection                                                     *)
+(* ========================================================================== *)
+
+IF TEMP_1 > TEMP_CRITICAL THEN
+    ALM_OVERTEMP_1 := TRUE;
+    Pump1Faulted := TRUE;
+END_IF;
+
+IF TEMP_2 > TEMP_CRITICAL THEN
+    ALM_OVERTEMP_2 := TRUE;
+    Pump2Faulted := TRUE;
+END_IF;
+
+(* ========================================================================== *)
+(* Fault Reset Logic                                                          *)
+(* ========================================================================== *)
+
+(* Reset faults only if fault conditions have cleared *)
+IF FAULT_RESET THEN
+    (* Pump 1 fault reset - check all conditions *)
+    IF MOTOR_OL_1 AND TEMP_1 <= TEMP_CRITICAL AND NOT ALM_DRY_RUN_1 THEN
+        Pump1Faulted := FALSE;
+        ALM_MOTOR_OL_1 := FALSE;
+        ALM_OVERTEMP_1 := FALSE;
+    END_IF;
+
+    (* Pump 2 fault reset *)
+    IF MOTOR_OL_2 AND TEMP_2 <= TEMP_CRITICAL AND NOT ALM_DRY_RUN_2 THEN
+        Pump2Faulted := FALSE;
+        ALM_MOTOR_OL_2 := FALSE;
+        ALM_OVERTEMP_2 := FALSE;
+    END_IF;
+END_IF;
+
+(* ========================================================================== *)
 (* HOA Mode Decoding                                                          *)
 (* ========================================================================== *)
 
@@ -160,7 +223,6 @@ ELSE
     IF LEAD_PUMP = 1 THEN
         (* Pump 1 is lead *)
         IF Pump1InAuto AND NOT Pump1Faulted THEN
-            (* Start lead on HIGH, stop on LOW *)
             IF EFFECTIVE_LEVEL >= SP_HIGH THEN
                 LeadPumpCmd := TRUE;
             ELSIF EFFECTIVE_LEVEL < SP_LOW THEN
@@ -175,18 +237,16 @@ ELSE
             IF EFFECTIVE_LEVEL >= SP_HIGH_HIGH THEN
                 LagPumpCmd := TRUE;
             ELSIF EFFECTIVE_LEVEL < SP_LOW + 5 THEN
-                (* Stop lag with slight hysteresis *)
                 LagPumpCmd := FALSE;
             END_IF;
         ELSE
             LagPumpCmd := FALSE;
         END_IF;
 
-        (* Apply commands *)
         PUMP_1_RUN := LeadPumpCmd;
         PUMP_2_RUN := LagPumpCmd;
     ELSE
-        (* Pump 2 is lead (swap roles) *)
+        (* Pump 2 is lead *)
         IF Pump2InAuto AND NOT Pump2Faulted THEN
             IF EFFECTIVE_LEVEL >= SP_HIGH THEN
                 LeadPumpCmd := TRUE;
@@ -224,6 +284,14 @@ ELSE
         PUMP_1_RUN := FALSE;
     END_IF;
     IF HOA_2 = 0 THEN
+        PUMP_2_RUN := FALSE;
+    END_IF;
+
+    (* Faulted pumps cannot run *)
+    IF Pump1Faulted THEN
+        PUMP_1_RUN := FALSE;
+    END_IF;
+    IF Pump2Faulted THEN
         PUMP_2_RUN := FALSE;
     END_IF;
 END_IF;
