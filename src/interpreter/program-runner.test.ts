@@ -183,13 +183,10 @@ describe('runScanCycle', () => {
   });
 
   describe('timer updates', () => {
-    // TODO: These tests are failing because function-block-handler.ts:61-78 has the same
-    // getVariable bug that was fixed in execution-context.ts. The createFunctionBlockContext
-    // uses the old pattern `if (boolVal !== false)` instead of `if (name in store.booleans)`.
-    // This causes timer IN evaluation to fail when the Running variable is involved.
-    // Fix: Update createFunctionBlockContext to use the same pattern as execution-context.ts
+    // Bug fixed: function-block-handler.ts now uses `if (name in store.booleans)` pattern
+    // matching execution-context.ts. Timer IN evaluation works correctly.
 
-    it.skip('updates timer elapsed times each scan', () => {
+    it('updates timer elapsed times each scan', () => {
       const ast = parseSTToAST(`
         PROGRAM TimerTest
         VAR
@@ -221,7 +218,7 @@ describe('runScanCycle', () => {
       expect(timer3?.ET).toBe(300);
     });
 
-    it.skip('timer Q becomes TRUE when ET reaches PT', () => {
+    it('timer Q becomes TRUE when ET reaches PT', () => {
       const ast = parseSTToAST(`
         PROGRAM TimerTest
         VAR
