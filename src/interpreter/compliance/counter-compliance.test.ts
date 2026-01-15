@@ -1124,3 +1124,258 @@ describe('Multiple Counter Instances', () => {
     expect(store.getCounter('Counter2')?.QU).toBe(true);
   });
 });
+
+// ============================================================================
+// Counter State Management
+// ============================================================================
+
+describe('Counter State Management', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('re-initialization resets CV to 0', () => {
+    store.initCounter('MyCounter', 10);
+
+    // Count up a few times via direct method calls
+    for (let i = 0; i < 5; i++) {
+      store.pulseCountUp('MyCounter');
+    }
+    expect(store.getCounter('MyCounter')?.CV).toBe(5);
+
+    // Re-initialize
+    store.initCounter('MyCounter', 10);
+    expect(store.getCounter('MyCounter')?.CV).toBe(0);
+  });
+
+  it('clearAll resets all counter states', () => {
+    store.initCounter('Counter1', 10);
+    store.initCounter('Counter2', 20);
+
+    store.pulseCountUp('Counter1');
+    store.pulseCountUp('Counter2');
+    store.pulseCountUp('Counter2');
+
+    expect(store.getCounter('Counter1')?.CV).toBe(1);
+    expect(store.getCounter('Counter2')?.CV).toBe(2);
+
+    store.clearAll();
+
+    expect(store.getCounter('Counter1')).toBeUndefined();
+    expect(store.getCounter('Counter2')).toBeUndefined();
+  });
+
+  it('PV can be changed dynamically via counter object', () => {
+    store.initCounter('DynamicPV', 5);
+
+    // Count to 4
+    for (let i = 0; i < 4; i++) {
+      store.pulseCountUp('DynamicPV');
+    }
+    expect(store.getCounter('DynamicPV')?.QU).toBe(false);
+
+    // Change PV directly on counter object to 3
+    const counter = store.getCounter('DynamicPV');
+    if (counter) {
+      counter.PV = 3;
+    }
+
+    // QU is only updated on count pulse, so do one more
+    store.pulseCountUp('DynamicPV');
+    expect(store.getCounter('DynamicPV')?.QU).toBe(true);
+  });
+});
+
+// ============================================================================
+// Counter Boundary Tests
+// ============================================================================
+
+describe('Counter Boundary Tests', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  describe('PV Edge Values', () => {
+    it('PV = 0: QU is TRUE immediately after first count', () => {
+      store.initCounter('ZeroPV', 0);
+
+      store.pulseCountUp('ZeroPV');
+      expect(store.getCounter('ZeroPV')?.CV).toBe(1);
+      expect(store.getCounter('ZeroPV')?.QU).toBe(true); // 1 >= 0
+    });
+
+    it('PV = 1: QU is TRUE after one count', () => {
+      store.initCounter('OnePV', 1);
+
+      expect(store.getCounter('OnePV')?.QU).toBe(false);
+      store.pulseCountUp('OnePV');
+      expect(store.getCounter('OnePV')?.QU).toBe(true);
+    });
+
+    it('large PV (1000) works correctly', () => {
+      store.initCounter('LargePV', 1000);
+
+      // Count 999 times
+      for (let i = 0; i < 999; i++) {
+        store.pulseCountUp('LargePV');
+      }
+      expect(store.getCounter('LargePV')?.QU).toBe(false);
+      expect(store.getCounter('LargePV')?.CV).toBe(999);
+
+      // One more count
+      store.pulseCountUp('LargePV');
+      expect(store.getCounter('LargePV')?.QU).toBe(true);
+      expect(store.getCounter('LargePV')?.CV).toBe(1000);
+    });
+
+    it('very large PV (32767) initializes correctly', () => {
+      store.initCounter('MaxPV', 32767);
+
+      expect(store.getCounter('MaxPV')?.PV).toBe(32767);
+      expect(store.getCounter('MaxPV')?.CV).toBe(0);
+      expect(store.getCounter('MaxPV')?.QU).toBe(false);
+    });
+  });
+
+  describe('CV Boundary Behavior', () => {
+    it('CV increments beyond PV', () => {
+      store.initCounter('BeyondPV', 3);
+
+      // Count to PV
+      for (let i = 0; i < 3; i++) {
+        store.pulseCountUp('BeyondPV');
+      }
+      expect(store.getCounter('BeyondPV')?.QU).toBe(true);
+      expect(store.getCounter('BeyondPV')?.CV).toBe(3);
+
+      // Continue counting - should still work
+      for (let i = 0; i < 5; i++) {
+        store.pulseCountUp('BeyondPV');
+      }
+      expect(store.getCounter('BeyondPV')?.CV).toBe(8);
+      expect(store.getCounter('BeyondPV')?.QU).toBe(true); // Still true
+    });
+
+    it('CTD CV cannot go below 0', () => {
+      store.initCounter('NegativeTest', 5);
+
+      // Try to count down from 0
+      store.pulseCountDown('NegativeTest');
+      expect(store.getCounter('NegativeTest')?.CV).toBe(0);
+      expect(store.getCounter('NegativeTest')?.QD).toBe(true);
+
+      // Multiple attempts
+      for (let i = 0; i < 5; i++) {
+        store.pulseCountDown('NegativeTest');
+      }
+      expect(store.getCounter('NegativeTest')?.CV).toBe(0);
+    });
+
+    it('count up then count down sequence', () => {
+      store.initCounter('UpDown', 10);
+
+      // Count up 5
+      for (let i = 0; i < 5; i++) {
+        store.pulseCountUp('UpDown');
+      }
+      expect(store.getCounter('UpDown')?.CV).toBe(5);
+
+      // Count down 3
+      for (let i = 0; i < 3; i++) {
+        store.pulseCountDown('UpDown');
+      }
+      expect(store.getCounter('UpDown')?.CV).toBe(2);
+
+      // Count up 3 more to reach 5 again
+      for (let i = 0; i < 3; i++) {
+        store.pulseCountUp('UpDown');
+      }
+      expect(store.getCounter('UpDown')?.CV).toBe(5);
+    });
+  });
+});
+
+// ============================================================================
+// Counter Property-Based Tests (Additional)
+// ============================================================================
+
+describe('Counter Extended Property Tests', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('CV always equals number of up pulses minus down pulses (clamped at 0)', () => {
+    const testCases = [
+      { up: 10, down: 3, expected: 7 },
+      { up: 5, down: 5, expected: 0 },
+      { up: 3, down: 10, expected: 0 }, // Clamped at 0
+      { up: 0, down: 0, expected: 0 },
+      { up: 100, down: 50, expected: 50 },
+    ];
+
+    for (const tc of testCases) {
+      store.initCounter('PropCounter', 1000);
+
+      // Apply up pulses
+      for (let i = 0; i < tc.up; i++) {
+        store.pulseCountUp('PropCounter');
+      }
+
+      // Apply down pulses
+      for (let i = 0; i < tc.down; i++) {
+        store.pulseCountDown('PropCounter');
+      }
+
+      expect(store.getCounter('PropCounter')?.CV).toBe(tc.expected);
+    }
+  });
+
+  it('QD is TRUE iff CV <= 0 after count down operation', () => {
+    const testCases = [
+      { start: 5, down: 3, expectedCV: 2, expectedQD: false },
+      { start: 5, down: 5, expectedCV: 0, expectedQD: true },
+      { start: 5, down: 10, expectedCV: 0, expectedQD: true },
+      { start: 1, down: 1, expectedCV: 0, expectedQD: true },
+      { start: 10, down: 1, expectedCV: 9, expectedQD: false },
+    ];
+
+    for (const tc of testCases) {
+      store.initCounter('QDCheck', 100);
+
+      // Initialize to start value
+      for (let i = 0; i < tc.start; i++) {
+        store.pulseCountUp('QDCheck');
+      }
+
+      // Count down
+      for (let i = 0; i < tc.down; i++) {
+        store.pulseCountDown('QDCheck');
+      }
+
+      const counter = store.getCounter('QDCheck');
+      expect(counter?.CV).toBe(tc.expectedCV);
+      expect(counter?.QD).toBe(tc.expectedQD);
+    }
+  });
+
+  it('reset always sets CV to 0 regardless of previous state', () => {
+    const initialCounts = [0, 1, 5, 100];
+
+    for (const count of initialCounts) {
+      store.initCounter('ResetTest', 50);
+
+      for (let i = 0; i < count; i++) {
+        store.pulseCountUp('ResetTest');
+      }
+
+      store.resetCounter('ResetTest');
+      expect(store.getCounter('ResetTest')?.CV).toBe(0);
+    }
+  });
+});
