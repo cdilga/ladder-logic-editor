@@ -1152,4 +1152,181 @@ describe('dual-pump-controller', () => {
       expect(store.getBool('PUMP_1_RUN')).toBe(true);
     });
   });
+
+  // ==========================================================================
+  // Alternation Tests (from spec: Alternation Tests)
+  // ==========================================================================
+
+  describe('lead/lag alternation', () => {
+    beforeEach(() => {
+      setAutoMode();
+      setNormalConditions();
+    });
+
+    it('FORCE_ALTERNATE swaps lead/lag on rising edge', () => {
+      // Initial state: pump 1 is lead
+      store.setInt('LEVEL_1', 50);
+      store.setInt('LEVEL_2', 50);
+      store.setInt('LEVEL_3', 50);
+      runCycle();
+      expect(store.getInt('LEAD_PUMP')).toBe(1);
+
+      // Pulse FORCE_ALTERNATE
+      store.setBool('FORCE_ALTERNATE', true);
+      runCycle();
+
+      // Lead should swap to pump 2
+      expect(store.getInt('LEAD_PUMP')).toBe(2);
+
+      // Release and re-pulse to swap back
+      store.setBool('FORCE_ALTERNATE', false);
+      runCycle();
+      store.setBool('FORCE_ALTERNATE', true);
+      runCycle();
+
+      // Lead should swap back to pump 1
+      expect(store.getInt('LEAD_PUMP')).toBe(1);
+    });
+
+    it('FORCE_ALTERNATE only triggers on rising edge, not held', () => {
+      store.setInt('LEVEL_1', 50);
+      store.setInt('LEVEL_2', 50);
+      store.setInt('LEVEL_3', 50);
+      runCycle();
+      expect(store.getInt('LEAD_PUMP')).toBe(1);
+
+      // Set FORCE_ALTERNATE and hold it
+      store.setBool('FORCE_ALTERNATE', true);
+      runCycle();
+      expect(store.getInt('LEAD_PUMP')).toBe(2);
+
+      // Keep holding - should NOT swap again
+      runCycle();
+      expect(store.getInt('LEAD_PUMP')).toBe(2);
+      runCycle();
+      expect(store.getInt('LEAD_PUMP')).toBe(2);
+    });
+
+    it('FORCE_ALTERNATE changes which pump runs as lead', () => {
+      // Start with pump 1 as lead and get it running
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+      runCycle();
+      expect(store.getInt('LEAD_PUMP')).toBe(1);
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
+      expect(store.getBool('PUMP_2_RUN')).toBe(false);
+
+      // Force alternate to pump 2
+      store.setBool('FORCE_ALTERNATE', true);
+      runCycle();
+
+      // Now pump 2 should be lead and running
+      expect(store.getInt('LEAD_PUMP')).toBe(2);
+      expect(store.getBool('PUMP_1_RUN')).toBe(false);
+      expect(store.getBool('PUMP_2_RUN')).toBe(true);
+    });
+
+    it('timer-based alternation swaps after interval (30s demo)', () => {
+      // The AlternationInterval is T#30s = 30000ms
+      // Each scan cycle advances timer by 100ms
+      // So 300 cycles = 30000ms = 30s
+
+      store.setInt('LEVEL_1', 50);
+      store.setInt('LEVEL_2', 50);
+      store.setInt('LEVEL_3', 50);
+      runCycle();
+      expect(store.getInt('LEAD_PUMP')).toBe(1);
+
+      // Run 299 cycles (29.9 seconds) - not enough time
+      for (let i = 0; i < 299; i++) {
+        runCycle();
+      }
+      expect(store.getInt('LEAD_PUMP')).toBe(1);
+
+      // One more cycle to hit 30s
+      runCycle();
+
+      // Timer Q should be TRUE, swap should occur
+      expect(store.getInt('LEAD_PUMP')).toBe(2);
+    });
+
+    it('timer-based alternation continues cycling', () => {
+      // First alternation at 30s
+      store.setInt('LEVEL_1', 50);
+      store.setInt('LEVEL_2', 50);
+      store.setInt('LEVEL_3', 50);
+      runCycle();
+      expect(store.getInt('LEAD_PUMP')).toBe(1);
+
+      // Run 300 cycles to hit first alternation
+      for (let i = 0; i < 300; i++) {
+        runCycle();
+      }
+      expect(store.getInt('LEAD_PUMP')).toBe(2);
+
+      // After alternation, timer Q=TRUE, next cycle resets timer (IN becomes FALSE)
+      // When IN goes FALSE, timer resets (Q=FALSE, ET=0)
+      // Then next cycle restarts timer (IN becomes TRUE again)
+      // So we need 1 reset cycle + 300 timer cycles = 301 total, plus 1 more to process swap
+      for (let i = 0; i < 302; i++) {
+        runCycle();
+      }
+      expect(store.getInt('LEAD_PUMP')).toBe(1);
+    });
+
+    it('timer-based alternation does not run when a pump is faulted', () => {
+      store.setInt('LEVEL_1', 50);
+      store.setInt('LEVEL_2', 50);
+      store.setInt('LEVEL_3', 50);
+      runCycle();
+      expect(store.getInt('LEAD_PUMP')).toBe(1);
+
+      // Fault pump 2
+      store.setBool('MOTOR_OL_2', false);
+      runCycle();
+      expect(store.getBool('Pump2_Faulted')).toBe(true);
+
+      // Run 300 cycles - timer should NOT advance because pump 2 is faulted
+      for (let i = 0; i < 300; i++) {
+        runCycle();
+      }
+
+      // Lead should still be pump 1 (no alternation)
+      expect(store.getInt('LEAD_PUMP')).toBe(1);
+    });
+
+    it('timer-based alternation resumes after fault cleared', () => {
+      store.setInt('LEVEL_1', 50);
+      store.setInt('LEVEL_2', 50);
+      store.setInt('LEVEL_3', 50);
+      runCycle();
+      expect(store.getInt('LEAD_PUMP')).toBe(1);
+
+      // Fault pump 2
+      store.setBool('MOTOR_OL_2', false);
+      runCycle();
+
+      // Run 150 cycles while faulted
+      for (let i = 0; i < 150; i++) {
+        runCycle();
+      }
+      expect(store.getInt('LEAD_PUMP')).toBe(1);
+
+      // Clear the fault
+      store.setBool('MOTOR_OL_2', true);
+      store.setBool('FAULT_RESET', true);
+      runCycle();
+      store.setBool('FAULT_RESET', false);
+      expect(store.getBool('Pump2_Faulted')).toBe(false);
+
+      // Run 300 cycles - timer should now complete
+      for (let i = 0; i < 300; i++) {
+        runCycle();
+      }
+
+      // Now alternation should have occurred
+      expect(store.getInt('LEAD_PUMP')).toBe(2);
+    });
+  });
 });

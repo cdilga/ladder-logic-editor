@@ -118,6 +118,11 @@ VAR
     DryRunTimer1 : TON;
     DryRunTimer2 : TON;
     DRY_RUN_DELAY : TIME := T#5s;  (* 5 second delay before fault *)
+
+    (* Lead/lag alternation *)
+    AlternationInterval : TIME := T#30s;  (* Demo default - use T#24h for production *)
+    AlternationTimer : TON;               (* Timer for automatic alternation *)
+    Prev_Force_Alternate : BOOL := FALSE; (* Edge detection for manual alternation *)
 END_VAR
 
 (* ============================================================================
@@ -302,6 +307,7 @@ ALM_BOTH_PUMPS_FAILED := Pump1_Faulted AND Pump2_Faulted;
 (* ============================================================================
    PUMP AVAILABILITY
    A pump is available for AUTO control if HOA is in AUTO and not faulted
+   (Anti-cycle protection is applied as post-processing on pump output)
    ============================================================================ *)
 
 Pump1_Available := (HOA_1 = 2) AND NOT Pump1_Faulted;
@@ -326,6 +332,42 @@ ELSE
 END_IF;
 
 LEAD_PUMP := LeadPumpNum;
+
+(* ============================================================================
+   MANUAL ALTERNATION (FORCE_ALTERNATE)
+   Rising edge on FORCE_ALTERNATE triggers immediate lead/lag swap
+   ============================================================================ *)
+
+IF FORCE_ALTERNATE AND NOT Prev_Force_Alternate THEN
+    (* Rising edge detected - swap lead/lag *)
+    IF LeadPumpNum = 1 THEN
+        LeadPumpNum := 2;
+    ELSE
+        LeadPumpNum := 1;
+    END_IF;
+    LEAD_PUMP := LeadPumpNum;
+END_IF;
+Prev_Force_Alternate := FORCE_ALTERNATE;
+
+(* ============================================================================
+   TIMER-BASED ALTERNATION
+   Automatically swap lead/lag at AlternationInterval (30s demo / 24h production)
+   Only alternate when both pumps are healthy
+   ============================================================================ *)
+
+(* Timer runs when both pumps are not faulted *)
+AlternationTimer(IN := NOT Pump1_Faulted AND NOT Pump2_Faulted AND NOT AlternationTimer.Q, PT := AlternationInterval);
+
+IF AlternationTimer.Q THEN
+    (* Timer elapsed - swap lead/lag *)
+    IF LeadPumpNum = 1 THEN
+        LeadPumpNum := 2;
+    ELSE
+        LeadPumpNum := 1;
+    END_IF;
+    LEAD_PUMP := LeadPumpNum;
+    (* Timer will reset on next cycle when Q goes FALSE due to AND NOT AlternationTimer.Q *)
+END_IF;
 
 (* ============================================================================
    PUMP CONTROL STATE MACHINE
