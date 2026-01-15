@@ -23,10 +23,12 @@ Master specification for PLC interpreter IEC 61131-3 compliance testing.
 | [Integration Programs](./testing/INTEGRATION.md) | ~62 | 59 | 100% | 🟢 Complete |
 | [Error Handling](./testing/ERROR_HANDLING.md) | ~49 | 49 | 100% | 🟢 Complete |
 | [Property-Based Tests](./testing/PROPERTY_TESTS.md) | ~69 | 86 | 100% | 🟢 Complete |
-| [Bounds & Edge Cases](./testing/BOUNDS.md) | ~63 | 69 | 97% | 🟢 Complete |
+| [Bounds & Edge Cases](./testing/BOUNDS.md) | 69 | 69 | 100%* | 🟢 Complete |
 | **Total** | **~686** | **~741** | **99%** | 🟢 |
 
 **Target for Industrial Simulation:** 600+ tests, 95%+ passing ✅ (947 tests, all passing)
+
+\* Array and String bounds tests are pending feature implementation (documented as Future Work)
 
 ### Current Test Count by File (2026-01-16)
 - `data-types.test.ts`: 90 tests ✅ (BOOL: 20, INT: 22, REAL: 20, TIME: 18, Properties: 10)
