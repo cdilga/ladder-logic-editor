@@ -38,8 +38,8 @@
   --mobile-status-stopped: var(--mobile-text-tertiary);
 
   /* Layout metrics - scaled down 15% for mobile (Phase 5 refinement) */
-  --mobile-toolbar-height: 37px;
-  --mobile-tabbar-height: 44px;
+  --mobile-toolbar-height: 40px;
+  --mobile-tabbar-height: 48px;
   --mobile-safe-bottom: env(safe-area-inset-bottom, 0px);
 
   /* Animation timing - precise, mechanical */
@@ -143,8 +143,8 @@
 }
 
 .mobile-menu-btn {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -172,9 +172,9 @@
 
 /* Hamburger icon - perfectly centered (Phase 5 fix) */
 .menu-icon {
-  width: 14px;
+  width: 16px;
   height: 2px;
-  background: currentColor;
+  background: var(--mobile-text-primary);
   border-radius: 1px;
   position: relative;
   display: block;
@@ -185,9 +185,9 @@
 .menu-icon::after {
   content: '';
   position: absolute;
-  width: 14px;
+  width: 16px;
   height: 2px;
-  background: currentColor;
+  background: var(--mobile-text-primary);
   border-radius: 1px;
   left: 0;
   transition: all var(--mobile-transition-fast);
@@ -203,6 +203,11 @@
 
 .mobile-menu-btn.active .menu-icon {
   background: transparent;
+}
+
+.mobile-menu-btn.active .menu-icon::before,
+.mobile-menu-btn.active .menu-icon::after {
+  background: var(--mobile-bg-base);
 }
 
 .mobile-menu-btn.active .menu-icon::before {
@@ -331,7 +336,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   background: transparent;
   border: none;
   border-bottom: 1px solid var(--mobile-border);
@@ -342,7 +347,7 @@
   text-align: left;
   cursor: pointer;
   transition: all var(--mobile-transition-fast);
-  min-height: 40px;
+  min-height: 44px;
 }
 
 .mobile-menu-item:last-child {
@@ -434,7 +439,7 @@
   align-items: center;
   justify-content: center;
   gap: 3px;
-  height: 48px;
+  height: 52px;
   background: var(--mobile-bg-elevated);
   border: 1px solid var(--mobile-border);
   border-radius: 7px;
@@ -448,7 +453,7 @@
   transition: all var(--mobile-transition-fast);
 
   /* Touch target */
-  min-height: 40px;
+  min-height: 44px;
 }
 
 .sim-btn:disabled {
