@@ -1,8 +1,14 @@
 # Property-Based Tests
 
-**Status:** 🔴 Minimal (10%)
+**Status:** 🟢 Complete (81 tests, 100%+)
 **Test File:** `src/interpreter/property/`
 **Framework:** fast-check
+**Last Updated:** 2026-01-16
+
+### Current Test Files
+- `arithmetic-properties.test.ts`: 42 tests (commutativity, associativity, identity, boolean algebra)
+- `function-block-properties.test.ts`: 19 tests (timers, counters, edge detection, bistables)
+- `control-flow-properties.test.ts`: 20 tests (FOR, IF, CASE, WHILE, REPEAT properties)
 
 ---
 
