@@ -11,6 +11,7 @@ import type { IntersectionNetwork } from './traffic-controller';
 
 // Import example ST programs from external files (Vite ?raw import)
 import trafficControllerST from '../examples/traffic-controller.st?raw';
+import dualPumpControllerST from '../examples/dual-pump-controller.st?raw';
 
 // ============================================================================
 // Project Metadata
@@ -154,6 +155,23 @@ export function createTrafficControllerProgram(): ProgramUnit {
     name: 'TrafficController',
     type: 'PROGRAM',
     structuredText: trafficControllerST,
+    lastSyncSource: 'st',
+    syncValid: true,
+    variables: [],
+  };
+}
+
+/**
+ * Create a dual pump controller program with default ST code
+ * ST code is loaded from src/examples/dual-pump-controller.st at build time
+ * See specs/PUMP_EXAMPLE_SPEC.md for full specification.
+ */
+export function createDualPumpControllerProgram(): ProgramUnit {
+  return {
+    id: 'dual_pump_controller_main',
+    name: 'DualPumpController',
+    type: 'PROGRAM',
+    structuredText: dualPumpControllerST,
     lastSyncSource: 'st',
     syncValid: true,
     variables: [],
