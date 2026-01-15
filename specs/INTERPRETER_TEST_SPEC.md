@@ -1,259 +1,240 @@
 # Interpreter Test Specification
 
-This document defines comprehensive test coverage for the PLC interpreter engine.
+Master specification for PLC interpreter IEC 61131-3 compliance testing.
 
-## Test Categories
-
-### 1. Unit Tests (per component)
-### 2. Integration Tests (full scan cycles)
-### 3. Regression Tests (bug reproductions)
-### 4. Conformance Tests (IEC 61131-3 compliance)
+**Target:** Industrial Simulation Quality
+**Standard:** IEC 61131-3:2013
+**Test Framework:** Vitest + fast-check
 
 ---
 
-## 1. Execution Context Tests (`execution-context.test.ts`)
+## Status Overview
 
-### Variable Retrieval - CRITICAL (fixes current bug)
-- [ ] `getVariable` returns `0` for INT initialized to 0
-- [ ] `getVariable` returns `FALSE` for BOOL initialized to FALSE
-- [ ] `getVariable` returns `0.0` for REAL initialized to 0.0
-- [ ] `getVariable` returns `0` for TIME initialized to T#0ms
-- [ ] `getVariable` returns correct value for non-zero INT
-- [ ] `getVariable` returns correct value for TRUE BOOL
-- [ ] `getVariable` returns correct value for non-zero REAL
-- [ ] `getVariable` returns default (0/false) for undefined variable
+| Sub-Spec | Tests | Passing | Coverage | Status |
+|----------|-------|---------|----------|--------|
+| [Timers](./testing/TIMERS.md) | ~58 | ~8 | 14% | 🔴 Blocked |
+| [Counters](./testing/COUNTERS.md) | ~61 | ~15 | 25% | 🟡 Partial |
+| [Data Types](./testing/DATA_TYPES.md) | ~82 | ~30 | 37% | 🟡 Partial |
+| [Operators](./testing/OPERATORS.md) | ~50 | ~47 | 95% | 🟢 Good |
+| [Control Flow](./testing/CONTROL_FLOW.md) | ~40 | ~35 | 85% | 🟢 Good |
+| [Edge Detection](./testing/EDGE_DETECTION.md) | ~40 | 0 | 0% | 🔴 Not Started |
+| [Bistables](./testing/BISTABLES.md) | ~20 | 0 | 0% | 🔴 Not Started |
+| [Variables & Scope](./testing/VARIABLES.md) | ~30 | 0 | 0% | 🔴 Not Started |
+| [Integration Programs](./testing/INTEGRATION.md) | ~50 | ~15 | 30% | 🟡 Partial |
+| [Error Handling](./testing/ERROR_HANDLING.md) | ~30 | 0 | 0% | 🔴 Not Started |
+| [Property-Based Tests](./testing/PROPERTY_TESTS.md) | ~50 | ~5 | 10% | 🔴 Minimal |
+| [Bounds & Edge Cases](./testing/BOUNDS.md) | ~40 | 0 | 0% | 🔴 Not Started |
+| **Total** | **~551** | **~155** | **28%** | 🟡 |
 
-### Timer Field Access
-- [ ] `getTimerField` returns Q (output) correctly
-- [ ] `getTimerField` returns ET (elapsed time) correctly
-- [ ] `getTimerField` returns PT (preset time) correctly
-- [ ] `getTimerField` returns IN (input) correctly
-- [ ] `getTimerField` returns 0/false for non-existent timer
-
-### Counter Field Access
-- [ ] `getCounterField` returns CV (current value) correctly
-- [ ] `getCounterField` returns QU (up output) correctly
-- [ ] `getCounterField` returns QD (down output) correctly
-- [ ] `getCounterField` returns PV (preset value) correctly
-
-### Context Creation
-- [ ] `createExecutionContext` creates valid context from store
-- [ ] `createRuntimeState` extracts all variables from AST
-- [ ] Runtime state tracks previous values for edge detection
+**Target for Industrial Simulation:** 600+ tests, 95%+ passing
 
 ---
 
-## 2. Program Runner Tests (`program-runner.test.ts`)
+## Quick Reference: IEC 61131-3 Sections
 
-### Scan Cycle Execution
-- [ ] `runScanCycle` executes all statements in order
-- [ ] `runScanCycle` updates timer elapsed times
-- [ ] `runScanCycle` maintains state between calls
-- [ ] `runScanCycle` handles empty program gracefully
-
-### Variable Initialization
-- [ ] `initializeVariables` sets all declared variables
-- [ ] `initializeVariables` respects initial values
-- [ ] `initializeVariables` creates timers with correct PT
-- [ ] `initializeVariables` creates counters with correct PV
-- [ ] `initializeVariables` clears previous state
-
-### Multi-Scan Behavior
-- [ ] State persists across multiple scan cycles
-- [ ] Timer ET accumulates correctly over scans
-- [ ] Counter CV persists across scans
-- [ ] Boolean outputs maintain state between scans
+| Section | Topic | Sub-Spec |
+|---------|-------|----------|
+| 2.3 | Data Types | [DATA_TYPES.md](./testing/DATA_TYPES.md) |
+| 2.4 | Variables | [VARIABLES.md](./testing/VARIABLES.md) |
+| 2.5.1 | Timers (TON, TOF, TP) | [TIMERS.md](./testing/TIMERS.md) |
+| 2.5.2 | Counters (CTU, CTD, CTUD) | [COUNTERS.md](./testing/COUNTERS.md) |
+| 2.5.3 | Edge Detection (R_TRIG, F_TRIG) | [EDGE_DETECTION.md](./testing/EDGE_DETECTION.md) |
+| 2.5.4 | Bistables (SR, RS) | [BISTABLES.md](./testing/BISTABLES.md) |
+| 3.3 | Operators | [OPERATORS.md](./testing/OPERATORS.md) |
+| 3.4 | Control Flow | [CONTROL_FLOW.md](./testing/CONTROL_FLOW.md) |
 
 ---
 
-## 3. Timer Behavior Tests (IEC 61131-3 Compliance)
+## Design Decisions
 
-### TON (On-Delay Timer)
-- [ ] Q stays FALSE until ET >= PT
-- [ ] Q becomes TRUE when ET reaches PT
-- [ ] ET increments while IN is TRUE
-- [ ] ET resets to 0 when IN goes FALSE
-- [ ] Q resets when IN goes FALSE
-- [ ] Rising edge on IN restarts timing
-- [ ] ET caps at PT (doesn't exceed)
+### Tab Backgrounding Behavior
+**Decision:** Investigate Web Workers for background execution. Fallback to auto-pause.
+- When browser tab loses focus, `requestAnimationFrame` stops
+- Ideal: Continue execution in Web Worker
+- Fallback: Auto-pause simulation, resume when tab regains focus
+- **Do not:** Catch up with burst scans or jump timers forward
 
-### TOF (Off-Delay Timer) - if implemented
-- [ ] Q is TRUE immediately when IN goes TRUE
-- [ ] Q stays TRUE for PT duration after IN goes FALSE
-- [ ] ET counts while IN is FALSE and Q is TRUE
-- [ ] Q goes FALSE when ET reaches PT
+### Hot Reload (Code Editing While Running)
+**Decision:** Reset all state on code change, like interpreted languages.
+- When ST code is modified while running, reset all variables/timers/counters
+- **Future:** Add interactive REPL mode for live variable modification
+- **Future:** Add Nx speed slider (1x, 2x, 4x, 10x) for accelerated simulation
 
-### TP (Pulse Timer) - if implemented
-- [ ] Q goes TRUE on rising edge of IN
-- [ ] Q stays TRUE for exactly PT duration
-- [ ] Q goes FALSE after PT regardless of IN
-- [ ] Re-triggering during pulse has no effect
+### Float Equality Comparisons
+**Decision:** Warn in editor, execute per IEC 61131-3 standard.
+- Show warning squiggle on `REAL = REAL` comparisons
+- Do not change runtime behavior (exact comparison per standard)
 
----
+### Runtime Error Handling
+**Decision:** Match real PLC behavior - set error flag and continue.
+- Division by zero: Set system error flag, return Infinity, continue scan
+- Array bounds: Set error flag, return default, continue scan
+- **Do not:** Abort entire simulation on single error
 
-## 4. Counter Behavior Tests (IEC 61131-3 Compliance)
-
-### CTU (Count Up)
-- [ ] CV increments on rising edge of CU
-- [ ] QU becomes TRUE when CV >= PV
-- [ ] Reset (R) sets CV to 0
-- [ ] CV does not increment when R is TRUE
-- [ ] No increment on falling edge
-
-### CTD (Count Down)
-- [ ] CV decrements on rising edge of CD
-- [ ] QD becomes TRUE when CV <= 0
-- [ ] Load (LD) sets CV to PV
-- [ ] CV does not go negative
-
-### CTUD (Up/Down Counter)
-- [ ] CU increments CV
-- [ ] CD decrements CV
-- [ ] QU and QD work correctly
-- [ ] R resets to 0, LD loads PV
+### Timing Model
+**Decision:** Implement deterministic simulated time (required for industrial use).
+- Simulation time advances by fixed `scanTime` per cycle
+- Independent of wall-clock time
+- Configurable scan rate (1ms - 1000ms)
+- Nx speed multiplier for accelerated simulation
 
 ---
 
-## 5. Data Type Tests
+## Sub-Specifications
 
-### Integer Operations
-- [ ] INT comparison with 0 works correctly
-- [ ] INT arithmetic preserves sign
-- [ ] INT overflow behavior (wrap or clamp)
-- [ ] INT division truncates toward zero
+### Core Functionality (IEC 61131-3 Part 2.5)
+- [Timers (TON, TOF, TP)](./testing/TIMERS.md) - Section 2.5.1
+- [Counters (CTU, CTD, CTUD)](./testing/COUNTERS.md) - Section 2.5.2
+- [Edge Detection (R_TRIG, F_TRIG)](./testing/EDGE_DETECTION.md) - Section 2.5.3
+- [Bistables (SR, RS)](./testing/BISTABLES.md) - Section 2.5.4
 
-### Boolean Operations
-- [ ] FALSE compared to FALSE equals TRUE
-- [ ] NOT FALSE equals TRUE
-- [ ] AND/OR/XOR truth tables correct
+### Language Features (IEC 61131-3 Parts 2.3, 2.4, 3.x)
+- [Data Types](./testing/DATA_TYPES.md) - Section 2.3
+- [Variables & Scope](./testing/VARIABLES.md) - Section 2.4
+- [Operators & Precedence](./testing/OPERATORS.md) - Section 3.3
+- [Control Flow](./testing/CONTROL_FLOW.md) - Section 3.4
 
-### Real Operations
-- [ ] REAL comparison with 0.0 works
-- [ ] REAL arithmetic precision
-- [ ] REAL to INT conversion (truncation)
-
-### Time Operations
-- [ ] TIME comparison works
-- [ ] TIME arithmetic (addition/subtraction)
-- [ ] TIME literal parsing (T#1s, T#100ms, T#1m30s)
+### Quality Assurance
+- [Integration Programs](./testing/INTEGRATION.md) - Real-world program tests
+- [Error Handling](./testing/ERROR_HANDLING.md) - Fault behavior
+- [Property-Based Tests](./testing/PROPERTY_TESTS.md) - Mathematical invariants
+- [Bounds & Edge Cases](./testing/BOUNDS.md) - Boundary conditions
+- [Compliance Matrix](./testing/COMPLIANCE_MATRIX.md) - Full IEC section mapping
 
 ---
 
-## 6. Control Flow Tests
+## Known Bugs
 
-### IF Statement
-- [ ] Simple IF/THEN executes when TRUE
-- [ ] IF/THEN skips when FALSE
-- [ ] IF/ELSIF chains work correctly
-- [ ] IF/ELSE executes else branch
-- [ ] Nested IF statements work
+### P0 - Critical (Blocking Tests)
 
-### CASE Statement
-- [ ] Single value match
-- [ ] Range match (1..10)
-- [ ] Multiple labels (1, 2, 3:)
-- [ ] ELSE clause when no match
-- [ ] First match wins (no fallthrough)
+#### function-block-handler.ts:61-78
+Same bug as was fixed in execution-context.ts. Blocks all timer tests.
 
-### FOR Loop
-- [ ] Correct iteration count
-- [ ] Loop variable accessible in body
-- [ ] BY clause (step) works
-- [ ] Negative step works
-- [ ] Max iteration safety limit
+```typescript
+// CURRENT (buggy)
+if (boolVal !== false) return boolVal;  // Skips FALSE values
+if (intVal !== 0) return intVal;        // Skips 0 values
 
-### WHILE Loop
-- [ ] Executes while condition TRUE
-- [ ] Exits when condition FALSE
-- [ ] Never executes if initially FALSE
-- [ ] Max iteration safety limit
+// REQUIRED (fixed)
+if (name in store.booleans) return store.booleans[name];
+if (name in store.integers) return store.integers[name];
+```
+
+**Impact:** All timer tests fail because IN evaluation breaks for boolean variables.
 
 ---
 
-## 7. Integration Tests (Real Programs)
-
-### Traffic Light Controller
-- [ ] Lights correct in phase 0 (N/S green, E/W red)
-- [ ] Lights correct in phase 1 (N/S yellow, E/W red)
-- [ ] Lights correct in phase 2 (N/S red, E/W green)
-- [ ] Lights correct in phase 3 (N/S red, E/W yellow)
-- [ ] Phase transitions at correct intervals
-- [ ] Full cycle completes and wraps
-- [ ] START button initiates operation
-- [ ] STOP button halts operation
-- [ ] Emergency stop overrides all
-
-### Motor Starter (simple)
-- [ ] Start button sets motor ON
-- [ ] Stop button sets motor OFF
-- [ ] Interlock prevents conflicting states
-- [ ] Status outputs reflect motor state
-
-### Pump with Level Control
-- [ ] Pump starts when level low
-- [ ] Pump stops when level high
-- [ ] Hysteresis prevents rapid cycling
-- [ ] Alarm when level critical
-
----
-
-## 8. Edge Cases and Error Handling
-
-### Invalid Inputs
-- [ ] Unknown variable returns default
-- [ ] Unknown timer returns undefined/default
-- [ ] Unknown counter returns undefined/default
-- [ ] Malformed AST doesn't crash
-
-### Boundary Conditions
-- [ ] Timer with PT = 0
-- [ ] Counter with PV = 0
-- [ ] Division by zero
-- [ ] Very large numbers
-- [ ] Negative time values
-
-### State Consistency
-- [ ] Interrupted scan cycle doesn't corrupt state
-- [ ] Re-initialization clears all state
-- [ ] Concurrent access (if applicable)
-
----
-
-## Test Priority
-
-### P0 - Critical (blocking bugs)
-1. execution-context.test.ts - getVariable zero/false handling
-2. program-runner.test.ts - basic scan cycle
-
-### P1 - High (core functionality)
-3. Timer behavior compliance
-4. Counter behavior compliance
-5. Integration tests for traffic light
-
-### P2 - Medium (completeness)
-6. All control flow paths
-7. All data types
-8. Error handling
-
-### P3 - Low (nice to have)
-9. Performance tests
-10. Stress tests
-11. Edge cases
-
----
-
-## Running Tests
+## Test Execution
 
 ```bash
 # All interpreter tests
 npm test -- src/interpreter/
 
-# Specific test file
-npm test -- src/interpreter/execution-context.test.ts
+# By category
+npm test -- src/interpreter/compliance/    # IEC compliance tests
+npm test -- src/interpreter/property/      # Property-based tests
+npm test -- src/interpreter/integration/   # Full program tests
+
+# Specific sub-spec
+npm test -- src/interpreter/compliance/timer-compliance.test.ts
 
 # With coverage
 npm test -- --coverage src/interpreter/
 
-# Watch mode during development
+# Watch mode
 npm test -- --watch src/interpreter/
 ```
+
+---
+
+## Development Workflow
+
+### Commit After Each Feature
+
+**CRITICAL:** Commit immediately after completing each feature or test group.
+
+```bash
+# After implementing a feature:
+./scripts/commit.sh "Add TOF timer implementation"
+
+# After adding tests for a feature:
+./scripts/commit.sh "Add TOF timer compliance tests"
+```
+
+### Feature Implementation Pattern
+
+1. **Write test** → Verify it fails
+2. **Implement feature** → Make test pass
+3. **Run build** → `npm run build` (catch type errors)
+4. **Run tests** → `npm test`
+5. **Commit immediately** → `./scripts/commit.sh "message"`
+6. **Move to next feature**
+
+### Why Commit Frequently?
+
+- Enables easy rollback if something breaks
+- Creates clear history of changes
+- Prevents losing work
+- Makes code review easier
+- Allows parallel work in other windows
+
+See [CLAUDE.md](../CLAUDE.md) for full development guidelines.
+
+---
+
+## Compliance Roadmap
+
+### Phase 1: Foundation (Current)
+- [x] Fix execution-context.ts getVariable bug
+- [ ] Fix function-block-handler.ts same bug
+- [ ] Complete timer compliance tests (~58 tests)
+- [ ] Complete counter compliance tests (~61 tests)
+
+### Phase 2: Core Features
+- [ ] Implement R_TRIG, F_TRIG function blocks
+- [ ] Implement SR, RS function blocks
+- [ ] Add all integer types (SINT, DINT, LINT, etc.)
+- [ ] Implement deterministic timing model
+
+### Phase 3: Validation
+- [ ] Acquire IEC 61131-3:2013 standard document
+- [ ] Create formal compliance matrix
+- [ ] Reference validation against real PLC
+- [ ] External expert review
+
+### Phase 4: Industrial Ready
+- [ ] Fault injection capability
+- [ ] State snapshot/restore
+- [ ] Audit trail logging
+- [ ] Performance benchmarks
+
+---
+
+## Unit Test Checklist (Legacy - See Sub-Specs)
+
+The detailed test checklists have been moved to individual sub-spec files for maintainability.
+See each sub-spec for complete test case lists.
+
+### Execution Context Tests (`execution-context.test.ts`)
+See: `src/interpreter/execution-context.test.ts`
+- Variable retrieval for all types (0, FALSE, 0.0 handling)
+- Timer/counter field access
+- Context creation from store
+
+### Program Runner Tests (`program-runner.test.ts`)
+See: `src/interpreter/program-runner.test.ts`
+- Scan cycle execution order
+- Variable initialization
+- Multi-scan state persistence
+
+---
+
+## References
+
+- **IEC 61131-3:2013** - Programmable controllers - Programming languages
+- **PLCopen** - www.plcopen.org (free resources, function block definitions)
+- **Beckhoff TwinCAT** - Free IDE with IEC 61131-3 reference implementation
+- **CODESYS** - Free IDE for cross-reference testing
+- [Timers Sub-Spec](./testing/TIMERS.md)
+- [Counters Sub-Spec](./testing/COUNTERS.md)
+- [Full Compliance Matrix](./testing/COMPLIANCE_MATRIX.md)

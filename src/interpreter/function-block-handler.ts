@@ -34,6 +34,12 @@ export interface FunctionBlockStore {
   getInt: (name: string) => number;
   getReal: (name: string) => number;
   getTime: (name: string) => number;
+
+  // Variable storage (for existence checks - required for proper FALSE/0 handling)
+  booleans: Record<string, boolean>;
+  integers: Record<string, number>;
+  reals: Record<string, number>;
+  times: Record<string, number>;
 }
 
 /**
@@ -59,23 +65,15 @@ export function createFunctionBlockContext(
     store,
     previousInputs,
     getVariable: (name: string) => {
-      // Try boolean first
-      const boolVal = store.getBool(name);
-      if (boolVal !== false) return boolVal;
+      // Check if variable exists in each store (not just truthy value)
+      // This is critical for handling FALSE and 0 values correctly
+      if (name in store.booleans) return store.booleans[name];
+      if (name in store.integers) return store.integers[name];
+      if (name in store.reals) return store.reals[name];
+      if (name in store.times) return store.times[name];
 
-      // Then integer
-      const intVal = store.getInt(name);
-      if (intVal !== 0) return intVal;
-
-      // Then real
-      const realVal = store.getReal(name);
-      if (realVal !== 0) return realVal;
-
-      // Then time (critical for PT := GreenTime etc.)
-      const timeVal = store.getTime(name);
-      if (timeVal !== 0) return timeVal;
-
-      return 0;
+      // Default to false for unknown variables
+      return false;
     },
     getTimerField: (timerName: string, field: string) => {
       const timer = store.getTimer(timerName);

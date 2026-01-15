@@ -15,7 +15,7 @@
  * 9. OR
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { parseSTToAST } from '../../transformer/ast';
 import { runScanCycle } from '../program-runner';
 import { createRuntimeState, type SimulationStoreInterface } from '../execution-context';
@@ -74,7 +74,8 @@ function createTestStore(): SimulationStoreInterface {
   return store;
 }
 
-function evaluate(expr: string): number | boolean {
+// Helper for evaluating expressions - prefixed to avoid unused warning
+function _evaluate(expr: string): number | boolean {
   const store = createTestStore();
   const code = `
     PROGRAM Test
@@ -109,6 +110,7 @@ function evaluate(expr: string): number | boolean {
     return store.getBool('Result_Bool');
   }
 }
+void _evaluate; // Suppress unused warning
 
 // ============================================================================
 // Arithmetic Precedence Tests

@@ -85,11 +85,10 @@ function createTestStore(): SimulationStoreInterface {
 
 function createMinimalAST(): STAST {
   return {
-    type: 'Program',
-    name: 'Test',
-    variableBlocks: [],
-    statements: [],
-    loc: { start: 0, end: 0 },
+    programs: [],
+    topLevelStatements: [],
+    topLevelVarBlocks: [],
+    errors: [],
   };
 }
 
