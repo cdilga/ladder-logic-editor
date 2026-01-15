@@ -111,8 +111,12 @@
 - [x] 0.1 + 0.2 ≠ 0.3 (IEEE 754 precision documented in bounds.test.ts)
 
 ### Coercion
-- [ ] REAL to INT (truncation)
-- [ ] INT to REAL (exact for small values)
+Note: Type coercion in assignment is limited - see GUARDRAILS.md for details.
+The interpreter stores values based on their runtime type (integer vs non-integer),
+not the declared variable type. Type coercion works in expressions but not in
+direct assignments like `realVar := intVar`.
+- [x] INT + REAL produces REAL (via expression) - tested in operator-precedence
+- Note: Direct type coercion assignment not fully supported
 
 ### Literals
 - [x] Decimal: 3.14
@@ -146,9 +150,9 @@
 
 ### Edge Cases
 - [x] T#0ms (zero time) - parses to 0
-- [ ] Negative time (invalid?) - parser rejects
+- Note: Negative time (T#-1s) not supported - parses incorrectly as subtraction
 - [x] Very large time (T#24h) - 86400000ms, no overflow
-- [ ] ~~Overflow in addition~~ - TIME arithmetic not implemented
+- Note: TIME arithmetic not implemented - see GUARDRAILS.md
 
 ---
 
@@ -162,9 +166,9 @@
 | TIME | ❌ | ms | ❌ | - |
 
 ### Coercion Tests
-- [ ] Implicit coercion in mixed expressions
-- [ ] Explicit coercion functions (if any)
-- [ ] Invalid coercions produce error
+- [x] Implicit coercion in mixed expressions (INT + REAL works)
+- Note: Explicit coercion functions not implemented (INT_TO_REAL, etc.)
+- Note: Invalid coercions not explicitly checked (no strict type system)
 
 ---
 
