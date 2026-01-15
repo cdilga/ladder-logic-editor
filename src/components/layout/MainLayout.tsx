@@ -13,6 +13,8 @@ import { VariableWatch } from '../variable-watch/VariableWatch';
 import { ProgramSelector } from '../program-selector';
 import { ErrorPanel } from '../error-panel';
 import { PropertiesPanel } from '../properties-panel';
+import { TutorialLightbulb } from '../onboarding';
+import { HelpMenu } from '../help-menu';
 import { useProjectStore, useSimulationStore } from '../../store';
 import {
   saveToLocalStorage,
@@ -419,6 +421,10 @@ export function MainLayout() {
         <span className="status-bar-item">
           Source: Structured Text
         </span>
+        <div className="status-bar-actions">
+          <TutorialLightbulb />
+          <HelpMenu />
+        </div>
       </div>
     </div>
   );
