@@ -95,12 +95,12 @@
 - [x] INT < INT
 - [x] REAL < REAL
 - [x] TIME < TIME
-- [ ] Boundary values
+- [x] Boundary values (-32768 < -32767, tested in bounds.test.ts)
 
 ### Greater Than (>)
 - [x] INT > INT
 - [x] REAL > REAL
-- [ ] Boundary values
+- [x] Boundary values (32767 > 32766, tested in bounds.test.ts)
 
 ### Less or Equal (<=)
 - [x] Basic comparison
