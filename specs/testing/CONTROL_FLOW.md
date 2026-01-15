@@ -295,8 +295,8 @@ const MAX_ITERATIONS = 10000;
 ```
 
 #### Test Cases
-- [ ] FOR loop with huge range is capped
-- [ ] WHILE loop exceeding limit terminates
+- [x] FOR loop with step 0 prevented (no infinite loop)
+- [x] WHILE loop exceeding limit terminates at 10000 iterations
 - [ ] Error flag set when limit reached
 
 ---
