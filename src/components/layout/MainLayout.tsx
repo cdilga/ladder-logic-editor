@@ -114,13 +114,18 @@ export function MainLayout() {
 
   // Simulation control handlers
   const handleRun = useCallback(() => {
-    // Initialize variables from AST before starting
-    const ast = currentASTRef.current;
-    if (ast) {
-      const store = useSimulationStore.getState() as SimulationStoreInterface;
-      initializeVariables(ast, store);
-      runtimeStateRef.current = createRuntimeState(ast);
+    const currentStatus = useSimulationStore.getState().status;
+
+    // Only initialize variables when starting from stopped, not when resuming from paused
+    if (currentStatus === 'stopped') {
+      const ast = currentASTRef.current;
+      if (ast) {
+        const store = useSimulationStore.getState() as SimulationStoreInterface;
+        initializeVariables(ast, store);
+        runtimeStateRef.current = createRuntimeState(ast);
+      }
     }
+
     startSimulation();
   }, [startSimulation]);
 

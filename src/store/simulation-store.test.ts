@@ -31,6 +31,43 @@ describe('simulation-store', () => {
       expect(useSimulationStore.getState().booleans).toEqual({});
       expect(useSimulationStore.getState().integers).toEqual({});
     });
+
+    it('preserves state when pausing and resuming', () => {
+      let store = useSimulationStore.getState();
+
+      // Set up some state
+      store.start();
+      store.setBool('flag', true);
+      store.setInt('counter', 42);
+      store.initTimer('TMR1', 1000);
+      store.setTimerInput('TMR1', true);
+      store.updateTimer('TMR1', 500); // Partially through timing
+
+      // Verify initial state
+      expect(store.getBool('flag')).toBe(true);
+      expect(store.getInt('counter')).toBe(42);
+      expect(store.getTimer('TMR1')?.ET).toBe(500);
+
+      // Pause
+      store.pause();
+      store = useSimulationStore.getState(); // Get fresh state
+      expect(store.status).toBe('paused');
+
+      // State should be preserved during pause
+      expect(store.getBool('flag')).toBe(true);
+      expect(store.getInt('counter')).toBe(42);
+      expect(store.getTimer('TMR1')?.ET).toBe(500);
+
+      // Resume (this is just setting status back to running)
+      store.start();
+      store = useSimulationStore.getState(); // Get fresh state
+      expect(store.status).toBe('running');
+
+      // State should still be preserved after resume
+      expect(store.getBool('flag')).toBe(true);
+      expect(store.getInt('counter')).toBe(42);
+      expect(store.getTimer('TMR1')?.ET).toBe(500);
+    });
   });
 
   describe('boolean variables', () => {
