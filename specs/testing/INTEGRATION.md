@@ -1,6 +1,7 @@
 # Integration Program Tests
 
-**Status:** 🟢 Complete (95%, 59 tests)
+**Status:** 🟢 Complete (59 tests)
+**Last Updated:** 2026-01-16
 **Test File:** `src/interpreter/integration/`
 
 ---
@@ -11,9 +12,11 @@ Integration tests verify complete programs work correctly end-to-end. These are 
 
 ---
 
-## Traffic Light Controller
+## Traffic Light Controller (Future Work)
 
 Classic 4-phase traffic light with timer-based phase transitions.
+
+*Note: This integration test is not yet implemented. The program structure below shows the intended design.*
 
 ### Program Structure
 ```st
@@ -51,11 +54,11 @@ END_CASE;
 END_PROGRAM
 ```
 
-### Test Cases
+### Planned Test Cases
 
 #### Phase Correctness
-- [x] Phase 0: N/S green, E/W red
-- [x] Phase 1: N/S yellow, E/W red
+- [ ] Phase 0: N/S green, E/W red
+- [ ] Phase 1: N/S yellow, E/W red
 - [ ] Phase 2: N/S red, E/W green
 - [ ] Phase 3: N/S red, E/W yellow
 - [ ] Phase wraps 3 → 0
@@ -114,21 +117,31 @@ END_PROGRAM
 ### Test Cases
 
 #### Basic Operation
-- [ ] Start button sets motor running
-- [ ] Motor stays running after releasing start
-- [ ] Stop button stops motor
-- [ ] Motor stays stopped after releasing stop
+- [x] Start button sets motor running
+- [x] Motor stays running after releasing start (latching)
+- [x] Stop button stops motor
+- [x] Motor stays stopped after releasing stop
 
 #### Interlock
-- [ ] Fault prevents motor from starting
-- [ ] Fault stops running motor
-- [ ] Motor cannot restart while fault active
-- [ ] Clearing fault allows restart
+- [x] Fault prevents motor from starting
+- [x] Fault stops running motor immediately
+- [x] Motor cannot restart while fault active
+- [x] Clearing fault allows restart
 
 #### Status
-- [ ] Status=0 when stopped
-- [ ] Status=1 when running
-- [ ] Status=2 when faulted
+- [x] Status=0 when stopped (no fault)
+- [x] Status=1 when running
+- [x] Status=2 when faulted (even if would be running)
+- [x] Status transitions correctly through all states
+
+#### Edge Cases
+- [x] Simultaneous start and stop (SR set-dominant, start wins)
+- [x] Simultaneous start and fault (fault wins)
+- [x] Rapid button pressing does not corrupt state
+
+#### Safety Properties
+- [x] Motor never runs while fault is active (safety invariant)
+- [x] Status is always consistent with running and fault states
 
 ---
 
@@ -165,26 +178,39 @@ LevelAlarm := (TankLevel < 10) OR (TankLevel > 90);
 END_PROGRAM
 ```
 
-### Test Cases
+### Test Cases (22 tests)
 
 #### Basic Control
-- [ ] Pump starts when level <= 20
-- [ ] Pump stops when level >= 80
-- [ ] Pump stays running between 20-80 (hysteresis)
-- [ ] Pump stays stopped between 20-80 (hysteresis)
+- [x] Pump starts when level <= 20 (low setpoint)
+- [x] Pump stops when level >= 80 (high setpoint)
+- [x] Pump stays running between 20-80 when filling (hysteresis)
+- [x] Pump stays stopped between 20-80 when not filling (hysteresis)
 
 #### Hysteresis
-- [ ] Level 19 → pump on
-- [ ] Level 21 → pump still on (hysteresis)
-- [ ] Level 50 → pump still on
-- [ ] Level 81 → pump off
-- [ ] Level 79 → pump still off (hysteresis)
-- [ ] Level 50 → pump still off
+- [x] Level 19 → pump on (below low setpoint)
+- [x] Level 21 → pump still on if was filling (hysteresis)
+- [x] Level 50 → pump maintains previous state (middle of band)
+- [x] Level 81 → pump off (above high setpoint)
+- [x] Level 79 → pump still off if was not filling (hysteresis)
+- [x] Complete fill/drain cycle with hysteresis
 
 #### Alarm
-- [ ] Alarm when level < 10
-- [ ] Alarm when level > 90
-- [ ] No alarm in normal range
+- [x] Alarm when level < 10 (very low)
+- [x] Alarm when level > 90 (very high)
+- [x] No alarm in normal range (10-90)
+- [x] Alarm at boundaries
+
+#### Edge Cases
+- [x] Level at exactly low setpoint (20) triggers filling
+- [x] Level at exactly high setpoint (80) stops filling
+- [x] Level 0% triggers filling and alarm
+- [x] Level 100% stops filling and triggers alarm
+- [x] Negative level (invalid) still handled
+- [x] Rapid level changes do not corrupt state
+
+#### Property-Based
+- [x] Pump only runs when FillingMode is true
+- [x] Alarm is true iff level < 10 or level > 90
 
 ---
 
@@ -219,23 +245,43 @@ Step3_Active := (CurrentStep = 2);
 END_PROGRAM
 ```
 
-### Test Cases
+### Test Cases (20 tests)
 
 #### Step Progression
-- [ ] Starts at step 0
-- [ ] StepComplete pulse advances to step 1
-- [ ] StepComplete pulse advances to step 2
-- [ ] StepComplete pulse sets BatchComplete
-- [ ] CurrentStep = 3 when complete
+- [x] Starts at step 0
+- [x] StepComplete pulse advances to step 1
+- [x] StepComplete pulse advances to step 2
+- [x] StepComplete pulse sets BatchComplete
+- [x] CurrentStep = 3 when batch complete
+- [x] All step outputs FALSE when batch complete
 
 #### Reset
-- [ ] StartBtn resets to step 0
-- [ ] BatchComplete cleared on reset
-- [ ] All step outputs update correctly
+- [x] StartBtn resets to step 0
+- [x] BatchComplete cleared on reset
+- [x] All step outputs update correctly after reset
+- [x] Can restart batch after completion
+
+#### Edge Detection
+- [x] Sustained StepComplete TRUE counts only once
+- [x] Rapid StepComplete pulses count correctly
+
+#### Step Output Invariants
+- [x] Exactly one step active at a time (before completion)
+- [x] Step outputs match CurrentStep value
+
+#### Edge Cases
+- [x] Additional StepComplete after batch complete (counter keeps counting)
+- [x] Simultaneous StartBtn and StepComplete - both processed
+- [x] Holding StartBtn prevents StepComplete from counting
+
+#### Property-Based
+- [x] CurrentStep equals number of StepComplete pulses (until reset)
+- [x] BatchComplete is true iff CurrentStep >= PV (3)
+- [x] Reset always returns to step 0 regardless of previous state
 
 ---
 
-## Conveyor with Multiple Sensors
+## Conveyor with Multiple Sensors (Not Yet Implemented)
 
 Material handling with position tracking.
 
@@ -319,16 +365,16 @@ fc.assert(fc.property(
 
 ---
 
-## Test Count Target
+## Test Count Summary
 
-| Program | Basic | Timing | Safety | Properties | Total |
-|---------|-------|--------|--------|------------|-------|
-| Traffic Light | 8 | 5 | 4 | 3 | 20 |
-| Motor Starter | 6 | - | 4 | 2 | 12 |
-| Pump Control | 6 | - | 3 | 2 | 11 |
-| Batch Sequencer | 6 | 2 | - | 2 | 10 |
-| Conveyor | 5 | 2 | - | 2 | 9 |
-| **Total** | | | | | **62** |
+| Program | Tests | Status |
+|---------|-------|--------|
+| Motor Starter | 17 | ✅ Complete |
+| Pump Level Control | 22 | ✅ Complete |
+| Batch Sequencer | 20 | ✅ Complete |
+| Traffic Light | - | Future |
+| Conveyor | - | Future |
+| **Total** | **59** | ✅ |
 
 ---
 
