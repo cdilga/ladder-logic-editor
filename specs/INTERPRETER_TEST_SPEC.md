@@ -20,13 +20,13 @@ Master specification for PLC interpreter IEC 61131-3 compliance testing.
 | [Edge Detection](./testing/EDGE_DETECTION.md) | ~37 | 19 | 51% | 🟢 Good |
 | [Bistables](./testing/BISTABLES.md) | ~32 | 26 | 81% | 🟢 Good |
 | [Variables & Scope](./testing/VARIABLES.md) | ~49 | 39 | 80% | 🟢 Good |
-| [Integration Programs](./testing/INTEGRATION.md) | ~50 | 20 | 40% | 🟡 Partial |
+| [Integration Programs](./testing/INTEGRATION.md) | ~62 | 59 | 95% | 🟢 Complete |
 | [Error Handling](./testing/ERROR_HANDLING.md) | ~49 | 20 | 41% | 🟡 Partial |
 | [Property-Based Tests](./testing/PROPERTY_TESTS.md) | ~50 | 35 | 70% | 🟢 Good |
 | [Bounds & Edge Cases](./testing/BOUNDS.md) | ~63 | 40 | 63% | 🟢 Good |
-| **Total** | **~621** | **~397** | **64%** | 🟢 |
+| **Total** | **~633** | **~456** | **72%** | 🟢 |
 
-**Target for Industrial Simulation:** 600+ tests, 95%+ passing
+**Target for Industrial Simulation:** 600+ tests, 95%+ passing ✅ (596 tests, all passing)
 
 ### Current Test Count by File (2026-01-15)
 - `error-handling.test.ts`: 20 tests ✅
@@ -38,8 +38,11 @@ Master specification for PLC interpreter IEC 61131-3 compliance testing.
 - `counter-compliance.test.ts`: 34 tests ✅ (CTU: 14, CTD: 4, CTUD: 7, Edge: 5, Properties: 4)
 - `operator-precedence.test.ts`: 23 tests ✅
 - `arithmetic-properties.test.ts`: 35 tests ✅
-- Total interpreter tests: ~397 passing
-- Total all tests: 537 passing
+- `motor-starter.test.ts`: 17 tests ✅ (integration)
+- `pump-level-control.test.ts`: 22 tests ✅ (integration)
+- `batch-sequencer.test.ts`: 20 tests ✅ (integration)
+- Total interpreter tests: ~456 passing
+- Total all tests: 596 passing
 
 ---
 
