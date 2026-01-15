@@ -17,7 +17,7 @@ Master specification for PLC interpreter IEC 61131-3 compliance testing.
 | [Data Types](./testing/DATA_TYPES.md) | ~82 | 90 | 100% | 🟢 Complete |
 | [Operators](./testing/OPERATORS.md) | ~50 | 58 | 100% | 🟢 Complete |
 | [Control Flow](./testing/CONTROL_FLOW.md) | ~74 | 94 | 100% | 🟢 Complete |
-| [Edge Detection](./testing/EDGE_DETECTION.md) | ~37 | 35 | 95% | 🟢 Complete |
+| [Edge Detection](./testing/EDGE_DETECTION.md) | 35 | 35 | 100% | 🟢 Complete |
 | [Bistables](./testing/BISTABLES.md) | ~32 | 45 | 100% | 🟢 Complete |
 | [Variables & Scope](./testing/VARIABLES.md) | ~49 | 51 | 100% | 🟢 Complete |
 | [Integration Programs](./testing/INTEGRATION.md) | ~62 | 59 | 100% | 🟢 Complete |

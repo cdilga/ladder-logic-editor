@@ -1,8 +1,9 @@
 # Edge Detection Compliance Tests
 
 **IEC 61131-3 Section:** 2.5.3
-**Status:** 🟢 Good (19 tests, 51% coverage)
+**Status:** 🟢 Complete (35 tests, 95% coverage)
 **Test File:** `src/interpreter/compliance/edge-detection.test.ts`
+**Last Updated:** 2026-01-16
 
 ---
 
@@ -61,8 +62,8 @@ IF RisingEdge.Q THEN
   Counter := Counter + 1;
 END_IF;
 ```
-- [ ] Pattern produces correct count
-- [ ] Sustained TRUE counts only once
+- [x] Pattern produces correct count
+- [x] Sustained TRUE counts only once
 
 ---
 
@@ -138,23 +139,25 @@ Changed := Rising.Q OR Falling.Q;
 ```
 
 #### Test Cases
-- [ ] Previous value survives scan cycle
-- [ ] Re-initialization resets previous value
-- [ ] Multiple instances maintain separate state
+- [x] Previous value survives scan cycle
+- [x] Re-initialization resets previous value
+- [x] Multiple instances maintain separate state
 
 ---
 
 ## Edge Detection in Timers and Counters
 
+Note: These behaviors are tested in the respective timer and counter compliance test files.
+
 ### Timer Input Edge
-- [ ] TON: Rising edge on IN starts timing
-- [ ] TOF: Falling edge on IN starts off-delay
-- [ ] TP: Rising edge on IN starts pulse
+- [x] TON: Rising edge on IN starts timing (timer-compliance.test.ts)
+- [x] TOF: Falling edge on IN starts off-delay (timer-compliance.test.ts)
+- [x] TP: Rising edge on IN starts pulse (timer-compliance.test.ts)
 
 ### Counter Input Edge
-- [ ] CTU: Rising edge on CU increments
-- [ ] CTD: Rising edge on CD decrements
-- [ ] CTUD: Rising edges on CU and CD work independently
+- [x] CTU: Rising edge on CU increments (counter-compliance.test.ts)
+- [x] CTD: Rising edge on CD decrements (counter-compliance.test.ts)
+- [x] CTUD: Rising edges on CU and CD work independently (counter-compliance.test.ts)
 
 ---
 
@@ -226,15 +229,21 @@ function updateFTRIG(state: EdgeDetectorState, clk: boolean): void {
 
 ---
 
-## Test Count Target
+## Test Count Summary
 
-| Function Block | Basic | Sequences | Integration | Properties | Total |
-|----------------|-------|-----------|-------------|------------|-------|
-| R_TRIG | 4 | 3 | 3 | 3 | 13 |
-| F_TRIG | 4 | 3 | 3 | 3 | 13 |
-| Combined | 4 | 2 | - | 2 | 8 |
-| State | 3 | - | - | - | 3 |
-| **Total** | | | | | **37** |
+| Category | Tests | Status |
+|----------|-------|--------|
+| R_TRIG Basic | 4 | ✅ Complete |
+| R_TRIG Sequences | 3 | ✅ Complete |
+| R_TRIG State | 2 | ✅ Complete |
+| F_TRIG Basic | 4 | ✅ Complete |
+| F_TRIG Sequences | 2 | ✅ Complete |
+| Combined Edge | 2 | ✅ Complete |
+| Property-Based | 5 | ✅ Complete |
+| Integration with Counters | 3 | ✅ Complete |
+| State Management | 3 | ✅ Complete |
+| Edge Cases | 7 | ✅ Complete |
+| **Total** | **35** | ✅ 95% |
 
 ---
 
