@@ -1,7 +1,7 @@
 # Data Types Compliance Tests
 
 **IEC 61131-3 Section:** 2.3
-**Status:** 🟢 Complete (107 tests, basic types fully tested)
+**Status:** 🟢 Complete (110 tests, basic types fully tested)
 **Test File:** `src/interpreter/compliance/data-types.test.ts`
 
 ---
@@ -133,10 +133,11 @@
 - [x] T#1h30m45s500ms (full compound) - 5445500ms
 
 ### Arithmetic
-- [ ] TIME + TIME
-- [ ] TIME - TIME
-- [ ] TIME * INT (scaling)
-- [ ] TIME / INT (scaling)
+**Note:** TIME arithmetic assignment is not supported due to interpreter design limitation. See GUARDRAILS.md for details.
+- [ ] ~~TIME + TIME~~ - Not implemented (results stored as INT, not TIME)
+- [ ] ~~TIME - TIME~~ - Not implemented
+- [ ] ~~TIME * INT (scaling)~~ - Not implemented
+- [ ] ~~TIME / INT (scaling)~~ - Not implemented
 
 ### Comparison
 - [x] TIME = TIME
@@ -147,7 +148,7 @@
 - [x] T#0ms (zero time) - parses to 0
 - [ ] Negative time (invalid?) - parser rejects
 - [x] Very large time (T#24h) - 86400000ms, no overflow
-- [ ] Overflow in addition - TIME arithmetic not implemented
+- [ ] ~~Overflow in addition~~ - TIME arithmetic not implemented
 
 ---
 
