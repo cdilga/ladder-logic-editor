@@ -35,6 +35,8 @@ VAR_INPUT
     (* Operator Controls *)
     HOA_1 : INT;            (* 0=OFF, 1=HAND, 2=AUTO *)
     HOA_2 : INT;
+    HAND_RUN_1 : BOOL;      (* Manual run command for pump 1 in HAND mode *)
+    HAND_RUN_2 : BOOL;      (* Manual run command for pump 2 in HAND mode *)
     E_STOP : BOOL;          (* TRUE = emergency stop *)
     FAULT_RESET : BOOL;     (* Rising edge resets latched faults *)
     FORCE_ALTERNATE : BOOL; (* Manual alternation trigger *)
@@ -92,6 +94,14 @@ VAR
     Pump2_Faulted : BOOL := FALSE;
     Pump1_Running : BOOL := FALSE;
     Pump2_Running : BOOL := FALSE;
+
+    (* Pump availability (available for AUTO mode) *)
+    Pump1_Available : BOOL := FALSE;
+    Pump2_Available : BOOL := FALSE;
+
+    (* Pump command values before HOA processing *)
+    Pump1_AutoCmd : BOOL := FALSE;
+    Pump2_AutoCmd : BOOL := FALSE;
 
     (* Fault reset edge detection *)
     Prev_Fault_Reset : BOOL := FALSE;
@@ -215,6 +225,14 @@ ALM_OVERFLOW := EFFECTIVE_LEVEL >= SP_CRITICAL;
 LEAD_PUMP := LeadPumpNum;
 
 (* ============================================================================
+   PUMP AVAILABILITY
+   A pump is available for AUTO control if HOA is in AUTO and not faulted
+   ============================================================================ *)
+
+Pump1_Available := (HOA_1 = 2) AND NOT Pump1_Faulted;
+Pump2_Available := (HOA_2 = 2) AND NOT Pump2_Faulted;
+
+(* ============================================================================
    PUMP CONTROL STATE MACHINE
    States: 0=IDLE, 1=PUMPING_1, 2=PUMPING_2, 3=FAULT, 4=E_STOP
    ============================================================================ *)
@@ -225,7 +243,7 @@ IF E_STOP THEN
     PUMP_2_RUN := FALSE;
     SYSTEM_STATE := 4;  (* E_STOP state *)
 ELSE
-    (* State machine transitions *)
+    (* State machine transitions - only for pumps in AUTO mode *)
     IF SYSTEM_STATE = 0 THEN
         (* IDLE state *)
         IF EFFECTIVE_LEVEL >= SP_HIGH THEN
@@ -259,26 +277,58 @@ ELSE
         SYSTEM_STATE := 0;
     END_IF;
 
-    (* Set pump outputs based on state and lead/lag assignment *)
+    (* Calculate AUTO mode pump commands based on state and lead/lag *)
     IF SYSTEM_STATE = 1 THEN
         (* Lead pump only *)
         IF LeadPumpNum = 1 THEN
-            PUMP_1_RUN := TRUE;
-            PUMP_2_RUN := FALSE;
+            Pump1_AutoCmd := TRUE;
+            Pump2_AutoCmd := FALSE;
         ELSE
-            PUMP_1_RUN := FALSE;
-            PUMP_2_RUN := TRUE;
+            Pump1_AutoCmd := FALSE;
+            Pump2_AutoCmd := TRUE;
         END_IF;
 
     ELSIF SYSTEM_STATE = 2 THEN
         (* Both pumps running *)
-        PUMP_1_RUN := TRUE;
-        PUMP_2_RUN := TRUE;
+        Pump1_AutoCmd := TRUE;
+        Pump2_AutoCmd := TRUE;
 
     ELSE
         (* IDLE, FAULT, or other states - pumps off *)
+        Pump1_AutoCmd := FALSE;
+        Pump2_AutoCmd := FALSE;
+    END_IF;
+
+    (* ========================================================================
+       HOA MODE PROCESSING
+       Apply HOA switch to determine final pump output
+       HOA: 0=OFF, 1=HAND, 2=AUTO
+       ======================================================================== *)
+
+    (* Pump 1 HOA processing *)
+    IF HOA_1 = 0 THEN
+        (* OFF mode - pump disabled *)
         PUMP_1_RUN := FALSE;
+    ELSIF HOA_1 = 1 THEN
+        (* HAND mode - operator direct control *)
+        (* Safety protections still apply (implemented in later iteration) *)
+        PUMP_1_RUN := HAND_RUN_1;
+    ELSE
+        (* AUTO mode (HOA_1 = 2) - use state machine command *)
+        PUMP_1_RUN := Pump1_AutoCmd AND Pump1_Available;
+    END_IF;
+
+    (* Pump 2 HOA processing *)
+    IF HOA_2 = 0 THEN
+        (* OFF mode - pump disabled *)
         PUMP_2_RUN := FALSE;
+    ELSIF HOA_2 = 1 THEN
+        (* HAND mode - operator direct control *)
+        (* Safety protections still apply (implemented in later iteration) *)
+        PUMP_2_RUN := HAND_RUN_2;
+    ELSE
+        (* AUTO mode (HOA_2 = 2) - use state machine command *)
+        PUMP_2_RUN := Pump2_AutoCmd AND Pump2_Available;
     END_IF;
 END_IF;
 

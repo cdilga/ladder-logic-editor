@@ -227,6 +227,12 @@ describe('dual-pump-controller', () => {
     runScanCycle(ast, store as any, runtimeState);
   }
 
+  // Helper to set up normal operating conditions (both pumps in AUTO mode)
+  function setAutoMode() {
+    store.setInt('HOA_1', 2); // AUTO
+    store.setInt('HOA_2', 2); // AUTO
+  }
+
   // ==========================================================================
   // Level Voting Tests (from spec: Test Cases > Level Voting Tests)
   // ==========================================================================
@@ -437,6 +443,11 @@ describe('dual-pump-controller', () => {
   // ==========================================================================
 
   describe('pump control', () => {
+    beforeEach(() => {
+      // Pump control tests assume AUTO mode unless testing HOA specifically
+      setAutoMode();
+    });
+
     it('starts lead pump when level exceeds HIGH setpoint', () => {
       // Test: Normal start | Level=75, P1 available | P1 runs
       store.setInt('LEVEL_1', 75);
@@ -597,6 +608,132 @@ describe('dual-pump-controller', () => {
       expect(store.getBool('PUMP_1_RUN')).toBe(false);
       expect(store.getBool('PUMP_2_RUN')).toBe(true);
       expect(store.getInt('LEAD_PUMP')).toBe(2);
+    });
+  });
+
+  // ==========================================================================
+  // HOA Mode Tests
+  // ==========================================================================
+
+  describe('HOA mode', () => {
+    it('OFF mode prevents pump from running even with high level', () => {
+      store.setInt('HOA_1', 0); // OFF
+      store.setInt('HOA_2', 2); // AUTO
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+
+      runCycle();
+
+      // State machine transitions but pump 1 is OFF
+      expect(store.getInt('SYSTEM_STATE')).toBe(1); // PUMPING_1
+      expect(store.getBool('PUMP_1_RUN')).toBe(false); // OFF prevents running
+    });
+
+    it('HAND mode allows manual pump control via HAND_RUN', () => {
+      store.setInt('HOA_1', 1); // HAND
+      store.setBool('HAND_RUN_1', true);
+      store.setInt('LEVEL_1', 30);
+      store.setInt('LEVEL_2', 30);
+      store.setInt('LEVEL_3', 30);
+
+      runCycle();
+
+      // Level is low but HAND mode overrides
+      expect(store.getInt('SYSTEM_STATE')).toBe(0); // IDLE (level is low)
+      expect(store.getBool('PUMP_1_RUN')).toBe(true); // HAND mode forces run
+    });
+
+    it('HAND mode with HAND_RUN false keeps pump off', () => {
+      store.setInt('HOA_1', 1); // HAND
+      store.setBool('HAND_RUN_1', false);
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+
+      runCycle();
+
+      // Level would trigger AUTO but HAND_RUN is false
+      expect(store.getBool('PUMP_1_RUN')).toBe(false);
+    });
+
+    it('AUTO mode responds to level-based state machine', () => {
+      store.setInt('HOA_1', 2); // AUTO
+      store.setInt('HOA_2', 2); // AUTO
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+
+      runCycle();
+
+      expect(store.getInt('SYSTEM_STATE')).toBe(1);
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
+    });
+
+    it('mixed HOA modes: pump 1 HAND running, pump 2 AUTO responds to level', () => {
+      store.setInt('HOA_1', 1); // HAND
+      store.setBool('HAND_RUN_1', true);
+      store.setInt('HOA_2', 2); // AUTO
+      store.setInt('LEVEL_1', 90);
+      store.setInt('LEVEL_2', 90);
+      store.setInt('LEVEL_3', 90);
+
+      runCycle(); // IDLE -> PUMPING_1
+      runCycle(); // PUMPING_1 -> PUMPING_2
+
+      // Both pumps should run: P1 via HAND, P2 via AUTO
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
+      expect(store.getBool('PUMP_2_RUN')).toBe(true);
+    });
+
+    it('E-STOP overrides HAND mode', () => {
+      store.setInt('HOA_1', 1); // HAND
+      store.setBool('HAND_RUN_1', true);
+      store.setBool('E_STOP', true);
+
+      runCycle();
+
+      expect(store.getInt('SYSTEM_STATE')).toBe(4); // E_STOP
+      expect(store.getBool('PUMP_1_RUN')).toBe(false); // E-STOP overrides HAND
+    });
+
+    it('switching from AUTO to OFF stops pump', () => {
+      setAutoMode();
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+
+      runCycle();
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
+
+      // Switch to OFF
+      store.setInt('HOA_1', 0);
+      runCycle();
+
+      expect(store.getBool('PUMP_1_RUN')).toBe(false);
+    });
+
+    it('switching from AUTO to HAND allows manual control', () => {
+      setAutoMode();
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+
+      runCycle();
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
+
+      // Switch to HAND but don't set HAND_RUN
+      store.setInt('HOA_1', 1);
+      store.setBool('HAND_RUN_1', false);
+      runCycle();
+
+      expect(store.getBool('PUMP_1_RUN')).toBe(false);
+
+      // Now set HAND_RUN
+      store.setBool('HAND_RUN_1', true);
+      runCycle();
+
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
     });
   });
 });
