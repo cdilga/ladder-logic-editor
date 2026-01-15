@@ -12,12 +12,15 @@ import { subscribeWithSelector } from 'zustand/middleware';
 // Timer State (IEC 61131-3)
 // ============================================================================
 
+export type TimerType = 'TON' | 'TOF' | 'TP';
+
 export interface TimerState {
   IN: boolean;      // Input
   PT: number;       // Preset time (ms)
   Q: boolean;       // Output
   ET: number;       // Elapsed time (ms)
   running: boolean; // Internal: is timer currently timing
+  timerType: TimerType; // Timer type: TON, TOF, or TP
 }
 
 // ============================================================================
@@ -33,6 +36,24 @@ export interface CounterState {
   QU: boolean;      // Count up output (CV >= PV)
   QD: boolean;      // Count down output (CV <= 0)
   CV: number;       // Current value
+}
+
+// ============================================================================
+// Edge Detector State (IEC 61131-3 Section 2.5.3)
+// ============================================================================
+
+export interface EdgeDetectorState {
+  CLK: boolean;     // Current input
+  Q: boolean;       // Output (single-scan pulse)
+  M: boolean;       // Memory (previous CLK value)
+}
+
+// ============================================================================
+// Bistable State (IEC 61131-3 Section 2.5.4)
+// ============================================================================
+
+export interface BistableState {
+  Q1: boolean;      // Output state
 }
 
 // ============================================================================
@@ -60,6 +81,12 @@ interface SimulationState {
   // Counter instances
   counters: Record<string, CounterState>;
 
+  // Edge detector instances (R_TRIG, F_TRIG)
+  edgeDetectors: Record<string, EdgeDetectorState>;
+
+  // Bistable instances (SR, RS)
+  bistables: Record<string, BistableState>;
+
   // Actions
   start: () => void;
   pause: () => void;
@@ -78,7 +105,7 @@ interface SimulationState {
   getTime: (name: string) => number;
 
   // Timer operations
-  initTimer: (name: string, pt: number) => void;
+  initTimer: (name: string, pt: number, timerType?: TimerType) => void;
   updateTimer: (name: string, deltaMs: number) => void;
   getTimer: (name: string) => TimerState | undefined;
   setTimerInput: (name: string, input: boolean) => void;
@@ -87,9 +114,22 @@ interface SimulationState {
   // Counter operations
   initCounter: (name: string, pv: number) => void;
   getCounter: (name: string) => CounterState | undefined;
+  setCounterPV: (name: string, pv: number) => void;
   pulseCountUp: (name: string) => void;
   pulseCountDown: (name: string) => void;
   resetCounter: (name: string) => void;
+
+  // Edge detector operations (R_TRIG, F_TRIG)
+  initEdgeDetector: (name: string) => void;
+  getEdgeDetector: (name: string) => EdgeDetectorState | undefined;
+  updateRTrig: (name: string, clk: boolean) => void;
+  updateFTrig: (name: string, clk: boolean) => void;
+
+  // Bistable operations (SR, RS)
+  initBistable: (name: string) => void;
+  getBistable: (name: string) => BistableState | undefined;
+  updateSR: (name: string, s1: boolean, r: boolean) => void;
+  updateRS: (name: string, s: boolean, r1: boolean) => void;
 
   // Bulk operations
   setVariables: (vars: Record<string, boolean | number>) => void;
@@ -100,13 +140,14 @@ interface SimulationState {
 // Default Timer State
 // ============================================================================
 
-function createDefaultTimerState(pt: number): TimerState {
+function createDefaultTimerState(pt: number, timerType: TimerType = 'TON'): TimerState {
   return {
     IN: false,
     PT: pt,
     Q: false,
     ET: 0,
     running: false,
+    timerType,
   };
 }
 
@@ -128,6 +169,28 @@ function createDefaultCounterState(pv: number): CounterState {
 }
 
 // ============================================================================
+// Default Edge Detector State
+// ============================================================================
+
+function createDefaultEdgeDetectorState(): EdgeDetectorState {
+  return {
+    CLK: false,
+    Q: false,
+    M: false,
+  };
+}
+
+// ============================================================================
+// Default Bistable State
+// ============================================================================
+
+function createDefaultBistableState(): BistableState {
+  return {
+    Q1: false,
+  };
+}
+
+// ============================================================================
 // Store Implementation
 // ============================================================================
 
@@ -145,6 +208,8 @@ export const useSimulationStore = create<SimulationState>()(
     times: {},
     timers: {},
     counters: {},
+    edgeDetectors: {},
+    bistables: {},
 
     // Control actions
     start: () => set({ status: 'running' }),
@@ -162,6 +227,8 @@ export const useSimulationStore = create<SimulationState>()(
         times: {},
         timers: {},
         counters: {},
+        edgeDetectors: {},
+        bistables: {},
       });
     },
 
@@ -218,11 +285,11 @@ export const useSimulationStore = create<SimulationState>()(
     },
 
     // Timer operations
-    initTimer: (name: string, pt: number) => {
+    initTimer: (name: string, pt: number, timerType: TimerType = 'TON') => {
       set((state) => ({
         timers: {
           ...state.timers,
-          [name]: createDefaultTimerState(pt),
+          [name]: createDefaultTimerState(pt, timerType),
         },
       }));
     },
@@ -236,30 +303,97 @@ export const useSimulationStore = create<SimulationState>()(
       const timer = state.timers[name];
       if (!timer) return;
 
-      // TON behavior: start timing when IN goes TRUE
       const wasOff = !timer.IN;
       const goingOn = input && wasOff;
       const goingOff = !input && timer.IN;
       const stayingOff = !input && !timer.IN;
+      const stayingOn = input && timer.IN;
 
       let newTimer = { ...timer, IN: input };
 
-      if (goingOn) {
-        // Rising edge - start timing
-        newTimer.running = true;
-        newTimer.ET = 0;
-        newTimer.Q = false;
-      } else if (goingOff) {
-        // Falling edge - stop timer but DON'T reset Q immediately
-        // This allows self-resetting patterns like: Timer(IN := condition AND NOT Timer.Q)
-        // Q will be reset on the NEXT scan when IN stays FALSE
-        newTimer.running = false;
-        newTimer.ET = 0;
-        // Keep Q as-is so user code can see it for one scan
-      } else if (stayingOff && timer.Q) {
-        // IN stayed FALSE for another scan - NOW reset Q
-        // This gives user code one full scan to see Q=TRUE
-        newTimer.Q = false;
+      // Handle based on timer type
+      switch (timer.timerType) {
+        case 'TON':
+          // TON behavior: start timing when IN goes TRUE
+          if (goingOn) {
+            // Rising edge - start timing
+            newTimer.ET = 0;
+            // Per IEC 61131-3: if PT=0, Q is immediately TRUE
+            if (timer.PT <= 0) {
+              newTimer.Q = true;
+              newTimer.running = false;
+            } else {
+              newTimer.running = true;
+              newTimer.Q = false;
+            }
+          } else if (goingOff) {
+            // Falling edge - stop timer but DON'T reset Q immediately
+            // This allows self-resetting patterns like: Timer(IN := condition AND NOT Timer.Q)
+            // Q will be reset on the NEXT scan when IN stays FALSE
+            newTimer.running = false;
+            newTimer.ET = 0;
+            // Keep Q as-is so user code can see it for one scan
+          } else if (stayingOff && timer.Q) {
+            // IN stayed FALSE for another scan - NOW reset Q
+            // This gives user code one full scan to see Q=TRUE
+            newTimer.Q = false;
+          }
+          break;
+
+        case 'TOF':
+          // TOF behavior: Q goes TRUE immediately when IN goes TRUE
+          // ET starts counting when IN goes FALSE
+          // Q goes FALSE after PT elapses with IN FALSE
+          if (goingOn) {
+            // Rising edge - Q immediately TRUE, stop any running timer
+            newTimer.Q = true;
+            newTimer.ET = 0;
+            newTimer.running = false;
+          } else if (goingOff) {
+            // Falling edge - start the off-delay timing
+            // Q stays TRUE, start counting
+            if (timer.PT <= 0) {
+              // If PT=0, Q goes FALSE immediately
+              newTimer.Q = false;
+              newTimer.running = false;
+              newTimer.ET = 0;
+            } else {
+              newTimer.ET = 0;
+              newTimer.running = true;
+              // Q stays TRUE during the delay
+            }
+          } else if (stayingOn) {
+            // IN stays TRUE - reset any elapsed time, keep Q TRUE
+            newTimer.ET = 0;
+            newTimer.running = false;
+            // Q should be TRUE if it was already set
+            if (!timer.Q) {
+              newTimer.Q = true;
+            }
+          }
+          // stayingOff - timer continues running (handled in updateTimer)
+          break;
+
+        case 'TP':
+          // TP behavior: Pulse timer - Q goes TRUE for exactly PT duration
+          // Non-retriggerable: rising edge during pulse has NO effect
+          if (goingOn && !timer.running && !timer.Q) {
+            // Rising edge AND not currently in pulse - start new pulse
+            if (timer.PT <= 0) {
+              // PT=0: no pulse (or single-scan pulse - we'll do no pulse)
+              newTimer.Q = false;
+              newTimer.running = false;
+              newTimer.ET = 0;
+            } else {
+              newTimer.Q = true;
+              newTimer.ET = 0;
+              newTimer.running = true;
+            }
+          }
+          // During pulse: IN changes have NO effect on Q or timing
+          // Q stays TRUE and ET keeps incrementing until PT is reached
+          // This is handled in updateTimer
+          break;
       }
 
       set((s) => ({
@@ -286,7 +420,34 @@ export const useSimulationStore = create<SimulationState>()(
       if (!timer || !timer.running) return;
 
       const newET = Math.min(timer.ET + deltaMs, timer.PT);
-      const newQ = newET >= timer.PT;
+      const timedOut = newET >= timer.PT;
+
+      let newQ: boolean;
+      let newRunning: boolean;
+
+      switch (timer.timerType) {
+        case 'TON':
+          // TON: Q goes TRUE when timeout, stays TRUE while IN is TRUE
+          newQ = timedOut;
+          newRunning = !timedOut;
+          break;
+
+        case 'TOF':
+          // TOF: Q goes FALSE when timeout (was TRUE during delay)
+          newQ = timedOut ? false : timer.Q;
+          newRunning = !timedOut;
+          break;
+
+        case 'TP':
+          // TP: Q goes FALSE when timeout (pulse ends)
+          newQ = timedOut ? false : timer.Q;
+          newRunning = !timedOut;
+          break;
+
+        default:
+          newQ = timedOut;
+          newRunning = !timedOut;
+      }
 
       set((s) => ({
         timers: {
@@ -295,7 +456,7 @@ export const useSimulationStore = create<SimulationState>()(
             ...timer,
             ET: newET,
             Q: newQ,
-            running: !newQ, // Stop running once Q is true
+            running: newRunning,
           },
         },
       }));
@@ -313,6 +474,19 @@ export const useSimulationStore = create<SimulationState>()(
 
     getCounter: (name: string) => {
       return get().counters[name];
+    },
+
+    setCounterPV: (name: string, pv: number) => {
+      const state = get();
+      const counter = state.counters[name];
+      if (!counter) return;
+
+      set((s) => ({
+        counters: {
+          ...s.counters,
+          [name]: { ...counter, PV: pv },
+        },
+      }));
     },
 
     pulseCountUp: (name: string) => {
@@ -369,6 +543,134 @@ export const useSimulationStore = create<SimulationState>()(
       }));
     },
 
+    // Edge detector operations (R_TRIG, F_TRIG)
+    initEdgeDetector: (name: string) => {
+      set((state) => ({
+        edgeDetectors: {
+          ...state.edgeDetectors,
+          [name]: createDefaultEdgeDetectorState(),
+        },
+      }));
+    },
+
+    getEdgeDetector: (name: string) => {
+      return get().edgeDetectors[name];
+    },
+
+    updateRTrig: (name: string, clk: boolean) => {
+      const state = get();
+      let ed = state.edgeDetectors[name];
+
+      // Initialize if not exists
+      if (!ed) {
+        ed = createDefaultEdgeDetectorState();
+      }
+
+      // R_TRIG: Q = CLK AND NOT M (rising edge: current TRUE and previous FALSE)
+      const newQ = clk && !ed.M;
+
+      set((s) => ({
+        edgeDetectors: {
+          ...s.edgeDetectors,
+          [name]: {
+            CLK: clk,
+            Q: newQ,
+            M: clk,  // Remember current state for next scan
+          },
+        },
+      }));
+    },
+
+    updateFTrig: (name: string, clk: boolean) => {
+      const state = get();
+      let ed = state.edgeDetectors[name];
+
+      // Initialize if not exists
+      if (!ed) {
+        ed = createDefaultEdgeDetectorState();
+      }
+
+      // F_TRIG: Q = NOT CLK AND M (falling edge: current FALSE and previous TRUE)
+      const newQ = !clk && ed.M;
+
+      set((s) => ({
+        edgeDetectors: {
+          ...s.edgeDetectors,
+          [name]: {
+            CLK: clk,
+            Q: newQ,
+            M: clk,  // Remember current state for next scan
+          },
+        },
+      }));
+    },
+
+    // Bistable operations (SR, RS)
+    initBistable: (name: string) => {
+      set((state) => ({
+        bistables: {
+          ...state.bistables,
+          [name]: createDefaultBistableState(),
+        },
+      }));
+    },
+
+    getBistable: (name: string) => {
+      return get().bistables[name];
+    },
+
+    updateSR: (name: string, s1: boolean, r: boolean) => {
+      const state = get();
+      let bs = state.bistables[name];
+
+      // Initialize if not exists
+      if (!bs) {
+        bs = createDefaultBistableState();
+      }
+
+      // SR (Set Dominant): S1 wins if both active
+      let newQ1 = bs.Q1;
+      if (s1) {
+        newQ1 = true;
+      } else if (r) {
+        newQ1 = false;
+      }
+      // else: maintain current state
+
+      set((s) => ({
+        bistables: {
+          ...s.bistables,
+          [name]: { Q1: newQ1 },
+        },
+      }));
+    },
+
+    updateRS: (name: string, s: boolean, r1: boolean) => {
+      const state = get();
+      let bs = state.bistables[name];
+
+      // Initialize if not exists
+      if (!bs) {
+        bs = createDefaultBistableState();
+      }
+
+      // RS (Reset Dominant): R1 wins if both active
+      let newQ1 = bs.Q1;
+      if (r1) {
+        newQ1 = false;
+      } else if (s) {
+        newQ1 = true;
+      }
+      // else: maintain current state
+
+      set((s) => ({
+        bistables: {
+          ...s.bistables,
+          [name]: { Q1: newQ1 },
+        },
+      }));
+    },
+
     // Bulk operations
     setVariables: (vars: Record<string, boolean | number>) => {
       const state = get();
@@ -401,6 +703,8 @@ export const useSimulationStore = create<SimulationState>()(
         times: {},
         timers: {},
         counters: {},
+        edgeDetectors: {},
+        bistables: {},
       });
     },
   }))

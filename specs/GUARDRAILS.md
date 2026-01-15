@@ -548,3 +548,55 @@ Added comprehensive mobile styles in `LadderCanvas.css`:
 - [ ] Lighthouse mobile audit (target > 90)
 
 ---
+
+## Interpreter Type-Aware Assignment (2026-01-16) ✅ RESOLVED
+
+### ✅ Cross-Type Variable Assignment - IMPLEMENTED
+
+**Previously a limitation**, now fully working. The interpreter now tracks declared variable types at runtime and uses them for proper storage with type coercion.
+
+**What now works:**
+```st
+result : INT;
+result := 3.7;  (* ✅ Stores 3 - REAL truncated to INT *)
+
+realVal : REAL;
+result := 42;
+realVal := result;  (* ✅ Stores 42.0 - INT promoted to REAL *)
+```
+
+**Implementation:**
+1. `buildTypeRegistry()` in `variable-initializer.ts` builds a map of variable names → declared types
+2. `RuntimeState` includes the type registry
+3. `ExecutionContext` provides `getVariableType()` and `setTime()`
+4. `executeAssignment()` uses declared type for storage with proper coercion:
+   - REAL → INT: `Math.trunc()` (per IEC 61131-3)
+   - INT → REAL: Direct promotion
+   - * → TIME: Stored in times dictionary
+
+**Tests:** `src/interpreter/compliance/type-aware-assignment.test.ts` (22 tests)
+
+---
+
+### ✅ TIME Arithmetic Assignment - IMPLEMENTED
+
+**Previously a limitation**, now fully working. TIME arithmetic results are stored in the times dictionary based on declared type.
+
+**What now works:**
+```st
+t1 : TIME := T#1s;
+t2 : TIME := T#500ms;
+result : TIME;
+result := t1 + t2;  (* ✅ Stores 1500 in times dict *)
+
+totalTime : TIME := T#0ms;
+totalTime := totalTime + T#100ms;  (* ✅ Accumulation works *)
+```
+
+**Implementation:**
+The `executeAssignment()` function now checks the target variable's declared type and uses the appropriate setter:
+- `TIME` → `context.setTime()` stores in `store.times` dictionary
+
+**Tests:** TIME arithmetic tests in `src/interpreter/compliance/type-aware-assignment.test.ts`
+
+---

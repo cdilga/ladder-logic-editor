@@ -66,6 +66,11 @@ describe('handleFunctionBlockCall', () => {
     getInt: ReturnType<typeof vi.fn>;
     getReal: ReturnType<typeof vi.fn>;
     getTime: ReturnType<typeof vi.fn>;
+    // Variable storage for existence checks
+    booleans: Record<string, boolean>;
+    integers: Record<string, number>;
+    reals: Record<string, number>;
+    times: Record<string, number>;
   };
   let context: FunctionBlockContext;
   let previousInputs: Record<string, boolean>;
@@ -84,6 +89,11 @@ describe('handleFunctionBlockCall', () => {
       getInt: vi.fn().mockReturnValue(0),
       getReal: vi.fn().mockReturnValue(0),
       getTime: vi.fn().mockReturnValue(0),
+      // Variable storage - empty by default
+      booleans: {},
+      integers: {},
+      reals: {},
+      times: {},
     };
     previousInputs = {};
     context = createFunctionBlockContext(mockStore, previousInputs);
@@ -137,7 +147,8 @@ describe('handleFunctionBlockCall', () => {
     });
 
     it('evaluates variable for IN argument', () => {
-      mockStore.getBool.mockReturnValue(true);
+      // Set up the variable in storage (not just the mock return value)
+      mockStore.booleans['start_signal'] = true;
 
       const call = functionBlockCall('Timer1', [
         { name: 'IN', expression: variable('start_signal') },
@@ -151,7 +162,8 @@ describe('handleFunctionBlockCall', () => {
 
     it('evaluates TIME variable for PT argument', () => {
       // This test ensures TIME variables like GreenTime are properly resolved
-      mockStore.getTime.mockReturnValue(10000); // GreenTime = T#10s = 10000ms
+      // Set up the variable in storage (not just the mock return value)
+      mockStore.times['GreenTime'] = 10000; // GreenTime = T#10s = 10000ms
 
       const call = functionBlockCall('Timer1', [
         { name: 'IN', expression: boolLiteral(true) },
@@ -160,7 +172,6 @@ describe('handleFunctionBlockCall', () => {
 
       handleFunctionBlockCall(call, context);
 
-      expect(mockStore.getTime).toHaveBeenCalledWith('GreenTime');
       expect(mockStore.initTimer).toHaveBeenCalledWith('Timer1', 10000);
     });
   });

@@ -1,8 +1,12 @@
 # Dual Pump Control System Specification
 
+**Status:** 🟡 Specification Complete - Implementation Pending
+
 ## Overview
 
 This specification defines a production-grade dual pump control system with lead/lag alternation, redundant sensors, comprehensive fault handling, and pump protection features. The implementation demonstrates industrial best practices for pump station control.
+
+> **Note:** Draft ST code and tests exist in `src/examples/` but are not yet finalized. Complete implementation when ready.
 
 ## References
 

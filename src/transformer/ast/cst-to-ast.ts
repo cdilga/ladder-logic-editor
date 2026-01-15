@@ -880,13 +880,16 @@ function parseMulExpression(node: SyntaxNode, source: string): STExpression {
 
 function parseUnaryExpression(node: SyntaxNode, source: string): STExpression {
   const loc = { start: node.from, end: node.to };
-  let hasNot = false;
+  const unaryOps: Array<'NOT' | '-'> = [];
   let primary: STExpression | null = null;
 
   let child = node.firstChild;
   while (child) {
-    if (child.name === 'NOT' || source.slice(child.from, child.to).toUpperCase() === 'NOT') {
-      hasNot = true;
+    const text = source.slice(child.from, child.to);
+    if (child.name === 'NOT' || text.toUpperCase() === 'NOT') {
+      unaryOps.push('NOT');
+    } else if (text === '-') {
+      unaryOps.push('-');
     } else if (child.name === 'PrimaryExpression') {
       primary = parsePrimaryExpression(child, source);
     }
@@ -894,10 +897,17 @@ function parseUnaryExpression(node: SyntaxNode, source: string): STExpression {
   }
 
   if (primary) {
-    if (hasNot) {
-      return { type: 'UnaryExpr', operator: 'NOT', operand: primary, loc };
+    // Apply unary operators in reverse order (innermost first)
+    let result = primary;
+    for (let i = unaryOps.length - 1; i >= 0; i--) {
+      result = {
+        type: 'UnaryExpr',
+        operator: unaryOps[i],
+        operand: result,
+        loc,
+      };
     }
-    return primary;
+    return result;
   }
 
   return { type: 'Literal', value: false, literalType: 'BOOL', rawValue: 'FALSE', loc };

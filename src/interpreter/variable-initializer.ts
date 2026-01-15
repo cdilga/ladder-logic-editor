@@ -3,13 +3,34 @@
  *
  * Initializes the simulation store from ST variable declarations.
  * Handles all data types including function blocks (timers, counters).
+ * Also builds a type registry for type-aware assignment.
  */
 
 import type { STAST, STVarBlock, STVariableDecl, STLiteral } from '../transformer/ast/st-ast-types';
 
 // ============================================================================
+// Type Registry
+// ============================================================================
+
+/**
+ * Declared data type categories for variable storage.
+ */
+export type DeclaredType = 'BOOL' | 'INT' | 'REAL' | 'TIME' | 'TIMER' | 'COUNTER' | 'R_TRIG' | 'F_TRIG' | 'BISTABLE' | 'UNKNOWN';
+
+/**
+ * Registry mapping variable names to their declared types.
+ * Used for type-aware assignment during execution.
+ */
+export type TypeRegistry = Record<string, DeclaredType>;
+
+// ============================================================================
 // Types
 // ============================================================================
+
+/**
+ * Timer type for IEC 61131-3 timers
+ */
+export type TimerType = 'TON' | 'TOF' | 'TP';
 
 /**
  * Store interface for variable initialization.
@@ -19,7 +40,7 @@ export interface InitializableStore {
   setInt: (name: string, value: number) => void;
   setReal: (name: string, value: number) => void;
   setTime: (name: string, value: number) => void;
-  initTimer: (name: string, pt: number) => void;
+  initTimer: (name: string, pt: number, timerType?: TimerType) => void;
   initCounter: (name: string, pv: number) => void;
   clearAll: () => void;
 }
@@ -77,7 +98,8 @@ function initializeDeclaration(decl: STVariableDecl, store: InitializableStore):
     // Handle function block types
     if (TIMER_TYPES.has(typeName)) {
       const ptValue = extractTimerPreset(decl);
-      store.initTimer(name, ptValue);
+      const timerType = typeName as TimerType;
+      store.initTimer(name, ptValue, timerType);
       continue;
     }
 
@@ -153,6 +175,10 @@ function extractIntValue(expr: STVariableDecl['initialValue']): number {
   if (expr.type === 'Literal' && expr.literalType === 'BOOL') {
     return expr.value ? 1 : 0;
   }
+  // Handle unary minus expression
+  if (expr.type === 'UnaryExpr' && expr.operator === '-') {
+    return -extractIntValue(expr.operand);
+  }
   return 0;
 }
 
@@ -160,6 +186,10 @@ function extractRealValue(expr: STVariableDecl['initialValue']): number {
   if (!expr) return 0.0;
   if (expr.type === 'Literal' && (expr.literalType === 'REAL' || expr.literalType === 'INT')) {
     return expr.value as number;
+  }
+  // Handle unary minus expression
+  if (expr.type === 'UnaryExpr' && expr.operator === '-') {
+    return -extractRealValue(expr.operand);
   }
   return 0.0;
 }
@@ -246,13 +276,15 @@ function parseTimeString(timeStr: string): number {
     return parseFloat(hMatch[1]) * 60 * 60 * 1000;
   }
 
-  // Complex format like T#1h2m3s4ms
+  // Complex format like T#1h2m3s4ms or T#1d2h3m4s5ms
   let total = 0;
-  const complexMatch = str.matchAll(/(\d+(?:\.\d+)?)\s*(h|m|s|ms)/gi);
+  // Note: ms must come before m and s to avoid s500ms being matched as s + 500m
+  const complexMatch = str.matchAll(/(\d+(?:\.\d+)?)\s*(d|h|ms|m|s)/gi);
   for (const match of complexMatch) {
     const value = parseFloat(match[1]);
     const unit = match[2].toLowerCase();
     switch (unit) {
+      case 'd': total += value * 24 * 60 * 60 * 1000; break;
       case 'h': total += value * 60 * 60 * 1000; break;
       case 'm': total += value * 60 * 1000; break;
       case 's': total += value * 1000; break;
@@ -265,4 +297,96 @@ function parseTimeString(timeStr: string): number {
   // Fallback: try to parse as plain number (assume ms)
   const num = parseFloat(str);
   return isNaN(num) ? 0 : num;
+}
+
+// ============================================================================
+// Type Registry Builder
+// ============================================================================
+
+/**
+ * Build a type registry from AST variable declarations.
+ *
+ * This maps each variable name to its declared type category,
+ * enabling type-aware assignment during execution.
+ *
+ * @param ast - The parsed ST AST
+ * @returns TypeRegistry mapping variable names to declared types
+ */
+export function buildTypeRegistry(ast: STAST): TypeRegistry {
+  const registry: TypeRegistry = {};
+
+  // Process programs
+  for (const program of ast.programs) {
+    for (const varBlock of program.varBlocks) {
+      buildVarBlockTypes(varBlock, registry);
+    }
+  }
+
+  // Process top-level var blocks
+  for (const varBlock of ast.topLevelVarBlocks) {
+    buildVarBlockTypes(varBlock, registry);
+  }
+
+  return registry;
+}
+
+function buildVarBlockTypes(varBlock: STVarBlock, registry: TypeRegistry): void {
+  for (const decl of varBlock.declarations) {
+    const typeName = decl.dataType.typeName.toUpperCase();
+    const declaredType = categorizeType(typeName);
+
+    for (const name of decl.names) {
+      registry[name] = declaredType;
+    }
+  }
+}
+
+/**
+ * Categorize a type name into a DeclaredType category.
+ */
+function categorizeType(typeName: string): DeclaredType {
+  // Boolean
+  if (typeName === 'BOOL') {
+    return 'BOOL';
+  }
+
+  // Integer types (IEC 61131-3 Section 2.3)
+  if (['INT', 'DINT', 'SINT', 'LINT', 'UINT', 'UDINT', 'USINT', 'ULINT'].includes(typeName)) {
+    return 'INT';
+  }
+
+  // Real types
+  if (['REAL', 'LREAL'].includes(typeName)) {
+    return 'REAL';
+  }
+
+  // Time
+  if (typeName === 'TIME') {
+    return 'TIME';
+  }
+
+  // Timer function blocks
+  if (['TON', 'TOF', 'TP'].includes(typeName)) {
+    return 'TIMER';
+  }
+
+  // Counter function blocks
+  if (['CTU', 'CTD', 'CTUD'].includes(typeName)) {
+    return 'COUNTER';
+  }
+
+  // Edge detector function blocks
+  if (typeName === 'R_TRIG') {
+    return 'R_TRIG';
+  }
+  if (typeName === 'F_TRIG') {
+    return 'F_TRIG';
+  }
+
+  // Bistable function blocks
+  if (['SR', 'RS'].includes(typeName)) {
+    return 'BISTABLE';
+  }
+
+  return 'UNKNOWN';
 }

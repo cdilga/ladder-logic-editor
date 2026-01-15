@@ -17,6 +17,22 @@ import type {
   STCaseLabel,
 } from '../transformer/ast/st-ast-types';
 import { evaluateExpression, type Value, type EvaluationContext } from './expression-evaluator';
+import type { DeclaredType } from './variable-initializer';
+
+// ============================================================================
+// Exit Signal (for EXIT statement support)
+// ============================================================================
+
+/**
+ * Signal thrown by EXIT statement to break out of loops.
+ * Caught by loop executors (FOR, WHILE, REPEAT).
+ */
+export class ExitSignal extends Error {
+  constructor() {
+    super('EXIT');
+    this.name = 'ExitSignal';
+  }
+}
 
 // ============================================================================
 // Types
@@ -33,12 +49,16 @@ export interface ExecutionContext extends EvaluationContext {
   setInt: (name: string, value: number) => void;
   /** Set a real variable */
   setReal: (name: string, value: number) => void;
+  /** Set a time variable */
+  setTime: (name: string, value: number) => void;
   /** Get a boolean variable */
   getBool: (name: string) => boolean;
   /** Get an integer variable */
   getInt: (name: string) => number;
   /** Get a real variable */
   getReal: (name: string) => number;
+  /** Get the declared type of a variable */
+  getVariableType: (name: string) => DeclaredType | undefined;
   /** Handle function block calls (timers, counters) */
   handleFunctionBlockCall: (call: STFunctionBlockCall, ctx: ExecutionContext) => void;
 }
@@ -89,9 +109,8 @@ export function executeStatement(stmt: STStatement, context: ExecutionContext): 
       break;
 
     case 'ExitStatement':
-      // Exit statements break out of loops
-      // Would need to be handled at loop level with exceptions or flags
-      break;
+      // EXIT statement breaks out of the innermost enclosing loop
+      throw new ExitSignal();
 
     default:
       console.warn(`Unknown statement type: ${(stmt as STStatement).type}`);
@@ -115,7 +134,43 @@ function executeAssignment(stmt: STAssignment, context: ExecutionContext): void 
   const value = evaluateExpression(stmt.expression, context);
   const targetName = stmt.target.name;
 
-  // Determine the type and call appropriate setter
+  // Get the declared type of the target variable
+  const declaredType = context.getVariableType(targetName);
+
+  // If we have a declared type, use it for storage with proper coercion
+  if (declaredType) {
+    switch (declaredType) {
+      case 'BOOL':
+        context.setBool(targetName, toBoolean(value));
+        return;
+
+      case 'INT':
+        // Truncate REAL values to INT (per IEC 61131-3)
+        context.setInt(targetName, Math.trunc(toNumber(value)));
+        return;
+
+      case 'REAL':
+        // Promote INT values to REAL
+        context.setReal(targetName, toNumber(value));
+        return;
+
+      case 'TIME':
+        // TIME values are stored as milliseconds (numbers)
+        context.setTime(targetName, Math.trunc(toNumber(value)));
+        return;
+
+      case 'TIMER':
+      case 'COUNTER':
+        // Function blocks are handled differently, skip
+        return;
+
+      case 'UNKNOWN':
+        // Fall through to value-based detection
+        break;
+    }
+  }
+
+  // Fallback: Determine storage by value type (legacy behavior for undeclared vars)
   if (typeof value === 'boolean') {
     context.setBool(targetName, value);
   } else if (typeof value === 'number') {
@@ -182,13 +237,30 @@ function executeCaseStatement(stmt: STCaseStatement, context: ExecutionContext):
   }
 }
 
+// Track already-warned descending ranges to avoid duplicate warnings
+const warnedDescendingRanges = new Set<string>();
+
 function matchesCaseLabels(value: number, labels: STCaseLabel[]): boolean {
   for (const label of labels) {
     if (label.type === 'single' && label.value === value) {
       return true;
     }
     if (label.type === 'range' && label.start !== undefined && label.end !== undefined) {
-      if (value >= label.start && value <= label.end) {
+      // Warn about descending ranges (non-standard IEC 61131-3)
+      if (label.start > label.end) {
+        const rangeKey = `${label.start}..${label.end}`;
+        if (!warnedDescendingRanges.has(rangeKey)) {
+          warnedDescendingRanges.add(rangeKey);
+          console.warn(
+            `CASE range ${label.start}..${label.end} is descending. ` +
+            `This works but is non-standard IEC 61131-3. Consider using ${label.end}..${label.start} instead.`
+          );
+        }
+      }
+      // Handle both ascending (1..10) and descending (10..1) ranges
+      const min = Math.min(label.start, label.end);
+      const max = Math.max(label.start, label.end);
+      if (value >= min && value <= max) {
         return true;
       }
     }
@@ -214,57 +286,81 @@ function executeForStatement(stmt: STForStatement, context: ExecutionContext): v
   }
 
   let iterations = 0;
-  if (stepVal > 0) {
-    for (let i = startVal; i <= endVal && iterations < MAX_ITERATIONS; i += stepVal) {
-      context.setInt(stmt.variable, i);
-      executeStatements(stmt.body, context);
-      iterations++;
+  try {
+    if (stepVal > 0) {
+      for (let i = startVal; i <= endVal && iterations < MAX_ITERATIONS; i += stepVal) {
+        context.setInt(stmt.variable, i);
+        executeStatements(stmt.body, context);
+        iterations++;
+      }
+    } else {
+      for (let i = startVal; i >= endVal && iterations < MAX_ITERATIONS; i += stepVal) {
+        context.setInt(stmt.variable, i);
+        executeStatements(stmt.body, context);
+        iterations++;
+      }
     }
-  } else {
-    for (let i = startVal; i >= endVal && iterations < MAX_ITERATIONS; i += stepVal) {
-      context.setInt(stmt.variable, i);
-      executeStatements(stmt.body, context);
-      iterations++;
-    }
-  }
 
-  if (iterations >= MAX_ITERATIONS) {
-    console.warn(`FOR loop exceeded maximum iterations (${MAX_ITERATIONS})`);
+    if (iterations >= MAX_ITERATIONS) {
+      console.warn(`FOR loop exceeded maximum iterations (${MAX_ITERATIONS})`);
+    }
+  } catch (e) {
+    if (e instanceof ExitSignal) {
+      // EXIT statement - break out of loop normally
+      return;
+    }
+    throw e; // Re-throw other errors
   }
 }
 
 function executeWhileStatement(stmt: STWhileStatement, context: ExecutionContext): void {
   let iterations = 0;
 
-  while (iterations < MAX_ITERATIONS) {
-    const conditionValue = evaluateExpression(stmt.condition, context);
-    if (!toBoolean(conditionValue)) {
-      break;
+  try {
+    while (iterations < MAX_ITERATIONS) {
+      const conditionValue = evaluateExpression(stmt.condition, context);
+      if (!toBoolean(conditionValue)) {
+        break;
+      }
+      executeStatements(stmt.body, context);
+      iterations++;
     }
-    executeStatements(stmt.body, context);
-    iterations++;
-  }
 
-  if (iterations >= MAX_ITERATIONS) {
-    console.warn(`WHILE loop exceeded maximum iterations (${MAX_ITERATIONS})`);
+    if (iterations >= MAX_ITERATIONS) {
+      console.warn(`WHILE loop exceeded maximum iterations (${MAX_ITERATIONS})`);
+    }
+  } catch (e) {
+    if (e instanceof ExitSignal) {
+      // EXIT statement - break out of loop normally
+      return;
+    }
+    throw e; // Re-throw other errors
   }
 }
 
 function executeRepeatStatement(stmt: STRepeatStatement, context: ExecutionContext): void {
   let iterations = 0;
 
-  do {
-    executeStatements(stmt.body, context);
-    iterations++;
+  try {
+    do {
+      executeStatements(stmt.body, context);
+      iterations++;
 
-    const conditionValue = evaluateExpression(stmt.condition, context);
-    if (toBoolean(conditionValue)) {
-      break; // REPEAT exits when condition becomes TRUE
+      const conditionValue = evaluateExpression(stmt.condition, context);
+      if (toBoolean(conditionValue)) {
+        break; // REPEAT exits when condition becomes TRUE
+      }
+    } while (iterations < MAX_ITERATIONS);
+
+    if (iterations >= MAX_ITERATIONS) {
+      console.warn(`REPEAT loop exceeded maximum iterations (${MAX_ITERATIONS})`);
     }
-  } while (iterations < MAX_ITERATIONS);
-
-  if (iterations >= MAX_ITERATIONS) {
-    console.warn(`REPEAT loop exceeded maximum iterations (${MAX_ITERATIONS})`);
+  } catch (e) {
+    if (e instanceof ExitSignal) {
+      // EXIT statement - break out of loop normally
+      return;
+    }
+    throw e; // Re-throw other errors
   }
 }
 

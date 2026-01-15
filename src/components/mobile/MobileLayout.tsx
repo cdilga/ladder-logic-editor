@@ -15,10 +15,9 @@ import { PropertiesPanel } from '../properties-panel';
 import { ProgramSelector } from '../program-selector';
 import { ErrorPanel } from '../error-panel';
 import { BottomTabBar } from './BottomTabBar';
-import { useMobileStore, type MobileView } from '../../store/mobile-store';
+import { useMobileStore } from '../../store/mobile-store';
 import { useProjectStore, useSimulationStore } from '../../store';
 import { useKeyboardDetect } from '../../hooks/useKeyboardDetect';
-import { useSwipeGesture } from '../../hooks/useSwipeGesture';
 import {
   saveToLocalStorage,
   loadFromLocalStorage,
@@ -43,44 +42,13 @@ export function MobileLayout() {
   useKeyboardDetect();
 
   const activeView = useMobileStore((state) => state.activeView);
-  const setActiveView = useMobileStore((state) => state.setActiveView);
   const keyboardVisible = useMobileStore((state) => state.keyboardVisible);
   const keyboardHeight = useMobileStore((state) => state.keyboardHeight);
-
-  // Ref for swipe gesture detection
-  const panelsRef = useRef<HTMLDivElement>(null);
 
   const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error'>('synced');
   const [errorCount, setErrorCount] = useState(0);
   const [selectedNode, setSelectedNode] = useState<LadderNode | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  // View navigation order
-  const VIEW_ORDER: MobileView[] = ['ladder', 'editor', 'debug', 'properties'];
-
-  // Swipe gesture handlers
-  const handleSwipeLeft = useCallback(() => {
-    const currentIndex = VIEW_ORDER.indexOf(activeView);
-    if (currentIndex < VIEW_ORDER.length - 1) {
-      setActiveView(VIEW_ORDER[currentIndex + 1]);
-    }
-  }, [activeView, setActiveView]);
-
-  const handleSwipeRight = useCallback(() => {
-    const currentIndex = VIEW_ORDER.indexOf(activeView);
-    if (currentIndex > 0) {
-      setActiveView(VIEW_ORDER[currentIndex - 1]);
-    }
-  }, [activeView, setActiveView]);
-
-  // Enable swipe gestures
-  useSwipeGesture(panelsRef, {
-    onSwipeLeft: handleSwipeLeft,
-    onSwipeRight: handleSwipeRight,
-    minDistance: 60,
-    maxVerticalDeviation: 120,
-    enableHaptic: true,
-  });
 
   // Simulation state and actions
   const simulationStatus = useSimulationStore((state) => state.status);
@@ -360,7 +328,7 @@ export function MobileLayout() {
       )}
 
       {/* Panel Container */}
-      <div className="mobile-panels" ref={panelsRef}>
+      <div className="mobile-panels">
         {/* Ladder View */}
         <div
           className={`mobile-panel ${activeView === 'ladder' ? 'active' : ''}`}

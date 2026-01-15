@@ -126,10 +126,12 @@ describe('executeStatement', () => {
       setBool,
       setInt,
       setReal,
+      setTime: vi.fn(),
       getBool,
       getInt,
       getReal: vi.fn().mockReturnValue(0),
       getVariable,
+      getVariableType: vi.fn().mockReturnValue(undefined),  // Default: no type info
       getTimerField: vi.fn().mockReturnValue(false),
       getCounterField: vi.fn().mockReturnValue(0),
       handleFunctionBlockCall: handleFunctionBlock,

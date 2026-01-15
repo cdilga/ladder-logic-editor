@@ -168,7 +168,7 @@ describe('initializeVariables', () => {
 
       initializeVariables(ast, mockStore);
 
-      expect(mockStore.initTimer).toHaveBeenCalledWith('Timer1', 0);
+      expect(mockStore.initTimer).toHaveBeenCalledWith('Timer1', 0, 'TON');
     });
 
     it('initializes TOF timer', () => {
@@ -182,7 +182,7 @@ describe('initializeVariables', () => {
 
       initializeVariables(ast, mockStore);
 
-      expect(mockStore.initTimer).toHaveBeenCalledWith('Timer2', 0);
+      expect(mockStore.initTimer).toHaveBeenCalledWith('Timer2', 0, 'TOF');
     });
   });
 

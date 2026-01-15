@@ -225,7 +225,7 @@ MulExpression {
 }
 
 UnaryExpression {
-  kw<"NOT">? PrimaryExpression
+  ("-" | kw<"NOT">)* PrimaryExpression
 }
 
 PrimaryExpression {

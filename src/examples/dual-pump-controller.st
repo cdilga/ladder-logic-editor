@@ -1,16 +1,8 @@
 PROGRAM DualPumpController
-
-(* ============================================================================
-   Dual Pump Control System
-
-   Production-grade dual pump control with:
-   - Lead/lag alternation
-   - 2oo3 redundant level sensing
-   - Comprehensive fault handling
-   - Pump protection features
-
-   See specs/PUMP_EXAMPLE_SPEC.md for full specification.
-   ============================================================================ *)
+(*
+ * Dual Pump Control System with Lead/Lag Alternation
+ * See specs/PUMP_EXAMPLE_SPEC.md for full specification
+ *)
 
 VAR_INPUT
     (* Level Sensors - redundant 2oo3 voting *)
@@ -27,19 +19,14 @@ VAR_INPUT
     TEMP_2 : INT;
 
     (* Motor Feedback *)
-    MOTOR_OL_1 : BOOL;      (* TRUE = motor OK, FALSE = overload tripped *)
+    MOTOR_OL_1 : BOOL;      (* FALSE = overload tripped *)
     MOTOR_OL_2 : BOOL;
-    SEAL_OK_1 : BOOL;       (* TRUE = seal OK, FALSE = seal leak *)
-    SEAL_OK_2 : BOOL;
 
     (* Operator Controls *)
     HOA_1 : INT;            (* 0=OFF, 1=HAND, 2=AUTO *)
     HOA_2 : INT;
-    HAND_RUN_1 : BOOL;      (* Manual run command for pump 1 in HAND mode *)
-    HAND_RUN_2 : BOOL;      (* Manual run command for pump 2 in HAND mode *)
     E_STOP : BOOL;          (* TRUE = emergency stop *)
     FAULT_RESET : BOOL;     (* Rising edge resets latched faults *)
-    FORCE_ALTERNATE : BOOL; (* Manual alternation trigger *)
 END_VAR
 
 VAR_OUTPUT
@@ -48,489 +35,285 @@ VAR_OUTPUT
     PUMP_2_RUN : BOOL;
 
     (* Status *)
-    LEAD_PUMP : INT;        (* 1 or 2 *)
-    SYSTEM_STATE : INT;     (* 0=IDLE, 1=PUMPING_1, 2=PUMPING_2, 3=FAULT, 4=E_STOP *)
+    LEAD_PUMP : INT := 1;   (* 1 or 2 *)
     EFFECTIVE_LEVEL : INT;  (* Voted level value *)
 
     (* Alarms *)
     ALM_SENSOR_DISAGREE : BOOL;
-    ALM_SENSOR_FAILED : BOOL;
-    ALM_CRITICAL_SENSOR_FAULT : BOOL;
-    ALM_DRY_RUN_1 : BOOL;
-    ALM_DRY_RUN_2 : BOOL;
-    ALM_OVERTEMP_1 : BOOL;
-    ALM_OVERTEMP_2 : BOOL;
-    ALM_MOTOR_OL_1 : BOOL;
-    ALM_MOTOR_OL_2 : BOOL;
-    ALM_SEAL_LEAK_1 : BOOL;
-    ALM_SEAL_LEAK_2 : BOOL;
     ALM_HIGH_LEVEL : BOOL;
     ALM_OVERFLOW : BOOL;
-    ALM_BOTH_PUMPS_FAILED : BOOL;
-    ALM_TEMP_WARN_1 : BOOL;   (* Temperature warning for pump 1 *)
-    ALM_TEMP_WARN_2 : BOOL;   (* Temperature warning for pump 2 *)
+    ALM_DRY_RUN_1 : BOOL;
+    ALM_DRY_RUN_2 : BOOL;
+    ALM_MOTOR_OL_1 : BOOL;
+    ALM_MOTOR_OL_2 : BOOL;
+    ALM_OVERTEMP_1 : BOOL;
+    ALM_OVERTEMP_2 : BOOL;
 END_VAR
 
 VAR
+    (* Intermediate calculation variables *)
+    Min12 : INT;
+    Max12 : INT;
+    Median : INT;
+
+    (* Sensor disagreement calculation *)
+    Diff12 : INT;
+    Diff13 : INT;
+    Diff23 : INT;
+    MaxDiff : INT;
+    Tolerance : INT := 5;   (* 5% tolerance *)
+
     (* Setpoints *)
-    SP_LOW_LOW : INT := 10;
     SP_LOW : INT := 20;
     SP_HIGH : INT := 70;
     SP_HIGH_HIGH : INT := 85;
     SP_CRITICAL : INT := 95;
-    SP_HYSTERESIS : INT := 2;
-    SP_SENSOR_TOLERANCE : INT := 5;  (* 5% of span *)
+    TEMP_CRITICAL : INT := 95;  (* Critical temperature threshold *)
 
-    (* Temperature thresholds *)
-    TEMP_HIGH : INT := 80;
-    TEMP_CRITICAL : INT := 95;
+    (* Internal state *)
+    LeadPumpCmd : BOOL;
+    LagPumpCmd : BOOL;
+    Pump1InAuto : BOOL;
+    Pump2InAuto : BOOL;
 
-    (* Sensor status *)
-    Sensor1_Failed : BOOL := FALSE;
-    Sensor2_Failed : BOOL := FALSE;
-    Sensor3_Failed : BOOL := FALSE;
-    ValidSensorCount : INT := 3;
-
-    (* Pump state *)
-    Pump1_Faulted : BOOL := FALSE;
-    Pump2_Faulted : BOOL := FALSE;
-    Pump1_Running : BOOL := FALSE;
-    Pump2_Running : BOOL := FALSE;
-
-    (* Pump availability (available for AUTO mode) *)
-    Pump1_Available : BOOL := FALSE;
-    Pump2_Available : BOOL := FALSE;
-
-    (* Pump command values before HOA processing *)
-    Pump1_AutoCmd : BOOL := FALSE;
-    Pump2_AutoCmd : BOOL := FALSE;
-
-    (* Fault reset edge detection *)
-    Prev_Fault_Reset : BOOL := FALSE;
-
-    (* Lead/lag *)
-    LeadPumpNum : INT := 1;
-
-    (* Intermediate voting variables *)
-    Min_Level : INT;
-    Max_Level : INT;
-    Mid_Level : INT;
-
-    (* Dry run protection timers *)
+    (* Dry run protection *)
     DryRunTimer1 : TON;
     DryRunTimer2 : TON;
-    DRY_RUN_DELAY : TIME := T#5s;  (* 5 second delay before fault *)
+    DryRunDelay : TIME := T#5s;
 
-    (* Lead/lag alternation *)
-    AlternationInterval : TIME := T#30s;  (* Demo default - use T#24h for production *)
-    AlternationTimer : TON;               (* Timer for automatic alternation *)
-    Prev_Force_Alternate : BOOL := FALSE; (* Edge detection for manual alternation *)
-
-    (* Anti-cycle protection *)
-    MIN_OFF_TIME : TIME := T#30s;  (* Minimum time pump must be off before restart *)
-    MIN_ON_TIME : TIME := T#10s;   (* Minimum time pump must run before stopping *)
-    AntiCycleTimer1 : TON;         (* Time since pump 1 stopped *)
-    AntiCycleTimer2 : TON;         (* Time since pump 2 stopped *)
-    Pump1_CanStart : BOOL := TRUE; (* TRUE if pump 1 has been off long enough *)
-    Pump2_CanStart : BOOL := TRUE; (* TRUE if pump 2 has been off long enough *)
-    Prev_Pump1_Running : BOOL := FALSE;  (* Previous cycle pump 1 state for stop detection *)
-    Prev_Pump2_Running : BOOL := FALSE;  (* Previous cycle pump 2 state for stop detection *)
+    (* Fault state - latched *)
+    Pump1Faulted : BOOL := FALSE;
+    Pump2Faulted : BOOL := FALSE;
 END_VAR
 
-(* ============================================================================
-   LEVEL SENSING WITH 2oo3 VOTING
-   ============================================================================ *)
+(* ========================================================================== *)
+(* Level Voting - Median of 3 sensors                                         *)
+(* ========================================================================== *)
 
-(* Check for out-of-range sensors (failed sensors) *)
-Sensor1_Failed := LEVEL_1 < 0 OR LEVEL_1 > 100;
-Sensor2_Failed := LEVEL_2 < 0 OR LEVEL_2 > 100;
-Sensor3_Failed := LEVEL_3 < 0 OR LEVEL_3 > 100;
-
-(* Count valid sensors *)
-ValidSensorCount := 3;
-IF Sensor1_Failed THEN ValidSensorCount := ValidSensorCount - 1; END_IF;
-IF Sensor2_Failed THEN ValidSensorCount := ValidSensorCount - 1; END_IF;
-IF Sensor3_Failed THEN ValidSensorCount := ValidSensorCount - 1; END_IF;
-
-(* Set sensor failed alarm *)
-ALM_SENSOR_FAILED := Sensor1_Failed OR Sensor2_Failed OR Sensor3_Failed;
-
-(* Calculate effective level using median (2oo3 voting) *)
-(* Median of 3 values using comparison logic *)
-IF ValidSensorCount = 3 THEN
-    (* All sensors valid - use median *)
-    IF LEVEL_1 >= LEVEL_2 THEN
-        IF LEVEL_2 >= LEVEL_3 THEN
-            EFFECTIVE_LEVEL := LEVEL_2;
-        ELSIF LEVEL_1 >= LEVEL_3 THEN
-            EFFECTIVE_LEVEL := LEVEL_3;
-        ELSE
-            EFFECTIVE_LEVEL := LEVEL_1;
-        END_IF;
-    ELSE
-        IF LEVEL_1 >= LEVEL_3 THEN
-            EFFECTIVE_LEVEL := LEVEL_1;
-        ELSIF LEVEL_2 >= LEVEL_3 THEN
-            EFFECTIVE_LEVEL := LEVEL_3;
-        ELSE
-            EFFECTIVE_LEVEL := LEVEL_2;
-        END_IF;
-    END_IF;
-
-    (* Check for sensor disagreement *)
-    (* Find min and max to check spread *)
-    IF LEVEL_1 <= LEVEL_2 AND LEVEL_1 <= LEVEL_3 THEN
-        Min_Level := LEVEL_1;
-    ELSIF LEVEL_2 <= LEVEL_1 AND LEVEL_2 <= LEVEL_3 THEN
-        Min_Level := LEVEL_2;
-    ELSE
-        Min_Level := LEVEL_3;
-    END_IF;
-
-    IF LEVEL_1 >= LEVEL_2 AND LEVEL_1 >= LEVEL_3 THEN
-        Max_Level := LEVEL_1;
-    ELSIF LEVEL_2 >= LEVEL_1 AND LEVEL_2 >= LEVEL_3 THEN
-        Max_Level := LEVEL_2;
-    ELSE
-        Max_Level := LEVEL_3;
-    END_IF;
-
-    (* All 3 differ significantly if spread > tolerance *)
-    ALM_SENSOR_DISAGREE := (Max_Level - Min_Level) > SP_SENSOR_TOLERANCE;
-
-    (* Critical fault: one sensor reads LOW, another reads HIGH *)
-    ALM_CRITICAL_SENSOR_FAULT := (Min_Level < SP_LOW_LOW AND Max_Level > SP_HIGH_HIGH);
-
-ELSIF ValidSensorCount = 2 THEN
-    (* One sensor failed - use average of remaining two *)
-    IF Sensor1_Failed THEN
-        EFFECTIVE_LEVEL := (LEVEL_2 + LEVEL_3) / 2;
-        ALM_SENSOR_DISAGREE := FALSE;
-    ELSIF Sensor2_Failed THEN
-        EFFECTIVE_LEVEL := (LEVEL_1 + LEVEL_3) / 2;
-        ALM_SENSOR_DISAGREE := FALSE;
-    ELSE
-        EFFECTIVE_LEVEL := (LEVEL_1 + LEVEL_2) / 2;
-        ALM_SENSOR_DISAGREE := FALSE;
-    END_IF;
-    ALM_CRITICAL_SENSOR_FAULT := FALSE;
-
-ELSIF ValidSensorCount = 1 THEN
-    (* Two sensors failed - use remaining sensor *)
-    IF NOT Sensor1_Failed THEN
-        EFFECTIVE_LEVEL := LEVEL_1;
-    ELSIF NOT Sensor2_Failed THEN
-        EFFECTIVE_LEVEL := LEVEL_2;
-    ELSE
-        EFFECTIVE_LEVEL := LEVEL_3;
-    END_IF;
-    ALM_SENSOR_DISAGREE := FALSE;
-    ALM_CRITICAL_SENSOR_FAULT := FALSE;
-
+(* Calculate median: sort and pick middle *)
+(* Step 1: Find min and max of first two *)
+IF LEVEL_1 < LEVEL_2 THEN
+    Min12 := LEVEL_1;
+    Max12 := LEVEL_2;
 ELSE
-    (* All sensors failed - maintain last value, critical fault *)
-    ALM_SENSOR_DISAGREE := FALSE;
-    ALM_CRITICAL_SENSOR_FAULT := TRUE;
+    Min12 := LEVEL_2;
+    Max12 := LEVEL_1;
 END_IF;
 
-(* ============================================================================
-   LEVEL ALARMS
-   ============================================================================ *)
+(* Step 2: Find median using third value *)
+IF LEVEL_3 < Min12 THEN
+    Median := Min12;
+ELSIF LEVEL_3 > Max12 THEN
+    Median := Max12;
+ELSE
+    Median := LEVEL_3;
+END_IF;
 
-ALM_HIGH_LEVEL := EFFECTIVE_LEVEL >= SP_HIGH;
+EFFECTIVE_LEVEL := Median;
+
+(* ========================================================================== *)
+(* Sensor Disagreement Detection                                              *)
+(* ========================================================================== *)
+
+(* Calculate absolute differences between sensors *)
+IF LEVEL_1 > LEVEL_2 THEN
+    Diff12 := LEVEL_1 - LEVEL_2;
+ELSE
+    Diff12 := LEVEL_2 - LEVEL_1;
+END_IF;
+
+IF LEVEL_1 > LEVEL_3 THEN
+    Diff13 := LEVEL_1 - LEVEL_3;
+ELSE
+    Diff13 := LEVEL_3 - LEVEL_1;
+END_IF;
+
+IF LEVEL_2 > LEVEL_3 THEN
+    Diff23 := LEVEL_2 - LEVEL_3;
+ELSE
+    Diff23 := LEVEL_3 - LEVEL_2;
+END_IF;
+
+(* Find maximum difference *)
+MaxDiff := Diff12;
+IF Diff13 > MaxDiff THEN
+    MaxDiff := Diff13;
+END_IF;
+IF Diff23 > MaxDiff THEN
+    MaxDiff := Diff23;
+END_IF;
+
+(* Set alarm if any sensor differs by more than tolerance *)
+ALM_SENSOR_DISAGREE := MaxDiff > Tolerance;
+
+(* ========================================================================== *)
+(* Level Alarms                                                               *)
+(* ========================================================================== *)
+
+ALM_HIGH_LEVEL := EFFECTIVE_LEVEL >= SP_HIGH_HIGH;
 ALM_OVERFLOW := EFFECTIVE_LEVEL >= SP_CRITICAL;
 
-(* ============================================================================
-   FAULT DETECTION AND HANDLING
-   ============================================================================ *)
+(* ========================================================================== *)
+(* Motor Overload Detection                                                   *)
+(* ========================================================================== *)
 
-(* Fault reset on rising edge *)
-IF FAULT_RESET AND NOT Prev_Fault_Reset THEN
-    (* Clear all latched faults *)
-    Pump1_Faulted := FALSE;
-    Pump2_Faulted := FALSE;
-    ALM_MOTOR_OL_1 := FALSE;
-    ALM_MOTOR_OL_2 := FALSE;
-    ALM_SEAL_LEAK_1 := FALSE;
-    ALM_SEAL_LEAK_2 := FALSE;
-    ALM_OVERTEMP_1 := FALSE;
-    ALM_OVERTEMP_2 := FALSE;
-    ALM_DRY_RUN_1 := FALSE;
-    ALM_DRY_RUN_2 := FALSE;
-END_IF;
-Prev_Fault_Reset := FAULT_RESET;
-
-(* Motor overload detection - MOTOR_OL = FALSE means overload tripped *)
+(* Motor overload contact is normally closed - FALSE means tripped *)
 IF NOT MOTOR_OL_1 THEN
-    Pump1_Faulted := TRUE;
     ALM_MOTOR_OL_1 := TRUE;
+    Pump1Faulted := TRUE;
 END_IF;
 
 IF NOT MOTOR_OL_2 THEN
-    Pump2_Faulted := TRUE;
     ALM_MOTOR_OL_2 := TRUE;
+    Pump2Faulted := TRUE;
 END_IF;
 
-(* Seal leak detection - SEAL_OK = FALSE means seal leak *)
-IF NOT SEAL_OK_1 THEN
-    Pump1_Faulted := TRUE;
-    ALM_SEAL_LEAK_1 := TRUE;
-END_IF;
+(* ========================================================================== *)
+(* Temperature Protection                                                     *)
+(* ========================================================================== *)
 
-IF NOT SEAL_OK_2 THEN
-    Pump2_Faulted := TRUE;
-    ALM_SEAL_LEAK_2 := TRUE;
-END_IF;
-
-(* Overtemperature detection *)
-(* Warning at TEMP_HIGH threshold - alarm only, pump continues *)
-ALM_TEMP_WARN_1 := TEMP_1 > TEMP_HIGH;
-ALM_TEMP_WARN_2 := TEMP_2 > TEMP_HIGH;
-
-(* Critical at TEMP_CRITICAL threshold - fault and stop pump *)
 IF TEMP_1 > TEMP_CRITICAL THEN
-    Pump1_Faulted := TRUE;
     ALM_OVERTEMP_1 := TRUE;
+    Pump1Faulted := TRUE;
 END_IF;
 
 IF TEMP_2 > TEMP_CRITICAL THEN
-    Pump2_Faulted := TRUE;
     ALM_OVERTEMP_2 := TRUE;
+    Pump2Faulted := TRUE;
 END_IF;
 
-(* ============================================================================
-   DRY RUN PROTECTION
-   Timer runs when pump is running but no flow detected
-   Uses Pump1_Running/Pump2_Running which track previous cycle's output
-   ============================================================================ *)
+(* ========================================================================== *)
+(* Fault Reset Logic                                                          *)
+(* ========================================================================== *)
 
-(* Pump 1 dry run detection - start timer when running without flow *)
-DryRunTimer1(IN := Pump1_Running AND NOT FLOW_1 AND NOT DryRunTimer1.Q, PT := DRY_RUN_DELAY);
-IF DryRunTimer1.Q THEN
-    Pump1_Faulted := TRUE;
-    ALM_DRY_RUN_1 := TRUE;
-END_IF;
-
-(* Pump 2 dry run detection *)
-DryRunTimer2(IN := Pump2_Running AND NOT FLOW_2 AND NOT DryRunTimer2.Q, PT := DRY_RUN_DELAY);
-IF DryRunTimer2.Q THEN
-    Pump2_Faulted := TRUE;
-    ALM_DRY_RUN_2 := TRUE;
-END_IF;
-
-(* Both pumps failed alarm *)
-ALM_BOTH_PUMPS_FAILED := Pump1_Faulted AND Pump2_Faulted;
-
-(* ============================================================================
-   ANTI-CYCLE PROTECTION
-   Prevents rapid pump cycling that damages motors.
-   Timer starts when pump stops, pump cannot restart until MIN_OFF_TIME elapsed.
-   On first scan (cold start), pumps are allowed to start immediately.
-   ============================================================================ *)
-
-(* Pump 1 anti-cycle timer *)
-(* Timer runs when pump is NOT running and hasn't completed yet *)
-(* Timer stays complete (Q=TRUE) until pump starts again *)
-AntiCycleTimer1(IN := NOT Pump1_Running, PT := MIN_OFF_TIME);
-
-(* Pump can start if:
-   - Cold start: pump has never run before (Prev_Pump1_Running = FALSE)
-   - Timer completed (Q = TRUE, meaning 30s has elapsed)
-   - Already running *)
-Pump1_CanStart := Pump1_Running OR AntiCycleTimer1.Q OR NOT Prev_Pump1_Running;
-
-(* Pump 2 anti-cycle timer *)
-AntiCycleTimer2(IN := NOT Pump2_Running, PT := MIN_OFF_TIME);
-Pump2_CanStart := Pump2_Running OR AntiCycleTimer2.Q OR NOT Prev_Pump2_Running;
-
-(* Update previous running states for next scan cycle - these persist across scans *)
-(* Once set TRUE, these stay TRUE (latch) so we know pump has run before *)
-IF Pump1_Running THEN
-    Prev_Pump1_Running := TRUE;
-END_IF;
-IF Pump2_Running THEN
-    Prev_Pump2_Running := TRUE;
-END_IF;
-
-(* ============================================================================
-   PUMP AVAILABILITY
-   A pump is available for AUTO control if HOA is in AUTO, not faulted,
-   and anti-cycle timer has elapsed
-   ============================================================================ *)
-
-Pump1_Available := (HOA_1 = 2) AND NOT Pump1_Faulted AND Pump1_CanStart;
-Pump2_Available := (HOA_2 = 2) AND NOT Pump2_Faulted AND Pump2_CanStart;
-
-(* ============================================================================
-   LEAD/LAG ASSIGNMENT WITH FAILOVER
-   If lead pump faults and lag pump is OK, swap lead/lag
-   ============================================================================ *)
-
-(* Lead pump failover logic *)
-IF LeadPumpNum = 1 THEN
-    (* Pump 1 is lead - check if it faulted and pump 2 is OK *)
-    IF Pump1_Faulted AND NOT Pump2_Faulted THEN
-        LeadPumpNum := 2;  (* Swap to pump 2 as lead *)
+(* Reset faults only if fault conditions have cleared *)
+IF FAULT_RESET THEN
+    (* Pump 1 fault reset - check all conditions *)
+    IF MOTOR_OL_1 AND TEMP_1 <= TEMP_CRITICAL AND NOT ALM_DRY_RUN_1 THEN
+        Pump1Faulted := FALSE;
+        ALM_MOTOR_OL_1 := FALSE;
+        ALM_OVERTEMP_1 := FALSE;
     END_IF;
-ELSE
-    (* Pump 2 is lead - check if it faulted and pump 1 is OK *)
-    IF Pump2_Faulted AND NOT Pump1_Faulted THEN
-        LeadPumpNum := 1;  (* Swap to pump 1 as lead *)
+
+    (* Pump 2 fault reset *)
+    IF MOTOR_OL_2 AND TEMP_2 <= TEMP_CRITICAL AND NOT ALM_DRY_RUN_2 THEN
+        Pump2Faulted := FALSE;
+        ALM_MOTOR_OL_2 := FALSE;
+        ALM_OVERTEMP_2 := FALSE;
     END_IF;
 END_IF;
 
-LEAD_PUMP := LeadPumpNum;
+(* ========================================================================== *)
+(* HOA Mode Decoding                                                          *)
+(* ========================================================================== *)
 
-(* ============================================================================
-   MANUAL ALTERNATION (FORCE_ALTERNATE)
-   Rising edge on FORCE_ALTERNATE triggers immediate lead/lag swap
-   ============================================================================ *)
+Pump1InAuto := HOA_1 = 2;
+Pump2InAuto := HOA_2 = 2;
 
-IF FORCE_ALTERNATE AND NOT Prev_Force_Alternate THEN
-    (* Rising edge detected - swap lead/lag *)
-    IF LeadPumpNum = 1 THEN
-        LeadPumpNum := 2;
-    ELSE
-        LeadPumpNum := 1;
-    END_IF;
-    LEAD_PUMP := LeadPumpNum;
-END_IF;
-Prev_Force_Alternate := FORCE_ALTERNATE;
+(* ========================================================================== *)
+(* Pump Control Logic                                                         *)
+(* ========================================================================== *)
 
-(* ============================================================================
-   TIMER-BASED ALTERNATION
-   Automatically swap lead/lag at AlternationInterval (30s demo / 24h production)
-   Only alternate when both pumps are healthy
-   ============================================================================ *)
-
-(* Timer runs when both pumps are not faulted *)
-AlternationTimer(IN := NOT Pump1_Faulted AND NOT Pump2_Faulted AND NOT AlternationTimer.Q, PT := AlternationInterval);
-
-IF AlternationTimer.Q THEN
-    (* Timer elapsed - swap lead/lag *)
-    IF LeadPumpNum = 1 THEN
-        LeadPumpNum := 2;
-    ELSE
-        LeadPumpNum := 1;
-    END_IF;
-    LEAD_PUMP := LeadPumpNum;
-    (* Timer will reset on next cycle when Q goes FALSE due to AND NOT AlternationTimer.Q *)
-END_IF;
-
-(* ============================================================================
-   PUMP CONTROL STATE MACHINE
-   States: 0=IDLE, 1=PUMPING_1, 2=PUMPING_2, 3=FAULT, 4=E_STOP
-   ============================================================================ *)
-
-(* E-STOP overrides everything - highest priority *)
+(* E-STOP overrides everything *)
 IF E_STOP THEN
     PUMP_1_RUN := FALSE;
     PUMP_2_RUN := FALSE;
-    SYSTEM_STATE := 4;  (* E_STOP state *)
 ELSE
-    (* State machine transitions - only for pumps in AUTO mode *)
-    IF SYSTEM_STATE = 0 THEN
-        (* IDLE state *)
-        IF EFFECTIVE_LEVEL >= SP_HIGH THEN
-            SYSTEM_STATE := 1;  (* Start lead pump *)
-        END_IF;
-
-    ELSIF SYSTEM_STATE = 1 THEN
-        (* PUMPING_1 state - Lead pump running *)
-        IF EFFECTIVE_LEVEL <= SP_LOW THEN
-            SYSTEM_STATE := 0;  (* Stop lead pump, return to IDLE *)
-        ELSIF EFFECTIVE_LEVEL >= SP_HIGH_HIGH THEN
-            SYSTEM_STATE := 2;  (* Start lag pump too *)
-        END_IF;
-
-    ELSIF SYSTEM_STATE = 2 THEN
-        (* PUMPING_2 state - Both pumps running *)
-        (* Lag pump stops at LOW + 5 (hysteresis ensures no oscillation) *)
-        IF EFFECTIVE_LEVEL <= SP_LOW + 5 THEN
-            SYSTEM_STATE := 1;  (* Stop lag pump, keep lead running *)
-        END_IF;
-
-    ELSIF SYSTEM_STATE = 3 THEN
-        (* FAULT state - handled separately *)
-        (* For now, maintain current state until fault handling is implemented *)
-
-    ELSIF SYSTEM_STATE = 4 THEN
-        (* E_STOP state - should not reach here as E_STOP is handled above *)
-
-    ELSE
-        (* Invalid state - reset to IDLE *)
-        SYSTEM_STATE := 0;
-    END_IF;
-
-    (* Calculate AUTO mode pump commands based on state and lead/lag *)
-    IF SYSTEM_STATE = 1 THEN
-        (* Lead pump only *)
-        IF LeadPumpNum = 1 THEN
-            Pump1_AutoCmd := TRUE;
-            Pump2_AutoCmd := FALSE;
+    (* Lead pump control in AUTO *)
+    IF LEAD_PUMP = 1 THEN
+        (* Pump 1 is lead *)
+        IF Pump1InAuto AND NOT Pump1Faulted THEN
+            IF EFFECTIVE_LEVEL >= SP_HIGH THEN
+                LeadPumpCmd := TRUE;
+            ELSIF EFFECTIVE_LEVEL < SP_LOW THEN
+                LeadPumpCmd := FALSE;
+            END_IF;
         ELSE
-            Pump1_AutoCmd := FALSE;
-            Pump2_AutoCmd := TRUE;
+            LeadPumpCmd := FALSE;
         END_IF;
 
-    ELSIF SYSTEM_STATE = 2 THEN
-        (* Both pumps running *)
-        Pump1_AutoCmd := TRUE;
-        Pump2_AutoCmd := TRUE;
+        (* Lag pump (Pump 2) assists on HIGH_HIGH *)
+        IF Pump2InAuto AND NOT Pump2Faulted THEN
+            IF EFFECTIVE_LEVEL >= SP_HIGH_HIGH THEN
+                LagPumpCmd := TRUE;
+            ELSIF EFFECTIVE_LEVEL < SP_LOW + 5 THEN
+                LagPumpCmd := FALSE;
+            END_IF;
+        ELSE
+            LagPumpCmd := FALSE;
+        END_IF;
 
+        PUMP_1_RUN := LeadPumpCmd;
+        PUMP_2_RUN := LagPumpCmd;
     ELSE
-        (* IDLE, FAULT, or other states - pumps off *)
-        Pump1_AutoCmd := FALSE;
-        Pump2_AutoCmd := FALSE;
+        (* Pump 2 is lead *)
+        IF Pump2InAuto AND NOT Pump2Faulted THEN
+            IF EFFECTIVE_LEVEL >= SP_HIGH THEN
+                LeadPumpCmd := TRUE;
+            ELSIF EFFECTIVE_LEVEL < SP_LOW THEN
+                LeadPumpCmd := FALSE;
+            END_IF;
+        ELSE
+            LeadPumpCmd := FALSE;
+        END_IF;
+
+        IF Pump1InAuto AND NOT Pump1Faulted THEN
+            IF EFFECTIVE_LEVEL >= SP_HIGH_HIGH THEN
+                LagPumpCmd := TRUE;
+            ELSIF EFFECTIVE_LEVEL < SP_LOW + 5 THEN
+                LagPumpCmd := FALSE;
+            END_IF;
+        ELSE
+            LagPumpCmd := FALSE;
+        END_IF;
+
+        PUMP_2_RUN := LeadPumpCmd;
+        PUMP_1_RUN := LagPumpCmd;
     END_IF;
 
-    (* ========================================================================
-       HOA MODE PROCESSING
-       Apply HOA switch to determine final pump output
-       HOA: 0=OFF, 1=HAND, 2=AUTO
-       ======================================================================== *)
+    (* HAND mode override - runs pump regardless of level *)
+    IF HOA_1 = 1 AND NOT Pump1Faulted THEN
+        PUMP_1_RUN := TRUE;
+    END_IF;
+    IF HOA_2 = 1 AND NOT Pump2Faulted THEN
+        PUMP_2_RUN := TRUE;
+    END_IF;
 
-    (* Pump 1 HOA processing *)
+    (* OFF mode override *)
     IF HOA_1 = 0 THEN
-        (* OFF mode - pump disabled *)
         PUMP_1_RUN := FALSE;
-    ELSIF HOA_1 = 1 THEN
-        (* HAND mode - operator direct control *)
-        (* Safety protections still apply - cannot be bypassed *)
-        IF Pump1_Faulted THEN
-            PUMP_1_RUN := FALSE;  (* Safety override - fault blocks HAND *)
-        ELSE
-            PUMP_1_RUN := HAND_RUN_1;
-        END_IF;
-    ELSE
-        (* AUTO mode (HOA_1 = 2) - use state machine command *)
-        PUMP_1_RUN := Pump1_AutoCmd AND Pump1_Available;
+    END_IF;
+    IF HOA_2 = 0 THEN
+        PUMP_2_RUN := FALSE;
     END_IF;
 
-    (* Pump 2 HOA processing *)
-    IF HOA_2 = 0 THEN
-        (* OFF mode - pump disabled *)
+    (* Faulted pumps cannot run *)
+    IF Pump1Faulted THEN
+        PUMP_1_RUN := FALSE;
+    END_IF;
+    IF Pump2Faulted THEN
         PUMP_2_RUN := FALSE;
-    ELSIF HOA_2 = 1 THEN
-        (* HAND mode - operator direct control *)
-        (* Safety protections still apply - cannot be bypassed *)
-        IF Pump2_Faulted THEN
-            PUMP_2_RUN := FALSE;  (* Safety override - fault blocks HAND *)
-        ELSE
-            PUMP_2_RUN := HAND_RUN_2;
-        END_IF;
-    ELSE
-        (* AUTO mode (HOA_2 = 2) - use state machine command *)
-        PUMP_2_RUN := Pump2_AutoCmd AND Pump2_Available;
     END_IF;
 END_IF;
 
-(* ============================================================================
-   TRACK PUMP RUNNING STATE
-   Store current output for use in next scan cycle (dry run detection)
-   ============================================================================ *)
+(* ========================================================================== *)
+(* Dry Run Protection                                                         *)
+(* ========================================================================== *)
 
-Pump1_Running := PUMP_1_RUN;
-Pump2_Running := PUMP_2_RUN;
+(* Pump 1 dry run detection *)
+DryRunTimer1(IN := PUMP_1_RUN AND NOT FLOW_1 AND NOT DryRunTimer1.Q, PT := DryRunDelay);
+IF DryRunTimer1.Q THEN
+    ALM_DRY_RUN_1 := TRUE;
+    Pump1Faulted := TRUE;
+    PUMP_1_RUN := FALSE;
+END_IF;
+
+(* Pump 2 dry run detection *)
+DryRunTimer2(IN := PUMP_2_RUN AND NOT FLOW_2 AND NOT DryRunTimer2.Q, PT := DryRunDelay);
+IF DryRunTimer2.Q THEN
+    ALM_DRY_RUN_2 := TRUE;
+    Pump2Faulted := TRUE;
+    PUMP_2_RUN := FALSE;
+END_IF;
 
 END_PROGRAM

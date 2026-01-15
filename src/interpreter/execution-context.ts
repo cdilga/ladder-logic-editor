@@ -9,6 +9,7 @@ import type { STAST } from '../transformer/ast/st-ast-types';
 import type { ExecutionContext } from './statement-executor';
 import type { FunctionBlockStore } from './function-block-handler';
 import { handleFunctionBlockCall, createFunctionBlockContext } from './function-block-handler';
+import { buildTypeRegistry, type TypeRegistry } from './variable-initializer';
 
 // ============================================================================
 // Types
@@ -40,10 +41,10 @@ export interface SimulationStoreInterface extends FunctionBlockStore {
   // Function block storage
   counters: Record<string, { CU: boolean; CD: boolean; R: boolean; LD: boolean; PV: number; QU: boolean; QD: boolean; CV: number }>;
 
-  // Timer operations
-  initTimer: (name: string, pt: number) => void;
+  // Timer operations (timerType is optional for backwards compatibility)
+  initTimer: (name: string, pt: number, timerType?: 'TON' | 'TOF' | 'TP') => void;
   setTimerInput: (name: string, input: boolean) => void;
-  getTimer: (name: string) => { IN: boolean; PT: number; Q: boolean; ET: number; running: boolean } | undefined;
+  getTimer: (name: string) => { IN: boolean; PT: number; Q: boolean; ET: number; running: boolean; timerType?: 'TON' | 'TOF' | 'TP' } | undefined;
   updateTimer: (name: string, deltaMs: number) => void;
 
   // Counter operations
@@ -53,9 +54,23 @@ export interface SimulationStoreInterface extends FunctionBlockStore {
   resetCounter: (name: string) => void;
   getCounter: (name: string) => { CU: boolean; CD: boolean; R: boolean; LD: boolean; PV: number; QU: boolean; QD: boolean; CV: number } | undefined;
 
+  // Edge detector operations (R_TRIG, F_TRIG)
+  edgeDetectors: Record<string, { CLK: boolean; Q: boolean; M: boolean }>;
+  initEdgeDetector: (name: string) => void;
+  getEdgeDetector: (name: string) => { CLK: boolean; Q: boolean; M: boolean } | undefined;
+  updateRTrig: (name: string, clk: boolean) => void;
+  updateFTrig: (name: string, clk: boolean) => void;
+
+  // Bistable operations (SR, RS)
+  bistables: Record<string, { Q1: boolean }>;
+  initBistable: (name: string) => void;
+  getBistable: (name: string) => { Q1: boolean } | undefined;
+  updateSR: (name: string, s1: boolean, r: boolean) => void;
+  updateRS: (name: string, s: boolean, r1: boolean) => void;
+
   // Simulation state
   scanTime: number;
-  timers: Record<string, { IN: boolean; PT: number; Q: boolean; ET: number; running: boolean }>;
+  timers: Record<string, { IN: boolean; PT: number; Q: boolean; ET: number; running: boolean; timerType?: 'TON' | 'TOF' | 'TP' }>;
 
   // Lifecycle
   clearAll: () => void;
@@ -69,6 +84,8 @@ export interface RuntimeState {
   previousInputs: Record<string, boolean>;
   /** The AST being executed */
   ast: STAST;
+  /** Type registry mapping variable names to declared types */
+  typeRegistry: TypeRegistry;
 }
 
 // ============================================================================
@@ -86,18 +103,23 @@ export function createExecutionContext(
   store: SimulationStoreInterface,
   runtimeState: RuntimeState
 ): ExecutionContext {
-  const fbContext = createFunctionBlockContext(store, runtimeState.previousInputs);
+  const getVariableType = (name: string) => runtimeState.typeRegistry[name];
+  const fbContext = createFunctionBlockContext(store, runtimeState.previousInputs, getVariableType);
 
   return {
     // Variable setters
     setBool: store.setBool,
     setInt: store.setInt,
     setReal: store.setReal,
+    setTime: store.setTime,
 
     // Variable getters
     getBool: store.getBool,
     getInt: store.getInt,
     getReal: store.getReal,
+
+    // Type registry lookup
+    getVariableType: (name: string) => runtimeState.typeRegistry[name],
 
     // Expression evaluation context
     getVariable: (name: string) => {
@@ -139,6 +161,28 @@ export function createExecutionContext(
       }
     },
 
+    getEdgeDetectorField: (name: string, field: string) => {
+      const ed = store.getEdgeDetector(name);
+      if (!ed) return field === 'Q' ? false : 0;
+
+      switch (field.toUpperCase()) {
+        case 'Q': return ed.Q;
+        case 'CLK': return ed.CLK;
+        case 'M': return ed.M;
+        default: return false;
+      }
+    },
+
+    getBistableField: (name: string, field: string) => {
+      const bs = store.getBistable(name);
+      if (!bs) return false;
+
+      switch (field.toUpperCase()) {
+        case 'Q1': return bs.Q1;
+        default: return false;
+      }
+    },
+
     // Function block handling
     handleFunctionBlockCall: (call, _ctx) => {
       handleFunctionBlockCall(call, fbContext);
@@ -156,5 +200,6 @@ export function createRuntimeState(ast: STAST): RuntimeState {
   return {
     previousInputs: {},
     ast,
+    typeRegistry: buildTypeRegistry(ast),
   };
 }

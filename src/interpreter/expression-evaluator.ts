@@ -35,6 +35,10 @@ export interface EvaluationContext {
   getTimerField: (timerName: string, field: string) => Value;
   /** Get a counter field (CV, QU, QD, CU, CD, PV) */
   getCounterField: (counterName: string, field: string) => Value;
+  /** Get an edge detector field (Q, CLK, M) - optional for backwards compatibility */
+  getEdgeDetectorField?: (name: string, field: string) => Value;
+  /** Get a bistable field (Q1) - optional for backwards compatibility */
+  getBistableField?: (name: string, field: string) => Value;
 }
 
 // ============================================================================
@@ -43,6 +47,8 @@ export interface EvaluationContext {
 
 const TIMER_FIELDS = new Set(['Q', 'ET', 'IN', 'PT']);
 const COUNTER_FIELDS = new Set(['CV', 'QU', 'QD', 'CU', 'CD', 'PV', 'R', 'LD']);
+const EDGE_DETECTOR_FIELDS = new Set(['Q', 'CLK', 'M']);
+const BISTABLE_FIELDS = new Set(['Q1']);
 
 // ============================================================================
 // Main Evaluation Function
@@ -112,6 +118,16 @@ function evaluateVariable(variable: STVariable, context: EvaluationContext): Val
     // Check if it's a counter field
     if (COUNTER_FIELDS.has(fieldName)) {
       return context.getCounterField(baseName, fieldName);
+    }
+
+    // Check if it's an edge detector field (R_TRIG, F_TRIG)
+    if (EDGE_DETECTOR_FIELDS.has(fieldName) && context.getEdgeDetectorField) {
+      return context.getEdgeDetectorField(baseName, fieldName);
+    }
+
+    // Check if it's a bistable field (SR, RS)
+    if (BISTABLE_FIELDS.has(fieldName) && context.getBistableField) {
+      return context.getBistableField(baseName, fieldName);
     }
 
     // Unknown field - try as a regular variable with dot notation
