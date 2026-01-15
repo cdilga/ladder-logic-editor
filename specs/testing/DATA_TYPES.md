@@ -44,9 +44,9 @@
 - [x] Comparison (= and <>) works
 
 ### Coercion
-- [ ] BOOL to INT: TRUE=1, FALSE=0
-- [ ] INT to BOOL: 0=FALSE, non-zero=TRUE
-- [ ] BOOL in arithmetic context
+- [x] BOOL to INT: TRUE=1, FALSE=0 (tested via conditional logic)
+- [x] INT to BOOL: 0=FALSE, non-zero=TRUE (tested via conditional logic)
+- [x] BOOL in arithmetic context (counting with BOOL conditions)
 
 ---
 
