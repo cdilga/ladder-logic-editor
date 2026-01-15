@@ -90,7 +90,7 @@
   -webkit-tap-highlight-color: transparent;
 
   /* Ensure minimum touch target */
-  min-height: 40px;
+  min-height: 44px;
 }
 
 /* Technical grid background on active */
@@ -121,7 +121,7 @@
 
 /* Icon styling */
 .tab-icon {
-  font-size: 17px;
+  font-size: 19px;
   line-height: 1;
   transition: all var(--mobile-transition-fast);
   font-style: normal;
