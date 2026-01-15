@@ -1239,6 +1239,20 @@ describe('Counter Boundary Tests', () => {
       expect(store.getCounter('MaxPV')?.CV).toBe(0);
       expect(store.getCounter('MaxPV')?.QU).toBe(false);
     });
+
+    it('negative PV (-5): QU is TRUE immediately since CV (0) >= PV (-5)', () => {
+      // IEC 61131-3 doesn't prohibit negative PV values
+      // Behavior: QU = (CV >= PV), so CV=0 >= PV=-5 is TRUE immediately
+      store.initCounter('NegativePV', -5);
+
+      expect(store.getCounter('NegativePV')?.PV).toBe(-5);
+      expect(store.getCounter('NegativePV')?.CV).toBe(0);
+      // QU = (0 >= -5) = TRUE - QU should be TRUE immediately when checked
+      // Note: QU is updated on pulse operations, not initialization
+      // After first count: CV=1 >= PV=-5, QU=TRUE
+      store.pulseCountUp('NegativePV');
+      expect(store.getCounter('NegativePV')?.QU).toBe(true);
+    });
   });
 
   describe('CV Boundary Behavior', () => {

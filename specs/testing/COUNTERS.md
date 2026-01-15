@@ -1,7 +1,7 @@
 # Counter Compliance Tests
 
 **IEC 61131-3 Section:** 2.5.2
-**Status:** 🟢 Complete (58 tests, 95% coverage)
+**Status:** 🟢 Complete (59 tests, 100% coverage)
 **Test File:** `src/interpreter/compliance/counter-compliance.test.ts`
 **Last Updated:** 2026-01-16
 
@@ -44,7 +44,7 @@ CV:  0   1   2   3   0   1  (reset to 0)
 #### Edge Cases
 - [x] PV = 0 means first count triggers QU immediately
 - [x] PV = 1 means first count triggers QU
-- [ ] Negative PV (if allowed) behavior - not tested (low priority)
+- [x] Negative PV (-5): QU is TRUE immediately since CV (0) >= PV (-5)
 - [x] CV increments beyond PV
 
 ---
@@ -165,10 +165,10 @@ fc.assert(fc.property(
 | CTD Basic | 9 | ✅ Complete |
 | CTUD Basic | 11 | ✅ Complete |
 | Edge Detection | 5 | ✅ Complete |
-| Boundary/PV | 8 | ✅ Complete |
+| Boundary/PV | 9 | ✅ Complete |
 | Property-Based | 9 | ✅ Complete |
 | Integration | 2 | ✅ Complete |
-| **Total** | **58** | ✅ 95% |
+| **Total** | **59** | ✅ 100% |
 
 ---
 
