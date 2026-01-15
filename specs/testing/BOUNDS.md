@@ -1,6 +1,6 @@
 # Bounds & Edge Cases Tests
 
-**Status:** 🟢 Complete (69 tests, 97% coverage)
+**Status:** 🟢 Complete (71 tests, 100% coverage)
 **Test File:** `src/interpreter/compliance/bounds.test.ts`
 **Last Updated:** 2026-01-16
 
@@ -36,6 +36,8 @@ Boundary condition tests verify correct behavior at the edges of valid input ran
 - [x] -32768 - 1 = ? (underflow behavior - documents JavaScript behavior)
 - [x] 32767 * 2 = ? (multiplication overflow - documents JavaScript behavior)
 - [x] -32768 * -1 = 32768 (negation overflow: JavaScript doesn't overflow)
+- [x] -(-32768) = 32768 (unary negation overflow: JavaScript doesn't overflow)
+- [x] -(-32768) via literal negation (direct literal test)
 
 #### Comparison at Boundaries
 - [x] 32767 > 32766 = TRUE

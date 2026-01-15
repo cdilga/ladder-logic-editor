@@ -358,6 +358,39 @@ END_PROGRAM
       // In JavaScript, we get 32768 since there's no 16-bit overflow
       expect(store.getInt('x')).toBe(32768);
     });
+
+    it('-(-32768) unary negation overflow (JavaScript does not overflow)', () => {
+      // IEC 61131-3 behavior for -(-32768) in 16-bit is undefined/implementation-specific
+      // In true 16-bit two's complement, -(-32768) = 32768 which doesn't fit
+      // JavaScript doesn't have 16-bit overflow, so we get +32768
+      const code = `
+PROGRAM Test
+VAR
+  x : INT;
+  y : INT := -32768;
+END_VAR
+x := -y;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      // JavaScript produces 32768 (no 16-bit overflow)
+      expect(store.getInt('x')).toBe(32768);
+    });
+
+    it('-(-32768) using literal negation', () => {
+      // Test with direct literal negation in expression
+      const code = `
+PROGRAM Test
+VAR
+  x : INT;
+END_VAR
+x := -(-32768);
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      // JavaScript produces 32768 (no 16-bit overflow)
+      expect(store.getInt('x')).toBe(32768);
+    });
   });
 });
 

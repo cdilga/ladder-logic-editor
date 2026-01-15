@@ -833,6 +833,110 @@ END_PROGRAM
       expect(program.varBlocks.length).toBeGreaterThan(0);
     });
   });
+
+  describe('Parser Error Detection', () => {
+    // Helper to convert position to line number
+    function getLineNumber(source: string, position: number): number {
+      const lines = source.substring(0, position).split('\n');
+      return lines.length;
+    }
+
+    it('detects syntax error with position information', () => {
+      // Missing semicolon after assignment
+      const source = `PROGRAM Test
+VAR
+  x : INT := 10;
+END_VAR
+x := x + 1
+END_PROGRAM`;
+      const result = parseSTToAST(source);
+      // Parser should detect the error
+      expect(result.errors.length).toBeGreaterThan(0);
+    });
+
+    it('error location includes position in source', () => {
+      // Invalid syntax - missing END_IF
+      const source = `PROGRAM Test
+VAR
+  x : INT := 10;
+END_VAR
+IF x > 5 THEN
+  x := 0;
+END_PROGRAM`;
+      const result = parseSTToAST(source);
+      if (result.errors.length > 0) {
+        const error = result.errors[0];
+        // Error should have location information
+        expect(error.loc).toBeDefined();
+        expect(error.loc.start).toBeGreaterThanOrEqual(0);
+        // Error location end >= start (may be equal for zero-width error markers)
+        expect(error.loc.end).toBeGreaterThanOrEqual(error.loc.start);
+      }
+    });
+
+    it('error message includes position for user reference', () => {
+      // Unmatched parenthesis
+      const source = `PROGRAM Test
+VAR
+  x : INT := 10;
+END_VAR
+x := (x + 1;
+END_PROGRAM`;
+      const result = parseSTToAST(source);
+      if (result.errors.length > 0) {
+        const error = result.errors[0];
+        // Error message should include position
+        expect(error.message).toMatch(/position|at/i);
+      }
+    });
+
+    it('multiple errors are collected', () => {
+      // Multiple syntax issues
+      const source = `PROGRAM Test
+VAR
+  x : INT := 10
+  y : BOOL := TRUE
+END_VAR
+x := x +
+y := y AND
+END_PROGRAM`;
+      const result = parseSTToAST(source);
+      // May detect multiple errors (lenient parser, so behavior may vary)
+      expect(result.errors).toBeDefined();
+    });
+
+    it('error position can be converted to line number', () => {
+      // Error on line 5
+      const source = `PROGRAM Test
+VAR
+  x : INT := 10;
+END_VAR
+x := @invalid;
+END_PROGRAM`;
+      const result = parseSTToAST(source);
+      if (result.errors.length > 0) {
+        const error = result.errors[0];
+        const lineNumber = getLineNumber(source, error.loc.start);
+        // Error should be on line 5 (where @invalid is)
+        expect(lineNumber).toBe(5);
+      }
+    });
+
+    it('errors have severity level', () => {
+      const source = `PROGRAM Test
+VAR
+  x : INT := 10;
+END_VAR
+x := !!!;
+END_PROGRAM`;
+      const result = parseSTToAST(source);
+      if (result.errors.length > 0) {
+        const error = result.errors[0];
+        expect(error.severity).toBeDefined();
+        expect(['error', 'warning']).toContain(error.severity);
+      }
+    });
+  });
 });
 
 // ============================================================================

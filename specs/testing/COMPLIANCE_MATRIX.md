@@ -230,15 +230,15 @@ This document maps every relevant IEC 61131-3 section to our implementation, ser
 | [VARIABLES](./VARIABLES.md) | 2.4 | 52 | 52 | 52 | 100% |
 | [OPERATORS](./OPERATORS.md) | 3.3 | 73 | 73 | 73 | 100% |
 | [CONTROL_FLOW](./CONTROL_FLOW.md) | 3.4-3.5 | 116 | 116 | 116 | 100% |
-| [ERROR_HANDLING](./ERROR_HANDLING.md) | - | 49 | 49 | 49 | 100% |
+| [ERROR_HANDLING](./ERROR_HANDLING.md) | - | 55 | 55 | 55 | 100% |
 | [PROPERTY_TESTS](./PROPERTY_TESTS.md) | - | 86 | 86 | 86 | 100% |
-| [BOUNDS](./BOUNDS.md) | - | 69 | 69 | 69 | 100% |
+| [BOUNDS](./BOUNDS.md) | - | 71 | 71 | 71 | 100% |
 | [INTEGRATION](./INTEGRATION.md) | - | 105 | 105 | 105 | 100% |
 | Additional Edge Cases | - | 37 | 37 | 37 | 100% |
 | Timer/Counter Interaction | - | 13 | 13 | 13 | 100% |
-| **TOTAL** | | **~876** | **~876** | **~876** | **100%** |
+| **TOTAL** | | **~884** | **~884** | **~884** | **100%** |
 
-**Target:** 600+ tests, 95%+ passing ✅ ACHIEVED (1117 total tests, 100% passing)
+**Target:** 600+ tests, 95%+ passing ✅ ACHIEVED (1125 total tests, 100% passing)
 
 ---
 

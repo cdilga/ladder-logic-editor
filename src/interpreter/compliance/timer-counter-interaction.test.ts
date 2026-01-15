@@ -236,8 +236,6 @@ END_PROGRAM
       const timer = store.getTimer('Timer1');
       expect(timer?.Q).toBe(true);
 
-      const cv1 = store.getCounter('Counter1')?.CV;
-
       // Run many more scans with Q staying TRUE
       const ast = parseSTToAST(code);
       const state = createRuntimeState(ast);
