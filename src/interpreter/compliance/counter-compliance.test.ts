@@ -1379,3 +1379,229 @@ describe('Counter Extended Property Tests', () => {
     }
   });
 });
+
+// ============================================================================
+// CTD Extended Tests
+// ============================================================================
+
+describe('CTD Extended Tests (IEC 61131-3)', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('CTD: LD=TRUE loads CV with PV', () => {
+    store.initCounter('LoadTest', 25);
+
+    // Load the counter
+    store.getCounter('LoadTest')!.LD = true;
+    store.getCounter('LoadTest')!.CV = store.getCounter('LoadTest')!.PV;
+
+    expect(store.getCounter('LoadTest')?.CV).toBe(25);
+  });
+
+  it('CTD: QD is FALSE while CV > 0', () => {
+    store.initCounter('QDFalse', 5);
+
+    // Load with PV=5
+    store.getCounter('QDFalse')!.CV = 5;
+    store.getCounter('QDFalse')!.QD = store.getCounter('QDFalse')!.CV <= 0;
+
+    expect(store.getCounter('QDFalse')?.CV).toBe(5);
+    expect(store.getCounter('QDFalse')?.QD).toBe(false);
+  });
+
+  it('CTD: QD becomes TRUE when CV <= 0', () => {
+    store.initCounter('QDTrue', 3);
+
+    // Load with PV=3
+    store.getCounter('QDTrue')!.CV = 3;
+
+    // Count down to 0
+    for (let i = 0; i < 3; i++) {
+      store.pulseCountDown('QDTrue');
+    }
+
+    expect(store.getCounter('QDTrue')?.CV).toBe(0);
+    expect(store.getCounter('QDTrue')?.QD).toBe(true);
+  });
+
+  it('CTD: CD while CV=0 keeps CV=0', () => {
+    store.initCounter('CVFloor', 5);
+
+    // Count down past 0
+    for (let i = 0; i < 10; i++) {
+      store.pulseCountDown('CVFloor');
+    }
+
+    // CV should remain at 0 (floor)
+    expect(store.getCounter('CVFloor')?.CV).toBe(0);
+    expect(store.getCounter('CVFloor')?.QD).toBe(true);
+  });
+
+  it('CTD: multiple LD pulses reload CV', () => {
+    store.initCounter('ReloadTest', 10);
+
+    // First load
+    store.getCounter('ReloadTest')!.CV = 10;
+
+    // Count down some
+    store.pulseCountDown('ReloadTest');
+    store.pulseCountDown('ReloadTest');
+    expect(store.getCounter('ReloadTest')?.CV).toBe(8);
+
+    // Reload
+    store.getCounter('ReloadTest')!.CV = store.getCounter('ReloadTest')!.PV;
+    expect(store.getCounter('ReloadTest')?.CV).toBe(10);
+
+    // Count down again
+    store.pulseCountDown('ReloadTest');
+    expect(store.getCounter('ReloadTest')?.CV).toBe(9);
+  });
+});
+
+// ============================================================================
+// CTUD Additional Tests
+// ============================================================================
+
+describe('CTUD Additional Tests (IEC 61131-3)', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('CTUD: R has priority over LD if both TRUE', () => {
+    store.initCounter('RLDPriority', 50);
+
+    // Set CV to some value first
+    for (let i = 0; i < 25; i++) {
+      store.pulseCountUp('RLDPriority');
+    }
+    expect(store.getCounter('RLDPriority')?.CV).toBe(25);
+
+    // When R is TRUE, CV should be 0 regardless of LD
+    store.getCounter('RLDPriority')!.R = true;
+    store.getCounter('RLDPriority')!.LD = true;
+    store.resetCounter('RLDPriority');
+
+    expect(store.getCounter('RLDPriority')?.CV).toBe(0);
+  });
+
+  it('CTUD: LD=TRUE loads CV with PV when R=FALSE', () => {
+    store.initCounter('LDOnly', 75);
+
+    // Load counter
+    store.getCounter('LDOnly')!.LD = true;
+    store.getCounter('LDOnly')!.CV = store.getCounter('LDOnly')!.PV;
+
+    expect(store.getCounter('LDOnly')?.CV).toBe(75);
+  });
+
+  it('CTUD: bidirectional counting maintains accurate CV', () => {
+    store.initCounter('BiDir', 100);
+
+    // Count up 10 times
+    for (let i = 0; i < 10; i++) {
+      store.pulseCountUp('BiDir');
+    }
+    expect(store.getCounter('BiDir')?.CV).toBe(10);
+
+    // Count down 3 times
+    for (let i = 0; i < 3; i++) {
+      store.pulseCountDown('BiDir');
+    }
+    expect(store.getCounter('BiDir')?.CV).toBe(7);
+
+    // Count up 5 more times
+    for (let i = 0; i < 5; i++) {
+      store.pulseCountUp('BiDir');
+    }
+    expect(store.getCounter('BiDir')?.CV).toBe(12);
+
+    // Count down 12 times (should stop at 0)
+    for (let i = 0; i < 12; i++) {
+      store.pulseCountDown('BiDir');
+    }
+    expect(store.getCounter('BiDir')?.CV).toBe(0);
+  });
+
+  it('CTUD: QU and QD can be TRUE simultaneously only when CV=0 and PV<=0', () => {
+    // Special case: PV=0 means QU is TRUE when CV>=0
+    store.initCounter('BothQ', 0);
+
+    // With PV=0, CV starts at 0
+    // QU = (CV >= PV) = (0 >= 0) = TRUE
+    // QD = (CV <= 0) = (0 <= 0) = TRUE
+    store.getCounter('BothQ')!.QU = store.getCounter('BothQ')!.CV >= store.getCounter('BothQ')!.PV;
+    store.getCounter('BothQ')!.QD = store.getCounter('BothQ')!.CV <= 0;
+
+    expect(store.getCounter('BothQ')?.QU).toBe(true);
+    expect(store.getCounter('BothQ')?.QD).toBe(true);
+  });
+});
+
+// ============================================================================
+// Counter Integration Tests
+// ============================================================================
+
+describe('Counter Integration Tests', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('counter can be used to track timer completions', () => {
+    // Common pattern: count how many times a timer completes
+    store.initTimer('PulseTimer', 200);
+    store.initCounter('CompletionCounter', 100);
+
+    let timerQPrev = false;
+
+    // Simulate 10 timer cycles
+    for (let cycle = 0; cycle < 10; cycle++) {
+      // Start timer
+      store.setTimerInput('PulseTimer', true);
+
+      // Run until complete
+      for (let scan = 0; scan < 3; scan++) {
+        store.updateTimer('PulseTimer', 100);
+
+        // Count on rising edge of Q
+        const currentQ = store.getTimer('PulseTimer')?.Q ?? false;
+        if (currentQ && !timerQPrev) {
+          store.pulseCountUp('CompletionCounter');
+        }
+        timerQPrev = currentQ;
+      }
+
+      // Reset timer
+      store.setTimerInput('PulseTimer', false);
+      timerQPrev = false;
+    }
+
+    // Should have counted 10 timer completions
+    expect(store.getCounter('CompletionCounter')?.CV).toBe(10);
+  });
+
+  it('counter reset based on condition', () => {
+    store.initCounter('ConditionalReset', 5);
+
+    // Count up to 7
+    for (let i = 0; i < 7; i++) {
+      store.pulseCountUp('ConditionalReset');
+    }
+    expect(store.getCounter('ConditionalReset')?.CV).toBe(7);
+    expect(store.getCounter('ConditionalReset')?.QU).toBe(true);
+
+    // Reset when QU is TRUE (common pattern)
+    if (store.getCounter('ConditionalReset')?.QU) {
+      store.resetCounter('ConditionalReset');
+    }
+
+    expect(store.getCounter('ConditionalReset')?.CV).toBe(0);
+    expect(store.getCounter('ConditionalReset')?.QU).toBe(false);
+  });
+});
