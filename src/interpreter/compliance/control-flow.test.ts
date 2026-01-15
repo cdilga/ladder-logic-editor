@@ -1170,3 +1170,566 @@ END_PROGRAM
     });
   });
 });
+
+// ============================================================================
+// Additional Control Flow Tests
+// ============================================================================
+
+describe('Complex IF Conditions (IEC 61131-3)', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  describe('Compound Boolean Conditions', () => {
+    it('AND condition: both must be TRUE', () => {
+      const code = `
+PROGRAM Test
+VAR
+  a : BOOL := TRUE;
+  b : BOOL := TRUE;
+  result : INT := 0;
+END_VAR
+IF a AND b THEN
+  result := 1;
+END_IF;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getInt('result')).toBe(1);
+    });
+
+    it('AND condition: one FALSE returns FALSE', () => {
+      const code = `
+PROGRAM Test
+VAR
+  a : BOOL := TRUE;
+  b : BOOL := FALSE;
+  result : INT := 0;
+END_VAR
+IF a AND b THEN
+  result := 1;
+END_IF;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getInt('result')).toBe(0);
+    });
+
+    it('OR condition: one TRUE is enough', () => {
+      const code = `
+PROGRAM Test
+VAR
+  a : BOOL := FALSE;
+  b : BOOL := TRUE;
+  result : INT := 0;
+END_VAR
+IF a OR b THEN
+  result := 1;
+END_IF;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getInt('result')).toBe(1);
+    });
+
+    it('complex compound condition: (a AND b) OR c', () => {
+      const code = `
+PROGRAM Test
+VAR
+  a : BOOL := FALSE;
+  b : BOOL := TRUE;
+  c : BOOL := TRUE;
+  result : INT := 0;
+END_VAR
+IF (a AND b) OR c THEN
+  result := 1;
+END_IF;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getInt('result')).toBe(1);
+    });
+
+    it('NOT operator in condition', () => {
+      const code = `
+PROGRAM Test
+VAR
+  enabled : BOOL := FALSE;
+  result : INT := 0;
+END_VAR
+IF NOT enabled THEN
+  result := 1;
+END_IF;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getInt('result')).toBe(1);
+    });
+  });
+
+  describe('Comparison Conditions', () => {
+    it('greater than comparison', () => {
+      const code = `
+PROGRAM Test
+VAR
+  x : INT := 10;
+  result : INT := 0;
+END_VAR
+IF x > 5 THEN
+  result := 1;
+END_IF;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getInt('result')).toBe(1);
+    });
+
+    it('less than or equal comparison', () => {
+      const code = `
+PROGRAM Test
+VAR
+  x : INT := 5;
+  result : INT := 0;
+END_VAR
+IF x <= 5 THEN
+  result := 1;
+END_IF;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getInt('result')).toBe(1);
+    });
+
+    it('not equal comparison', () => {
+      const code = `
+PROGRAM Test
+VAR
+  x : INT := 10;
+  result : INT := 0;
+END_VAR
+IF x <> 5 THEN
+  result := 1;
+END_IF;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getInt('result')).toBe(1);
+    });
+
+    it('chained comparisons with AND', () => {
+      const code = `
+PROGRAM Test
+VAR
+  x : INT := 5;
+  result : INT := 0;
+END_VAR
+IF x >= 1 AND x <= 10 THEN
+  result := 1;
+END_IF;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getInt('result')).toBe(1);
+    });
+  });
+});
+
+describe('Loop Safety Limits (IEC 61131-3)', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  describe('WHILE Loop Safety', () => {
+    it('WHILE terminates after iteration limit', () => {
+      // This would be an infinite loop but for the safety limit
+      const code = `
+PROGRAM Test
+VAR
+  count : INT := 0;
+END_VAR
+WHILE TRUE DO
+  count := count + 1;
+END_WHILE;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      // Safety limit is 10000
+      expect(store.getInt('count')).toBe(10000);
+    });
+  });
+
+  describe('FOR Loop Safety', () => {
+    it('FOR with step 0 does not execute (prevented infinite loop)', () => {
+      const code = `
+PROGRAM Test
+VAR
+  i : INT;
+  count : INT := 0;
+END_VAR
+FOR i := 1 TO 10 BY 0 DO
+  count := count + 1;
+END_FOR;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      // Step 0 should be prevented
+      expect(store.getInt('count')).toBe(0);
+    });
+  });
+});
+
+describe('Nested Loops (IEC 61131-3)', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  describe('FOR inside WHILE', () => {
+    it('FOR loop inside WHILE executes correctly', () => {
+      const code = `
+PROGRAM Test
+VAR
+  i : INT;
+  j : INT := 0;
+  total : INT := 0;
+END_VAR
+WHILE j < 3 DO
+  FOR i := 1 TO 4 DO
+    total := total + 1;
+  END_FOR;
+  j := j + 1;
+END_WHILE;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      // 3 iterations of WHILE, each with 4 FOR iterations = 12
+      expect(store.getInt('total')).toBe(12);
+    });
+  });
+
+  describe('WHILE inside FOR', () => {
+    it('WHILE loop inside FOR executes correctly', () => {
+      const code = `
+PROGRAM Test
+VAR
+  i : INT;
+  j : INT;
+  total : INT := 0;
+END_VAR
+FOR i := 1 TO 3 DO
+  j := 0;
+  WHILE j < 2 DO
+    total := total + 1;
+    j := j + 1;
+  END_WHILE;
+END_FOR;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      // 3 FOR iterations, each with 2 WHILE iterations = 6
+      expect(store.getInt('total')).toBe(6);
+    });
+  });
+
+  describe('Triple nested loops', () => {
+    it('three levels of FOR nesting works correctly', () => {
+      const code = `
+PROGRAM Test
+VAR
+  i : INT;
+  j : INT;
+  k : INT;
+  count : INT := 0;
+END_VAR
+FOR i := 1 TO 2 DO
+  FOR j := 1 TO 2 DO
+    FOR k := 1 TO 2 DO
+      count := count + 1;
+    END_FOR;
+  END_FOR;
+END_FOR;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      // 2 * 2 * 2 = 8
+      expect(store.getInt('count')).toBe(8);
+    });
+  });
+});
+
+describe('IF inside Loops (IEC 61131-3)', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  describe('Conditional execution inside FOR', () => {
+    it('IF inside FOR filters iterations', () => {
+      const code = `
+PROGRAM Test
+VAR
+  i : INT;
+  evenCount : INT := 0;
+END_VAR
+FOR i := 1 TO 10 DO
+  IF i MOD 2 = 0 THEN
+    evenCount := evenCount + 1;
+  END_IF;
+END_FOR;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      // Even numbers in 1..10: 2, 4, 6, 8, 10 = 5
+      expect(store.getInt('evenCount')).toBe(5);
+    });
+
+    it('IF/ELSE inside FOR with counter', () => {
+      const code = `
+PROGRAM Test
+VAR
+  i : INT;
+  positiveSum : INT := 0;
+  negativeSum : INT := 0;
+END_VAR
+FOR i := -3 TO 3 DO
+  IF i > 0 THEN
+    positiveSum := positiveSum + i;
+  ELSIF i < 0 THEN
+    negativeSum := negativeSum + i;
+  END_IF;
+END_FOR;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      // Positive: 1+2+3 = 6, Negative: -3+-2+-1 = -6
+      expect(store.getInt('positiveSum')).toBe(6);
+      expect(store.getInt('negativeSum')).toBe(-6);
+    });
+  });
+
+  describe('Conditional execution inside WHILE', () => {
+    it('IF inside WHILE updates state', () => {
+      const code = `
+PROGRAM Test
+VAR
+  i : INT := 0;
+  highCount : INT := 0;
+END_VAR
+WHILE i < 10 DO
+  i := i + 1;
+  IF i > 5 THEN
+    highCount := highCount + 1;
+  END_IF;
+END_WHILE;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      // i values > 5: 6, 7, 8, 9, 10 = 5 iterations
+      expect(store.getInt('highCount')).toBe(5);
+    });
+  });
+});
+
+describe('CASE Inside Loops (IEC 61131-3)', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('CASE inside FOR loop', () => {
+    const code = `
+PROGRAM Test
+VAR
+  i : INT;
+  ones : INT := 0;
+  twos : INT := 0;
+  others : INT := 0;
+END_VAR
+FOR i := 1 TO 6 DO
+  CASE i OF
+    1, 4: ones := ones + 1;
+    2, 5: twos := twos + 1;
+  ELSE
+    others := others + 1;
+  END_CASE;
+END_FOR;
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 1);
+    // 1,4 -> ones = 2; 2,5 -> twos = 2; 3,6 -> others = 2
+    expect(store.getInt('ones')).toBe(2);
+    expect(store.getInt('twos')).toBe(2);
+    expect(store.getInt('others')).toBe(2);
+  });
+});
+
+describe('Loops with Complex Termination (IEC 61131-3)', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  describe('REPEAT with complex condition', () => {
+    it('REPEAT UNTIL with AND condition', () => {
+      const code = `
+PROGRAM Test
+VAR
+  i : INT := 0;
+  done : BOOL := FALSE;
+END_VAR
+REPEAT
+  i := i + 1;
+  IF i >= 5 THEN
+    done := TRUE;
+  END_IF;
+UNTIL done
+END_REPEAT;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getInt('i')).toBe(5);
+      expect(store.getBool('done')).toBe(true);
+    });
+  });
+
+  describe('WHILE with multiple exit conditions', () => {
+    it('WHILE with OR condition terminates on first TRUE', () => {
+      const code = `
+PROGRAM Test
+VAR
+  count : INT := 0;
+  limit1Hit : BOOL := FALSE;
+  limit2Hit : BOOL := FALSE;
+END_VAR
+WHILE NOT limit1Hit AND NOT limit2Hit DO
+  count := count + 1;
+  IF count >= 5 THEN
+    limit1Hit := TRUE;
+  END_IF;
+END_WHILE;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getInt('count')).toBe(5);
+      expect(store.getBool('limit1Hit')).toBe(true);
+    });
+  });
+});
+
+describe('Empty Loop Bodies (IEC 61131-3)', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('FOR with empty body does not crash', () => {
+    const code = `
+PROGRAM Test
+VAR
+  i : INT;
+  before : INT := 10;
+  after : INT := 20;
+END_VAR
+before := 1;
+FOR i := 1 TO 5 DO
+END_FOR;
+after := 2;
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 1);
+    expect(store.getInt('before')).toBe(1);
+    expect(store.getInt('after')).toBe(2);
+  });
+});
+
+describe('Control Flow Property Tests (Extended)', () => {
+  it('FOR loop with BY clause iterates correctly', () => {
+    fc.assert(fc.property(
+      fc.integer({ min: 0, max: 20 }),
+      fc.integer({ min: 1, max: 5 }),
+      (end, step) => {
+        const store = createTestStore(100);
+        const code = `
+PROGRAM Test
+VAR
+  i : INT;
+  count : INT := 0;
+END_VAR
+FOR i := 0 TO ${end} BY ${step} DO
+  count := count + 1;
+END_FOR;
+END_PROGRAM
+`;
+        initializeAndRun(code, store, 1);
+        // Calculate expected iterations
+        const expected = Math.floor(end / step) + 1;
+        return store.getInt('count') === expected;
+      }
+    ), { numRuns: 50 });
+  });
+
+  it('REPEAT always executes at least once', () => {
+    fc.assert(fc.property(
+      fc.boolean(),
+      (initialCondition) => {
+        const store = createTestStore(100);
+        const condStr = initialCondition ? 'TRUE' : 'FALSE';
+        const code = `
+PROGRAM Test
+VAR
+  count : INT := 0;
+  exitCond : BOOL := ${condStr};
+END_VAR
+REPEAT
+  count := count + 1;
+UNTIL exitCond
+END_REPEAT;
+END_PROGRAM
+`;
+        initializeAndRun(code, store, 1);
+        // REPEAT always executes at least once
+        return store.getInt('count') >= 1;
+      }
+    ), { numRuns: 20 });
+  });
+
+  it('nested IF/ELSE produces exactly one result', () => {
+    fc.assert(fc.property(
+      fc.integer({ min: 1, max: 5 }),
+      (selector) => {
+        const store = createTestStore(100);
+        const code = `
+PROGRAM Test
+VAR
+  x : INT := ${selector};
+  result : INT := 0;
+END_VAR
+IF x = 1 THEN
+  result := 10;
+ELSIF x = 2 THEN
+  result := 20;
+ELSIF x = 3 THEN
+  result := 30;
+ELSIF x = 4 THEN
+  result := 40;
+ELSE
+  result := 50;
+END_IF;
+END_PROGRAM
+`;
+        initializeAndRun(code, store, 1);
+        const expected = selector <= 4 ? selector * 10 : 50;
+        return store.getInt('result') === expected;
+      }
+    ), { numRuns: 20 });
+  });
+});
