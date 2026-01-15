@@ -641,6 +641,124 @@ END_PROGRAM
       expect(store.getInt('result')).toBe(1);
     });
   });
+
+  describe('Descending Range', () => {
+    it('descending range (10..1) matches values in range', () => {
+      // Per IEC 61131-3, ranges should match regardless of order
+      const code = `
+PROGRAM Test
+VAR
+  value : INT := 5;
+  result : INT := 0;
+END_VAR
+CASE value OF
+  10..1: result := 1;
+ELSE
+  result := -1;
+END_CASE;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getInt('result')).toBe(1);  // 5 is in range 1-10
+    });
+
+    it('descending range matches boundary values', () => {
+      // Test lower boundary
+      let code = `
+PROGRAM Test
+VAR
+  value : INT := 1;
+  result : INT := 0;
+END_VAR
+CASE value OF
+  10..1: result := 1;
+ELSE
+  result := -1;
+END_CASE;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getInt('result')).toBe(1);  // 1 is at boundary
+
+      // Test upper boundary
+      store.clearAll();
+      code = `
+PROGRAM Test
+VAR
+  value : INT := 10;
+  result : INT := 0;
+END_VAR
+CASE value OF
+  10..1: result := 1;
+ELSE
+  result := -1;
+END_CASE;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getInt('result')).toBe(1);  // 10 is at boundary
+    });
+
+    it('descending range does NOT match outside values', () => {
+      const code = `
+PROGRAM Test
+VAR
+  value : INT := 0;
+  result : INT := 0;
+END_VAR
+CASE value OF
+  10..1: result := 1;
+ELSE
+  result := -1;
+END_CASE;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getInt('result')).toBe(-1);  // 0 is outside range
+    });
+  });
+
+  describe('First Match Wins', () => {
+    it('first matching case executes (no fallthrough)', () => {
+      const code = `
+PROGRAM Test
+VAR
+  value : INT := 5;
+  count : INT := 0;
+END_VAR
+CASE value OF
+  1..10: count := count + 1;
+  5: count := count + 10;
+  1..20: count := count + 100;
+END_CASE;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getInt('count')).toBe(1);  // Only first match executes
+    });
+
+    it('no C-style fallthrough between cases', () => {
+      const code = `
+PROGRAM Test
+VAR
+  value : INT := 1;
+  result1 : BOOL := FALSE;
+  result2 : BOOL := FALSE;
+  result3 : BOOL := FALSE;
+END_VAR
+CASE value OF
+  1: result1 := TRUE;
+  2: result2 := TRUE;
+  3: result3 := TRUE;
+END_CASE;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getBool('result1')).toBe(true);
+      expect(store.getBool('result2')).toBe(false);  // No fallthrough
+      expect(store.getBool('result3')).toBe(false);  // No fallthrough
+    });
+  });
 });
 
 // ============================================================================

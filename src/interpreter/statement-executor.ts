@@ -202,7 +202,10 @@ function matchesCaseLabels(value: number, labels: STCaseLabel[]): boolean {
       return true;
     }
     if (label.type === 'range' && label.start !== undefined && label.end !== undefined) {
-      if (value >= label.start && value <= label.end) {
+      // Handle both ascending (1..10) and descending (10..1) ranges
+      const min = Math.min(label.start, label.end);
+      const max = Math.max(label.start, label.end);
+      if (value >= min && value <= max) {
         return true;
       }
     }

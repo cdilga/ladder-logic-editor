@@ -1,9 +1,9 @@
 # Control Flow Compliance Tests
 
 **IEC 61131-3 Section:** 3.4
-**Status:** 🟢 Complete (110 tests, 100%)
+**Status:** 🟢 Complete (115 tests, 100%)
 **Test Files:**
-- `src/interpreter/compliance/control-flow.test.ts` (90 tests)
+- `src/interpreter/compliance/control-flow.test.ts` (95 tests)
 - `src/interpreter/property/control-flow-properties.test.ts` (20 tests)
 
 ---
@@ -106,7 +106,9 @@ END_CASE;
 - [x] Range 1..10 matches 10
 - [x] Range 1..10 does NOT match 0
 - [x] Range 1..10 does NOT match 11
-- [ ] Descending range (10..1) - invalid or reversed?
+- [x] Descending range (10..1) matches values in range
+- [x] Descending range matches boundary values
+- [x] Descending range does NOT match outside values
 
 ### Multiple Labels
 ```st
@@ -118,12 +120,12 @@ END_CASE;
 
 #### Test Cases
 - [x] Comma-separated values match any
-- [ ] Mix of values and ranges: `1, 5..10, 20`
-- [ ] Duplicate values across cases (undefined behavior?)
+- [ ] Mix of values and ranges: `1, 5..10, 20` (parser support needed)
+- [ ] Duplicate values across cases (undefined behavior - not tested)
 
 ### First Match Wins
-- [ ] Overlapping cases (if allowed): first wins
-- [ ] No fallthrough like C switch
+- [x] First matching case executes (no fallthrough)
+- [x] No C-style fallthrough between cases
 
 ---
 
@@ -343,11 +345,12 @@ fc.assert(fc.property(
 
 | Test File | Tests | Status |
 |-----------|-------|--------|
-| `control-flow.test.ts` | 90 | ✅ Complete |
+| `control-flow.test.ts` | 95 | ✅ Complete |
 | `control-flow-properties.test.ts` | 20 | ✅ Complete |
-| **Total** | **110** | ✅ |
+| **Total** | **115** | ✅ |
 
 **Note:** EXIT statement is fully implemented and tested (16 tests).
+CASE descending ranges and first-match-wins behavior are tested (5 tests).
 CONTINUE statement is not part of IEC 61131-3 and is not implemented.
 RETURN is not applicable as user-defined functions are not supported yet.
 
