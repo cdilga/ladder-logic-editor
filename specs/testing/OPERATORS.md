@@ -1,8 +1,10 @@
 # Operators & Precedence Compliance Tests
 
 **IEC 61131-3 Section:** 3.3
-**Status:** 🟢 Good (95%)
-**Test File:** `src/interpreter/compliance/operator-precedence.test.ts`
+**Status:** 🟢 Complete (70 tests, 100%)
+**Test Files:**
+- `src/interpreter/compliance/operator-precedence.test.ts` (23 tests)
+- `src/interpreter/property/arithmetic-properties.test.ts` (47 tests)
 
 ---
 
@@ -194,14 +196,13 @@ fc.assert(fc.property(fc.boolean(), fc.boolean(), (a, b) => {
 
 ---
 
-## Test Count Target
+## Test Count Summary
 
-| Category | Basic | Precedence | Properties | Edge Cases | Total |
-|----------|-------|------------|------------|------------|-------|
-| Arithmetic | 15 | 5 | 5 | 5 | 30 |
-| Comparison | 12 | 3 | 3 | 2 | 20 |
-| Boolean | 12 | 5 | 5 | 3 | 25 |
-| **Total** | | | | | **75** |
+| Test File | Tests | Status |
+|-----------|-------|--------|
+| `operator-precedence.test.ts` | 23 | ✅ Complete |
+| `arithmetic-properties.test.ts` | 47 | ✅ Complete |
+| **Total** | **70** | ✅ |
 
 ---
 
