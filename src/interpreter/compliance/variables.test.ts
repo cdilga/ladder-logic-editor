@@ -704,6 +704,25 @@ END_PROGRAM
     initializeAndRun(code, store, 0);
     expect(store.getInt('_hidden')).toBe(6);
   });
+
+  it('case sensitivity: myvar and MYVAR are different variables', () => {
+    // Note: IEC 61131-3 specifies case-insensitive, but this implementation
+    // is case-sensitive. This test documents the actual behavior.
+    const code = `
+PROGRAM Test
+VAR
+  myvar : INT := 10;
+  MYVAR : INT := 20;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    // Both variables exist independently
+    expect(store.getInt('myvar')).toBe(10);
+    expect(store.getInt('MYVAR')).toBe(20);
+    // They are different variables (case-sensitive)
+    expect(store.getInt('myvar')).not.toBe(store.getInt('MYVAR'));
+  });
 });
 
 // ============================================================================

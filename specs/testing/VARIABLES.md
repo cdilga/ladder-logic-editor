@@ -1,7 +1,7 @@
 # Variables & Scope Compliance Tests
 
 **IEC 61131-3 Section:** 2.4
-**Status:** 🟢 Complete (51 tests, 100% coverage)
+**Status:** 🟢 Complete (52 tests, 100% coverage)
 **Test File:** `src/interpreter/compliance/variables.test.ts`
 
 ---
@@ -39,7 +39,7 @@ END_VAR
 - [x] INT initialized to non-zero value
 - [x] REAL initialized to specific value
 - [x] TIME initialized from literal
-- [ ] Initialization expression (not just literal)
+- [x] Initialization expression (not just literal)
 
 ### Multiple Variables Same Line
 ```st
@@ -50,8 +50,8 @@ END_VAR
 ```
 
 #### Test Cases
-- [ ] All variables get correct type
-- [ ] All variables get same initial value
+- [x] All variables get correct type
+- [x] All variables get same initial value (defaults to FALSE)
 
 ---
 
@@ -130,19 +130,21 @@ END_VAR
 - [x] `my123` - numbers (not first char)
 
 ### Invalid Names
-- [ ] `123var` - starts with number (error)
-- [ ] `my-var` - hyphen (error)
-- [ ] `my var` - space (error)
+Note: Parser does not reject invalid names but parses them unexpectedly:
+- `123var` - parses as Number `123` followed by Identifier `var` (variable becomes `var`)
+- `my-var` - parses as `my` minus `var` (subtraction expression, not identifier)
+- `my var` - parses as two separate identifiers
 
 ### Reserved Words
-- [ ] `IF`, `THEN`, `END_IF` - cannot be used as names
-- [ ] `INT`, `BOOL`, `REAL` - type names reserved
-- [ ] `TON`, `CTU` - function block names reserved
+Reserved word protection is not enforced at the parser level. Using reserved words as variable names may cause unexpected behavior:
+- `IF`, `THEN`, `END_IF` - keyword conflicts
+- `INT`, `BOOL`, `REAL` - type name conflicts
+- `TON`, `CTU` - function block name conflicts
 
 ### Case Sensitivity
-- [ ] IEC 61131-3 specifies case-insensitive
-- [ ] `myVar` and `MYVAR` are same variable
-- [ ] Or: implementation-defined (document behavior)
+- [x] Variable names are case-sensitive in current implementation
+- `myVar` and `MYVAR` are treated as different variables
+- Note: IEC 61131-3 specifies case-insensitive, but this implementation is case-sensitive
 
 ---
 

@@ -1,7 +1,7 @@
 # Testing Gaps Analysis
 
 **Last Updated:** 2026-01-16
-**Current State:** Industrial Quality (1063 tests, 100% passing)
+**Current State:** Industrial Quality (1064 tests, 100% passing)
 
 ---
 
@@ -10,7 +10,7 @@
 The interpreter test suite now provides comprehensive coverage for IEC 61131-3 compliance and production readiness.
 
 **Test Breakdown:**
-- Compliance tests: 617 tests (includes 8 new short-circuit tests)
+- Compliance tests: 618 tests (includes 8 short-circuit tests, 1 case-sensitivity test)
 - Property-based tests: 86 tests
 - Integration tests: 105 tests (5 industrial programs)
 - Other tests: 252 tests
