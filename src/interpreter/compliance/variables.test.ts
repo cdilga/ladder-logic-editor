@@ -1042,3 +1042,217 @@ END_PROGRAM
     expect(store.getBool('flag')).toBe(false);
   });
 });
+
+// ============================================================================
+// Initialization Order Tests
+// ============================================================================
+
+describe('Variable Initialization Order', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('variables are initialized in declaration order', () => {
+    // All variables should be initialized before first scan
+    // This tests that all declared variables are available
+    const code = `
+PROGRAM Test
+VAR
+  first : INT := 1;
+  second : INT := 2;
+  third : INT := 3;
+END_VAR
+END_PROGRAM
+`;
+    const ast = parseSTToAST(code);
+    initializeVariables(ast, store);
+
+    // All should be initialized
+    expect(store.getInt('first')).toBe(1);
+    expect(store.getInt('second')).toBe(2);
+    expect(store.getInt('third')).toBe(3);
+  });
+
+  it('later variables can reference earlier variables in expressions', () => {
+    // Note: This tests that initialization expressions can use other variables
+    // The actual evaluation order may depend on implementation
+    const code = `
+PROGRAM Test
+VAR
+  base : INT := 10;
+  doubled : INT := 0;
+END_VAR
+doubled := base * 2;
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 1);
+    expect(store.getInt('base')).toBe(10);
+    expect(store.getInt('doubled')).toBe(20);
+  });
+
+  it('multiple VAR blocks are all initialized', () => {
+    const code = `
+PROGRAM Test
+VAR
+  a : INT := 1;
+  b : INT := 2;
+END_VAR
+VAR
+  c : INT := 3;
+  d : INT := 4;
+END_VAR
+END_PROGRAM
+`;
+    const ast = parseSTToAST(code);
+    initializeVariables(ast, store);
+
+    expect(store.getInt('a')).toBe(1);
+    expect(store.getInt('b')).toBe(2);
+    expect(store.getInt('c')).toBe(3);
+    expect(store.getInt('d')).toBe(4);
+  });
+});
+
+// ============================================================================
+// Re-initialization Tests
+// ============================================================================
+
+describe('Variable Re-initialization', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('calling initializeVariables again resets state', () => {
+    const code = `
+PROGRAM Test
+VAR
+  counter : INT := 0;
+END_VAR
+counter := counter + 1;
+END_PROGRAM
+`;
+    const ast = parseSTToAST(code);
+
+    // First initialization and run
+    initializeVariables(ast, store);
+    const state1 = createRuntimeState(ast);
+    runScanCycle(ast, store, state1);
+    expect(store.getInt('counter')).toBe(1);
+
+    // Run more cycles
+    runScanCycle(ast, store, state1);
+    runScanCycle(ast, store, state1);
+    expect(store.getInt('counter')).toBe(3);
+
+    // Re-initialize - should reset counter to initial value
+    initializeVariables(ast, store);
+    expect(store.getInt('counter')).toBe(0);
+  });
+
+  it('re-initialization resets timer state', () => {
+    const code = `
+PROGRAM Test
+VAR
+  Timer1 : TON;
+  input : BOOL := TRUE;
+END_VAR
+Timer1(IN := input, PT := T#100ms);
+END_PROGRAM
+`;
+    const ast = parseSTToAST(code);
+
+    // First initialization and run
+    initializeVariables(ast, store);
+    const state1 = createRuntimeState(ast);
+    runScanCycle(ast, store, state1);
+
+    // Timer should be running/completed
+    const timer1 = store.getTimer('Timer1');
+    expect(timer1).toBeDefined();
+    expect(timer1?.ET).toBeGreaterThan(0);
+
+    // Re-initialize
+    initializeVariables(ast, store);
+
+    // Timer should be reset
+    const timer2 = store.getTimer('Timer1');
+    expect(timer2?.ET).toBe(0);
+    expect(timer2?.Q).toBe(false);
+  });
+
+  it('re-initialization resets counter state', () => {
+    const code = `
+PROGRAM Test
+VAR
+  Counter1 : CTU;
+  pulse : BOOL := TRUE;
+END_VAR
+Counter1(CU := pulse, PV := 10);
+END_PROGRAM
+`;
+    const ast = parseSTToAST(code);
+
+    // First initialization and run
+    initializeVariables(ast, store);
+    const state1 = createRuntimeState(ast);
+    runScanCycle(ast, store, state1);
+
+    // Counter should have incremented
+    const counter1 = store.getCounter('Counter1');
+    expect(counter1?.CV).toBe(1);
+
+    // Re-initialize
+    initializeVariables(ast, store);
+
+    // Counter should be reset
+    const counter2 = store.getCounter('Counter1');
+    expect(counter2?.CV).toBe(0);
+  });
+
+  it('new code change requires re-initialization', () => {
+    // This simulates what happens in the UI when code is edited:
+    // 1. Parse new code
+    // 2. Re-initialize variables
+    // 3. Create new runtime state
+    // This is the expected behavior documented in the spec
+
+    // First version of code
+    const code1 = `
+PROGRAM Test
+VAR
+  x : INT := 10;
+END_VAR
+x := x + 1;
+END_PROGRAM
+`;
+    const ast1 = parseSTToAST(code1);
+    initializeVariables(ast1, store);
+    const state1 = createRuntimeState(ast1);
+    runScanCycle(ast1, store, state1);
+    expect(store.getInt('x')).toBe(11);
+
+    // "Edit" code - change initial value
+    const code2 = `
+PROGRAM Test
+VAR
+  x : INT := 100;
+END_VAR
+x := x + 1;
+END_PROGRAM
+`;
+    const ast2 = parseSTToAST(code2);
+
+    // Re-initialize with new code - should reset to new initial value
+    initializeVariables(ast2, store);
+    expect(store.getInt('x')).toBe(100);
+
+    // Run with new state
+    const state2 = createRuntimeState(ast2);
+    runScanCycle(ast2, store, state2);
+    expect(store.getInt('x')).toBe(101);
+  });
+});

@@ -227,7 +227,7 @@ This document maps every relevant IEC 61131-3 section to our implementation, ser
 | [EDGE_DETECTION](./EDGE_DETECTION.md) | 2.5.3 | 35 | 35 | 35 | 100% |
 | [BISTABLES](./BISTABLES.md) | 2.5.4 | 45 | 45 | 45 | 100% |
 | [DATA_TYPES](./DATA_TYPES.md) | 2.3 | 110 | 110 | 110 | 100% |
-| [VARIABLES](./VARIABLES.md) | 2.4 | 52 | 52 | 52 | 100% |
+| [VARIABLES](./VARIABLES.md) | 2.4 | 59 | 59 | 59 | 100% |
 | [OPERATORS](./OPERATORS.md) | 3.3 | 101 | 101 | 101 | 100% |
 | [CONTROL_FLOW](./CONTROL_FLOW.md) | 3.4-3.5 | 116 | 116 | 116 | 100% |
 | [ERROR_HANDLING](./ERROR_HANDLING.md) | - | 55 | 55 | 55 | 100% |
@@ -236,9 +236,9 @@ This document maps every relevant IEC 61131-3 section to our implementation, ser
 | [INTEGRATION](./INTEGRATION.md) | - | 105 | 105 | 105 | 100% |
 | Additional Edge Cases | - | 37 | 37 | 37 | 100% |
 | Timer/Counter Interaction | - | 13 | 13 | 13 | 100% |
-| **TOTAL** | | **1040** | **1040** | **1040** | **100%** |
+| **TOTAL** | | **1047** | **1047** | **1047** | **100%** |
 
-**Target:** 600+ tests, 95%+ passing ✅ ACHIEVED (1040 interpreter tests, 1125 total tests, 100% passing)
+**Target:** 600+ tests, 95%+ passing ✅ ACHIEVED (1047 interpreter tests, 1132 total tests, 100% passing)
 
 ---
 

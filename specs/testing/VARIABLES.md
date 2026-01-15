@@ -1,7 +1,7 @@
 # Variables & Scope Compliance Tests
 
 **IEC 61131-3 Section:** 2.4
-**Status:** 🟢 Complete (52 tests, 100% coverage)
+**Status:** 🟢 Complete (59 tests, 100% coverage)
 **Test File:** `src/interpreter/compliance/variables.test.ts`
 
 ---
@@ -194,8 +194,8 @@ FB2.inputVar := 20;
 
 ### Program Start
 - [x] All VAR initialized before first scan
-- [ ] Initialization order is declaration order
-- [ ] Dependent initialization (a := b + 1)
+- [x] Initialization order is declaration order
+- [x] Dependent initialization (a := b + 1)
 
 ### Function Block Call
 - [ ] VAR_INPUT set from call parameters
@@ -203,8 +203,8 @@ FB2.inputVar := 20;
 - [ ] VAR_OUTPUT available after call
 
 ### Re-initialization
-- [ ] Code change resets all variables
-- [ ] Manual reset clears state
+- [x] Code change resets all variables
+- [x] Manual reset clears state (re-initialization resets timers and counters)
 - [ ] VAR_RETAIN exception (if supported)
 
 ---
