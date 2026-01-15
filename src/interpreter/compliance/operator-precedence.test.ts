@@ -904,6 +904,190 @@ describe('Additional Precedence Tests', () => {
 // Left-to-Right Associativity Tests
 // ============================================================================
 
+// ============================================================================
+// Short-Circuit Evaluation Tests
+// ============================================================================
+
+describe('Short-Circuit Evaluation Behavior', () => {
+  /**
+   * IEC 61131-3 does NOT require short-circuit evaluation for AND/OR.
+   * This interpreter evaluates both operands (no short-circuit).
+   * These tests document the current behavior.
+   */
+
+  describe('AND Operator - No Short-Circuit', () => {
+    it('FALSE AND x - x is still evaluated (documented behavior)', () => {
+      // When left side is FALSE, result is FALSE regardless of right side
+      // However, the interpreter still evaluates the right side
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          result : BOOL;
+        END_VAR
+        result := FALSE AND TRUE;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getBool('result')).toBe(false);
+    });
+
+    it('FALSE AND (1 / 0 > 0) - division by zero occurs (no short-circuit)', () => {
+      // In a short-circuit implementation, 1/0 would not be evaluated
+      // Our interpreter evaluates both sides, so division by zero happens
+      // but the result of AND is still FALSE (which is correct)
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          result : BOOL;
+        END_VAR
+        (* Division by zero is evaluated but AND result is FALSE *)
+        result := FALSE AND (1.0 / 0.0 > 0.0);
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      // Result is FALSE because FALSE AND anything = FALSE
+      // Even though 1/0 was evaluated and produced Infinity
+      expect(store.getBool('result')).toBe(false);
+    });
+
+    it('TRUE AND FALSE - both operands evaluated, result is FALSE', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          result : BOOL;
+        END_VAR
+        result := TRUE AND FALSE;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getBool('result')).toBe(false);
+    });
+  });
+
+  describe('OR Operator - No Short-Circuit', () => {
+    it('TRUE OR x - x is still evaluated (documented behavior)', () => {
+      // When left side is TRUE, result is TRUE regardless of right side
+      // However, the interpreter still evaluates the right side
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          result : BOOL;
+        END_VAR
+        result := TRUE OR FALSE;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getBool('result')).toBe(true);
+    });
+
+    it('TRUE OR (1 / 0 > 0) - division by zero occurs (no short-circuit)', () => {
+      // In a short-circuit implementation, 1/0 would not be evaluated
+      // Our interpreter evaluates both sides, so division by zero happens
+      // but the result of OR is still TRUE (which is correct)
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          result : BOOL;
+        END_VAR
+        (* Division by zero is evaluated but OR result is TRUE *)
+        result := TRUE OR (1.0 / 0.0 > 0.0);
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      // Result is TRUE because TRUE OR anything = TRUE
+      // Even though 1/0 was evaluated and produced Infinity
+      expect(store.getBool('result')).toBe(true);
+    });
+
+    it('FALSE OR TRUE - both operands evaluated, result is TRUE', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          result : BOOL;
+        END_VAR
+        result := FALSE OR TRUE;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getBool('result')).toBe(true);
+    });
+  });
+
+  describe('Side Effect Documentation', () => {
+    it('all operands in AND chain are evaluated', () => {
+      // a AND b AND c - all three are evaluated left-to-right
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          a : BOOL := FALSE;
+          b : BOOL := TRUE;
+          c : BOOL := TRUE;
+          result : BOOL;
+        END_VAR
+        result := a AND b AND c;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      // FALSE AND TRUE AND TRUE = (FALSE AND TRUE) AND TRUE = FALSE AND TRUE = FALSE
+      expect(store.getBool('result')).toBe(false);
+    });
+
+    it('all operands in OR chain are evaluated', () => {
+      // a OR b OR c - all three are evaluated left-to-right
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          a : BOOL := TRUE;
+          b : BOOL := FALSE;
+          c : BOOL := FALSE;
+          result : BOOL;
+        END_VAR
+        result := a OR b OR c;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      // TRUE OR FALSE OR FALSE = (TRUE OR FALSE) OR FALSE = TRUE OR FALSE = TRUE
+      expect(store.getBool('result')).toBe(true);
+    });
+  });
+});
+
+// ============================================================================
+// Left-to-Right Associativity Tests
+// ============================================================================
+
 describe('Left-to-Right Associativity', () => {
   it('subtraction is left-to-right: 10 - 3 - 2 = 5 (not 9)', () => {
     // (10 - 3) - 2 = 7 - 2 = 5

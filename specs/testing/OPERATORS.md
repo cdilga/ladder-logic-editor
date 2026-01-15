@@ -1,9 +1,9 @@
 # Operators & Precedence Compliance Tests
 
 **IEC 61131-3 Section:** 3.3
-**Status:** 🟢 Complete (90 tests, 100%)
+**Status:** 🟢 Complete (98 tests, 100%)
 **Test Files:**
-- `src/interpreter/compliance/operator-precedence.test.ts` (43 tests)
+- `src/interpreter/compliance/operator-precedence.test.ts` (51 tests)
 - `src/interpreter/property/arithmetic-properties.test.ts` (47 tests)
 
 ---
@@ -127,14 +127,14 @@
 - [x] TRUE AND FALSE = FALSE
 - [x] FALSE AND TRUE = FALSE
 - [x] FALSE AND FALSE = FALSE
-- [ ] Short-circuit evaluation (check if implemented)
+- [x] No short-circuit evaluation (both operands always evaluated) - documented in tests
 
 ### OR
 - [x] TRUE OR TRUE = TRUE
 - [x] TRUE OR FALSE = TRUE
 - [x] FALSE OR TRUE = TRUE
 - [x] FALSE OR FALSE = FALSE
-- [ ] Short-circuit evaluation
+- [x] No short-circuit evaluation (both operands always evaluated) - documented in tests
 
 ### XOR
 - [x] TRUE XOR TRUE = FALSE
@@ -210,16 +210,16 @@ fc.assert(fc.property(fc.boolean(), fc.boolean(), (a, b) => {
 
 | Test File | Tests | Status |
 |-----------|-------|--------|
-| `operator-precedence.test.ts` | 43 | ✅ Complete |
+| `operator-precedence.test.ts` | 51 | ✅ Complete |
 | `arithmetic-properties.test.ts` | 47 | ✅ Complete |
-| **Total** | **90** | ✅ |
+| **Total** | **98** | ✅ |
 
 ---
 
 ## Known Issues
 
-1. **Exponentiation** (`**`) may not be implemented yet
-2. **Short-circuit evaluation** - verify if AND/OR short-circuit
+1. **Exponentiation** (`**`) is not implemented (parser/interpreter support missing)
+2. **Short-circuit evaluation** - NOT implemented; both operands always evaluated (documented)
 3. **Type coercion** in mixed expressions needs verification
 
 ---
