@@ -215,19 +215,71 @@ ALM_OVERFLOW := EFFECTIVE_LEVEL >= SP_CRITICAL;
 LEAD_PUMP := LeadPumpNum;
 
 (* ============================================================================
-   BASIC PUMP CONTROL (placeholder for next iteration)
+   PUMP CONTROL STATE MACHINE
+   States: 0=IDLE, 1=PUMPING_1, 2=PUMPING_2, 3=FAULT, 4=E_STOP
    ============================================================================ *)
 
-(* E-STOP overrides everything *)
+(* E-STOP overrides everything - highest priority *)
 IF E_STOP THEN
     PUMP_1_RUN := FALSE;
     PUMP_2_RUN := FALSE;
     SYSTEM_STATE := 4;  (* E_STOP state *)
 ELSE
-    (* Default to IDLE for now *)
-    SYSTEM_STATE := 0;
-    PUMP_1_RUN := FALSE;
-    PUMP_2_RUN := FALSE;
+    (* State machine transitions *)
+    IF SYSTEM_STATE = 0 THEN
+        (* IDLE state *)
+        IF EFFECTIVE_LEVEL >= SP_HIGH THEN
+            SYSTEM_STATE := 1;  (* Start lead pump *)
+        END_IF;
+
+    ELSIF SYSTEM_STATE = 1 THEN
+        (* PUMPING_1 state - Lead pump running *)
+        IF EFFECTIVE_LEVEL <= SP_LOW THEN
+            SYSTEM_STATE := 0;  (* Stop lead pump, return to IDLE *)
+        ELSIF EFFECTIVE_LEVEL >= SP_HIGH_HIGH THEN
+            SYSTEM_STATE := 2;  (* Start lag pump too *)
+        END_IF;
+
+    ELSIF SYSTEM_STATE = 2 THEN
+        (* PUMPING_2 state - Both pumps running *)
+        (* Lag pump stops at LOW + 5 (hysteresis ensures no oscillation) *)
+        IF EFFECTIVE_LEVEL <= SP_LOW + 5 THEN
+            SYSTEM_STATE := 1;  (* Stop lag pump, keep lead running *)
+        END_IF;
+
+    ELSIF SYSTEM_STATE = 3 THEN
+        (* FAULT state - handled separately *)
+        (* For now, maintain current state until fault handling is implemented *)
+
+    ELSIF SYSTEM_STATE = 4 THEN
+        (* E_STOP state - should not reach here as E_STOP is handled above *)
+
+    ELSE
+        (* Invalid state - reset to IDLE *)
+        SYSTEM_STATE := 0;
+    END_IF;
+
+    (* Set pump outputs based on state and lead/lag assignment *)
+    IF SYSTEM_STATE = 1 THEN
+        (* Lead pump only *)
+        IF LeadPumpNum = 1 THEN
+            PUMP_1_RUN := TRUE;
+            PUMP_2_RUN := FALSE;
+        ELSE
+            PUMP_1_RUN := FALSE;
+            PUMP_2_RUN := TRUE;
+        END_IF;
+
+    ELSIF SYSTEM_STATE = 2 THEN
+        (* Both pumps running *)
+        PUMP_1_RUN := TRUE;
+        PUMP_2_RUN := TRUE;
+
+    ELSE
+        (* IDLE, FAULT, or other states - pumps off *)
+        PUMP_1_RUN := FALSE;
+        PUMP_2_RUN := FALSE;
+    END_IF;
 END_IF;
 
 END_PROGRAM

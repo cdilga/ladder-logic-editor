@@ -431,4 +431,172 @@ describe('dual-pump-controller', () => {
       expect(store.getInt('SYSTEM_STATE')).toBe(0); // IDLE state
     });
   });
+
+  // ==========================================================================
+  // Pump Control Tests (from spec: Test Cases > Pump Control Tests)
+  // ==========================================================================
+
+  describe('pump control', () => {
+    it('starts lead pump when level exceeds HIGH setpoint', () => {
+      // Test: Normal start | Level=75, P1 available | P1 runs
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+
+      runCycle();
+
+      expect(store.getInt('SYSTEM_STATE')).toBe(1); // PUMPING_1
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
+      expect(store.getBool('PUMP_2_RUN')).toBe(false);
+    });
+
+    it('does not start pump when level is below HIGH setpoint', () => {
+      store.setInt('LEVEL_1', 65);
+      store.setInt('LEVEL_2', 65);
+      store.setInt('LEVEL_3', 65);
+
+      runCycle();
+
+      expect(store.getInt('SYSTEM_STATE')).toBe(0); // IDLE
+      expect(store.getBool('PUMP_1_RUN')).toBe(false);
+      expect(store.getBool('PUMP_2_RUN')).toBe(false);
+    });
+
+    it('starts lag pump when level exceeds HIGH_HIGH setpoint', () => {
+      // Test: High-high assist | Level=90, P1 running | P1+P2 run
+      // First, get to PUMPING_1 state
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+      runCycle();
+
+      // Now raise level to HIGH_HIGH
+      store.setInt('LEVEL_1', 90);
+      store.setInt('LEVEL_2', 90);
+      store.setInt('LEVEL_3', 90);
+      runCycle();
+
+      expect(store.getInt('SYSTEM_STATE')).toBe(2); // PUMPING_2
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
+      expect(store.getBool('PUMP_2_RUN')).toBe(true);
+    });
+
+    it('stops lead pump when level drops below LOW setpoint', () => {
+      // Get to PUMPING_1 state
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+      runCycle();
+      expect(store.getInt('SYSTEM_STATE')).toBe(1);
+
+      // Drop level below LOW
+      store.setInt('LEVEL_1', 18);
+      store.setInt('LEVEL_2', 18);
+      store.setInt('LEVEL_3', 18);
+      runCycle();
+
+      expect(store.getInt('SYSTEM_STATE')).toBe(0); // IDLE
+      expect(store.getBool('PUMP_1_RUN')).toBe(false);
+      expect(store.getBool('PUMP_2_RUN')).toBe(false);
+    });
+
+    it('stops lag pump but keeps lead running when level drops to hysteresis point', () => {
+      // Get to PUMPING_2 state
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+      runCycle();
+      store.setInt('LEVEL_1', 90);
+      store.setInt('LEVEL_2', 90);
+      store.setInt('LEVEL_3', 90);
+      runCycle();
+      expect(store.getInt('SYSTEM_STATE')).toBe(2);
+
+      // Drop to lag pump stop point (LOW + 5 = 25)
+      store.setInt('LEVEL_1', 25);
+      store.setInt('LEVEL_2', 25);
+      store.setInt('LEVEL_3', 25);
+      runCycle();
+
+      expect(store.getInt('SYSTEM_STATE')).toBe(1); // PUMPING_1
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
+      expect(store.getBool('PUMP_2_RUN')).toBe(false);
+    });
+
+    it('handles full pumping cycle: IDLE -> PUMPING_1 -> PUMPING_2 -> PUMPING_1 -> IDLE', () => {
+      // Start in IDLE
+      store.setInt('LEVEL_1', 50);
+      store.setInt('LEVEL_2', 50);
+      store.setInt('LEVEL_3', 50);
+      runCycle();
+      expect(store.getInt('SYSTEM_STATE')).toBe(0);
+
+      // Level rises to HIGH -> PUMPING_1
+      store.setInt('LEVEL_1', 70);
+      store.setInt('LEVEL_2', 70);
+      store.setInt('LEVEL_3', 70);
+      runCycle();
+      expect(store.getInt('SYSTEM_STATE')).toBe(1);
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
+
+      // Level rises to HIGH_HIGH -> PUMPING_2
+      store.setInt('LEVEL_1', 85);
+      store.setInt('LEVEL_2', 85);
+      store.setInt('LEVEL_3', 85);
+      runCycle();
+      expect(store.getInt('SYSTEM_STATE')).toBe(2);
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
+      expect(store.getBool('PUMP_2_RUN')).toBe(true);
+
+      // Level drops to lag stop point -> PUMPING_1
+      store.setInt('LEVEL_1', 25);
+      store.setInt('LEVEL_2', 25);
+      store.setInt('LEVEL_3', 25);
+      runCycle();
+      expect(store.getInt('SYSTEM_STATE')).toBe(1);
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
+      expect(store.getBool('PUMP_2_RUN')).toBe(false);
+
+      // Level drops below LOW -> IDLE
+      store.setInt('LEVEL_1', 18);
+      store.setInt('LEVEL_2', 18);
+      store.setInt('LEVEL_3', 18);
+      runCycle();
+      expect(store.getInt('SYSTEM_STATE')).toBe(0);
+      expect(store.getBool('PUMP_1_RUN')).toBe(false);
+      expect(store.getBool('PUMP_2_RUN')).toBe(false);
+    });
+
+    it('E-STOP immediately stops pumps even when pumping', () => {
+      // Get to PUMPING_2 state
+      store.setInt('LEVEL_1', 90);
+      store.setInt('LEVEL_2', 90);
+      store.setInt('LEVEL_3', 90);
+      runCycle(); // IDLE -> PUMPING_1
+      runCycle(); // PUMPING_1 -> PUMPING_2
+      expect(store.getInt('SYSTEM_STATE')).toBe(2);
+
+      // Activate E-STOP
+      store.setBool('E_STOP', true);
+      runCycle();
+
+      expect(store.getInt('SYSTEM_STATE')).toBe(4); // E_STOP
+      expect(store.getBool('PUMP_1_RUN')).toBe(false);
+      expect(store.getBool('PUMP_2_RUN')).toBe(false);
+    });
+
+    it('uses pump 2 as lead when LeadPumpNum is 2', () => {
+      store.setInt('LeadPumpNum', 2);
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+
+      runCycle();
+
+      expect(store.getInt('SYSTEM_STATE')).toBe(1); // PUMPING_1
+      expect(store.getBool('PUMP_1_RUN')).toBe(false);
+      expect(store.getBool('PUMP_2_RUN')).toBe(true);
+      expect(store.getInt('LEAD_PUMP')).toBe(2);
+    });
+  });
 });
