@@ -69,9 +69,55 @@
   overflow: hidden;
 }
 
-/* Keyboard visibility adjustments */
+/* ============================================================================
+   Keyboard Visibility Adjustments (Phase 4)
+   ========================================================================= */
+
+/* When keyboard is visible, adjust layout */
 .mobile-layout[data-keyboard="visible"] {
   padding-bottom: 0;
+}
+
+/* Editor panel resizes smoothly when keyboard appears */
+.mobile-layout[data-keyboard="visible"] .mobile-panel[data-view="editor"] {
+  /* Subtract keyboard height from panel height */
+  height: calc(100% - var(--keyboard-height, 0px));
+  transition: height 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Keep editor cursor visible - ensure content scrolls into view */
+.mobile-layout[data-keyboard="visible"] .mobile-panel[data-view="editor"] .st-editor {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Slide tab bar up when keyboard appears */
+.mobile-layout[data-keyboard="visible"] .bottom-tab-bar {
+  transform: translateY(calc(-1 * var(--keyboard-height, 0px)));
+  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Alternative: Hide tab bar completely when keyboard appears (cleaner editor) */
+/* Uncomment this and comment out the transform above if you prefer */
+/*
+.mobile-layout[data-keyboard="visible"] .bottom-tab-bar {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease-out;
+}
+*/
+
+/* Other views maintain their position when keyboard is visible */
+.mobile-layout[data-keyboard="visible"] .mobile-panel[data-view="ladder"],
+.mobile-layout[data-keyboard="visible"] .mobile-panel[data-view="debug"],
+.mobile-layout[data-keyboard="visible"] .mobile-panel[data-view="properties"] {
+  /* No height adjustment needed for these views */
+}
+
+/* Ensure error panel stays above keyboard */
+.mobile-layout[data-keyboard="visible"] .mobile-error-panel {
+  bottom: calc(var(--mobile-tabbar-height) + var(--mobile-safe-bottom) + var(--keyboard-height, 0px));
+  transition: bottom 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ============================================================================

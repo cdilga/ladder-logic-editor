@@ -17,6 +17,7 @@ import { ErrorPanel } from '../error-panel';
 import { BottomTabBar } from './BottomTabBar';
 import { useMobileStore } from '../../store/mobile-store';
 import { useProjectStore, useSimulationStore } from '../../store';
+import { useKeyboardDetect } from '../../hooks/useKeyboardDetect';
 import {
   saveToLocalStorage,
   loadFromLocalStorage,
@@ -37,6 +38,9 @@ import type { LadderNode } from '../../models/ladder-elements';
 import './MobileLayout.css';
 
 export function MobileLayout() {
+  // Enable keyboard detection
+  useKeyboardDetect();
+
   const activeView = useMobileStore((state) => state.activeView);
   const keyboardVisible = useMobileStore((state) => state.keyboardVisible);
   const keyboardHeight = useMobileStore((state) => state.keyboardHeight);
