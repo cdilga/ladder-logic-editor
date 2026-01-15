@@ -1854,5 +1854,9 @@ END_PROGRAM
       expect(store.getInt('resPos')).toBe(3);
       expect(store.getInt('resNeg')).toBe(-3);
     });
+
+    // Note: REAL to INT truncation and INT to REAL conversion are not yet
+    // implemented in the interpreter. Cross-type assignment stores 0.
+    // This is a known limitation - see TESTING_GAPS.md for details.
   });
 });
