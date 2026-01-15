@@ -3,21 +3,23 @@
  *
  * Dropdown menu in the status bar providing access to:
  * - Replay Tutorial
- * - Documentation (future)
- * - Report a Bug (future)
+ * - Documentation
+ * - Report a Bug
  * - GitHub Repository
  *
- * Phase 1: Documentation & Onboarding Implementation
+ * Phase 1 & 5: Documentation & Onboarding Implementation
  */
 
 import { useState, useEffect, useRef } from 'react';
 import { useOnboardingStore } from '../../store/onboarding-store';
+import { BugReportModal } from '../bug-report';
 import './HelpMenu.css';
 
 const GITHUB_URL = 'https://github.com/cdilga/ladder-logic-editor';
 
 export function HelpMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showBugReport, setShowBugReport] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const resetOnboarding = useOnboardingStore((state) => state.resetOnboarding);
 
@@ -52,6 +54,18 @@ export function HelpMenu() {
   const handleReplayTutorial = () => {
     setIsOpen(false);
     resetOnboarding();
+  };
+
+  const handleOpenDocs = () => {
+    setIsOpen(false);
+    // Navigate to docs page (relative to base URL)
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    window.location.href = `${baseUrl}docs`;
+  };
+
+  const handleReportBug = () => {
+    setIsOpen(false);
+    setShowBugReport(true);
   };
 
   const handleOpenGitHub = () => {
@@ -111,7 +125,54 @@ export function HelpMenu() {
             Replay Tutorial
           </button>
 
+          <button
+            className="help-menu__item"
+            onClick={handleOpenDocs}
+            role="menuitem"
+            type="button"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="help-menu__icon"
+            >
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+            </svg>
+            Documentation
+          </button>
+
           <div className="help-menu__divider" role="separator" />
+
+          <button
+            className="help-menu__item"
+            onClick={handleReportBug}
+            role="menuitem"
+            type="button"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="help-menu__icon"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            Report a Bug
+          </button>
 
           <button
             className="help-menu__item"
@@ -136,6 +197,11 @@ export function HelpMenu() {
           </button>
         </div>
       )}
+
+      <BugReportModal
+        isOpen={showBugReport}
+        onClose={() => setShowBugReport(false)}
+      />
     </div>
   );
 }

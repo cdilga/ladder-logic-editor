@@ -1,0 +1,266 @@
+/**
+ * Bug Report Modal Styles
+ */
+
+/* ============================================================================
+   Overlay
+   ============================================================================ */
+
+.bug-report-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  padding: 20px;
+}
+
+/* ============================================================================
+   Modal
+   ============================================================================ */
+
+.bug-report-modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  background: #1e1e2e;
+  border: 1px solid #313244;
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+/* ============================================================================
+   Header
+   ============================================================================ */
+
+.bug-report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: #181825;
+  border-bottom: 1px solid #313244;
+}
+
+.bug-report-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #cdd6f4;
+}
+
+.bug-report-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #a6adc8;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 150ms, color 150ms;
+}
+
+.bug-report-close:hover {
+  background: #313244;
+  color: #cdd6f4;
+}
+
+/* ============================================================================
+   Content
+   ============================================================================ */
+
+.bug-report-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.bug-report-intro {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #a6adc8;
+  line-height: 1.5;
+}
+
+/* ============================================================================
+   Form
+   ============================================================================ */
+
+.bug-report-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bug-report-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bug-report-field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #cdd6f4;
+}
+
+.bug-report-field .required {
+  color: #f38ba8;
+}
+
+.bug-report-field textarea {
+  padding: 10px 12px;
+  border: 1px solid #313244;
+  border-radius: 6px;
+  background: #181825;
+  color: #cdd6f4;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+  transition: border-color 150ms;
+}
+
+.bug-report-field textarea::placeholder {
+  color: #6c7086;
+}
+
+.bug-report-field textarea:focus {
+  outline: none;
+  border-color: #89b4fa;
+}
+
+.bug-report-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 500px) {
+  .bug-report-field-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================================
+   Options
+   ============================================================================ */
+
+.bug-report-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: #181825;
+  border-radius: 6px;
+}
+
+.bug-report-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.bug-report-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #89b4fa;
+}
+
+.bug-report-checkbox span {
+  font-size: 13px;
+  color: #a6adc8;
+}
+
+/* ============================================================================
+   Preview
+   ============================================================================ */
+
+.bug-report-preview {
+  margin-top: 8px;
+}
+
+.bug-report-preview summary {
+  font-size: 13px;
+  color: #89b4fa;
+  cursor: pointer;
+}
+
+.bug-report-preview summary:hover {
+  text-decoration: underline;
+}
+
+.bug-report-preview-content {
+  margin-top: 10px;
+  padding: 12px;
+  background: #181825;
+  border: 1px solid #313244;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: 'Fira Code', 'Monaco', 'Menlo', monospace;
+  color: #a6adc8;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* ============================================================================
+   Footer
+   ============================================================================ */
+
+.bug-report-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #181825;
+  border-top: 1px solid #313244;
+}
+
+.bug-report-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 150ms, opacity 150ms;
+}
+
+.bug-report-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bug-report-btn--secondary {
+  background: #313244;
+  color: #cdd6f4;
+}
+
+.bug-report-btn--secondary:hover:not(:disabled) {
+  background: #45475a;
+}
+
+.bug-report-btn--primary {
+  background: #89b4fa;
+  color: #1e1e2e;
+}
+
+.bug-report-btn--primary:hover:not(:disabled) {
+  background: #b4befe;
+}
