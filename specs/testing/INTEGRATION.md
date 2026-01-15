@@ -392,9 +392,9 @@ END_PROGRAM
 - [x] Counter values stable after many scans
 
 ### Long-Running Tests
-- [ ] 1000 scan cycles without state corruption
-- [ ] Timer/counter values stable
-- [ ] No memory leaks (if applicable)
+- [x] 1000 scan cycles without state corruption (in conveyor-control.test.ts)
+- [x] Counter values stable after many scans (in conveyor-control.test.ts)
+- [ ] No memory leaks (if applicable) - JavaScript GC handles this
 
 ---
 
