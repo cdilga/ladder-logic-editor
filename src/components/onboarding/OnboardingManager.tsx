@@ -13,9 +13,26 @@
 import { useCallback, useEffect } from 'react';
 import { useOnboardingStore } from '../../store/onboarding-store';
 import { useMobileStore } from '../../store/mobile-store';
+import { useProjectStore } from '../../store/project-store';
 import { OnboardingToast } from './OnboardingToast';
 import { ElementHighlight } from './ElementHighlight';
 import { getOnboardingSteps } from './onboarding-steps';
+
+// Example program loaded when user clicks "Load Example" in onboarding
+const EXAMPLE_PROGRAM = `VAR
+  StartButton : BOOL;
+  StopButton : BOOL;
+  Motor : BOOL;
+  StartDelay : TON;
+END_VAR
+
+// Motor starter with on-delay
+// Press StartButton to begin 2-second startup delay
+// Press StopButton to stop the motor
+
+StartDelay(IN := StartButton AND NOT StopButton, PT := T#2s);
+Motor := StartDelay.Q AND NOT StopButton;
+`;
 
 export function OnboardingManager() {
   const {
@@ -29,6 +46,7 @@ export function OnboardingManager() {
   } = useOnboardingStore();
 
   const isMobile = useMobileStore((state) => state.isMobile);
+  const loadFromSTCode = useProjectStore((state) => state.loadFromSTCode);
   const steps = getOnboardingSteps(isMobile);
   const totalSteps = steps.length;
 
@@ -75,8 +93,8 @@ export function OnboardingManager() {
     (action: string) => {
       switch (action) {
         case 'load-example':
-          // TODO: Implement load example functionality
-          // For now, just dismiss the onboarding
+          // Load the example motor starter program
+          loadFromSTCode('Motor Starter', EXAMPLE_PROGRAM);
           handleDismiss();
           break;
         case 'open-docs':
@@ -88,7 +106,7 @@ export function OnboardingManager() {
           break;
       }
     },
-    [handleDismiss]
+    [handleDismiss, loadFromSTCode]
   );
 
   // Keyboard navigation
