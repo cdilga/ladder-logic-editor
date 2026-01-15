@@ -16,23 +16,23 @@ Master specification for PLC interpreter IEC 61131-3 compliance testing.
 | [Counters](./testing/COUNTERS.md) | ~61 | 47 | 77% | 🟢 Good |
 | [Data Types](./testing/DATA_TYPES.md) | ~82 | 68 | 83% | 🟢 Good |
 | [Operators](./testing/OPERATORS.md) | ~50 | 23+35=58 | 100% | 🟢 Complete |
-| [Control Flow](./testing/CONTROL_FLOW.md) | ~74 | 50 | 68% | 🟢 Good |
+| [Control Flow](./testing/CONTROL_FLOW.md) | ~74 | 74 | 100% | 🟢 Complete |
 | [Edge Detection](./testing/EDGE_DETECTION.md) | ~37 | 35 | 95% | 🟢 Complete |
 | [Bistables](./testing/BISTABLES.md) | ~32 | 26 | 81% | 🟢 Good |
 | [Variables & Scope](./testing/VARIABLES.md) | ~49 | 39 | 80% | 🟢 Good |
 | [Integration Programs](./testing/INTEGRATION.md) | ~62 | 59 | 95% | 🟢 Complete |
 | [Error Handling](./testing/ERROR_HANDLING.md) | ~49 | 49 | 100% | 🟢 Complete |
-| [Property-Based Tests](./testing/PROPERTY_TESTS.md) | ~50 | 35 | 70% | 🟢 Good |
-| [Bounds & Edge Cases](./testing/BOUNDS.md) | ~63 | 40 | 63% | 🟢 Good |
-| **Total** | **~667** | **~547** | **82%** | 🟢 |
+| [Property-Based Tests](./testing/PROPERTY_TESTS.md) | ~69 | 54 | 78% | 🟢 Good |
+| [Bounds & Edge Cases](./testing/BOUNDS.md) | ~63 | 58 | 92% | 🟢 Complete |
+| **Total** | **~686** | **~608** | **89%** | 🟢 |
 
-**Target for Industrial Simulation:** 600+ tests, 95%+ passing ✅ (772 tests, all passing)
+**Target for Industrial Simulation:** 600+ tests, 95%+ passing ✅ (833 tests, all passing)
 
 ### Current Test Count by File (2026-01-15)
 - `data-types.test.ts`: 68 tests ✅ (BOOL: 16, INT: 19, REAL: 14, TIME: 11, Properties: 8)
-- `control-flow.test.ts`: 50 tests ✅ (IF: 15, CASE: 10, FOR: 12, WHILE: 5, REPEAT: 3, Properties: 5)
+- `control-flow.test.ts`: 74 tests ✅ (IF: 15, CASE: 10, FOR: 12, WHILE: 5, REPEAT: 3, Properties: 5, Complex: 24)
 - `error-handling.test.ts`: 49 tests ✅ (Division: 11, Overflow: 11, Parser: 6, EdgeCases: 12, Recovery: 9)
-- `bounds.test.ts`: 40 tests ✅
+- `bounds.test.ts`: 58 tests ✅ (Depth: 8, ScanCycle: 5, Overflow: 4, Properties: 6, Other: 35)
 - `edge-detection.test.ts`: 35 tests ✅ (R_TRIG: 11, F_TRIG: 8, Combined: 4, Properties: 5, Integration: 7)
 - `bistable.test.ts`: 26 tests ✅
 - `variables.test.ts`: 39 tests ✅
@@ -40,11 +40,12 @@ Master specification for PLC interpreter IEC 61131-3 compliance testing.
 - `counter-compliance.test.ts`: 47 tests ✅ (CTU: 14, CTD: 4, CTUD: 7, Edge: 5, Boundary: 8, Properties: 9)
 - `operator-precedence.test.ts`: 23 tests ✅
 - `arithmetic-properties.test.ts`: 35 tests ✅
+- `function-block-properties.test.ts`: 19 tests ✅ (Timer: 4, Counter: 4, Edge: 5, Bistable: 4, Combined: 2)
 - `motor-starter.test.ts`: 17 tests ✅ (integration)
 - `pump-level-control.test.ts`: 22 tests ✅ (integration)
 - `batch-sequencer.test.ts`: 20 tests ✅ (integration)
-- Total interpreter tests: ~547 compliance + integration
-- Total all tests: 772 passing
+- Total interpreter tests: ~608 compliance + integration
+- Total all tests: 833 passing
 
 ---
 
