@@ -12,6 +12,7 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { syntaxHighlighting, defaultHighlightStyle, bracketMatching } from '@codemirror/language';
 import { autocompletion, completionKeymap } from '@codemirror/autocomplete';
 import { structuredText } from '../../lang';
+import { stHoverTooltip } from '../../lang/st-hover';
 import { useProjectStore } from '../../store';
 
 import './STEditor.css';
@@ -55,6 +56,7 @@ export function STEditor({ className = '' }: STEditorProps) {
         autocompletion(),
         syntaxHighlighting(defaultHighlightStyle),
         structuredText(),
+        stHoverTooltip(),
         keymap.of([...defaultKeymap, ...historyKeymap, ...completionKeymap]),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {

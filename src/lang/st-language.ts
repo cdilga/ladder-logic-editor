@@ -11,9 +11,15 @@ import {
   foldNodeProp,
   foldInside,
 } from '@codemirror/language';
-import { completeFromList } from '@codemirror/autocomplete';
+import { completeFromList, type Completion } from '@codemirror/autocomplete';
 import { parser } from './st-parser';
 import { stHighlighting } from './st-highlight';
+import {
+  FUNCTION_BLOCK_DOCS,
+  DATA_TYPE_DOCS,
+  KEYWORD_DOCS,
+  formatDocumentationText,
+} from './st-docs';
 
 // ============================================================================
 // Configure Parser with Metadata
@@ -71,87 +77,139 @@ export const stLanguage = LRLanguage.define({
 });
 
 // ============================================================================
+// Helper: Create completion with documentation info
+// ============================================================================
+
+function createCompletion(
+  label: string,
+  type: string,
+  detail?: string,
+  apply?: string
+): Completion {
+  // Check for detailed documentation
+  const doc =
+    FUNCTION_BLOCK_DOCS[label] || DATA_TYPE_DOCS[label] || KEYWORD_DOCS[label];
+
+  const completion: Completion = {
+    label,
+    type,
+    detail: detail || (doc?.signature ? doc.signature.split('(')[0] : undefined),
+  };
+
+  // Add info function for extended documentation panel
+  if (doc) {
+    completion.info = () => {
+      const container = document.createElement('div');
+      container.className = 'cm-completion-info';
+      container.innerHTML = formatDocumentationText(doc).replace(/\n/g, '<br>');
+      return container;
+    };
+  }
+
+  // Add apply for snippets
+  if (apply) {
+    completion.apply = apply;
+  }
+
+  return completion;
+}
+
+// ============================================================================
 // Autocomplete Definitions
 // ============================================================================
 
-const keywords = [
+const keywords: Completion[] = [
   // Program structure
-  { label: 'PROGRAM', type: 'keyword', detail: 'Program declaration' },
-  { label: 'END_PROGRAM', type: 'keyword' },
-  { label: 'FUNCTION_BLOCK', type: 'keyword', detail: 'Function block declaration' },
-  { label: 'END_FUNCTION_BLOCK', type: 'keyword' },
+  createCompletion('PROGRAM', 'keyword', 'Program declaration'),
+  createCompletion('END_PROGRAM', 'keyword'),
+  createCompletion('FUNCTION_BLOCK', 'keyword', 'Function block declaration'),
+  createCompletion('END_FUNCTION_BLOCK', 'keyword'),
 
   // Variable declarations
-  { label: 'VAR', type: 'keyword', detail: 'Local variables' },
-  { label: 'VAR_INPUT', type: 'keyword', detail: 'Input variables' },
-  { label: 'VAR_OUTPUT', type: 'keyword', detail: 'Output variables' },
-  { label: 'VAR_IN_OUT', type: 'keyword', detail: 'In/Out variables' },
-  { label: 'VAR_TEMP', type: 'keyword', detail: 'Temporary variables' },
-  { label: 'END_VAR', type: 'keyword' },
+  createCompletion('VAR', 'keyword', 'Local variables'),
+  createCompletion('VAR_INPUT', 'keyword', 'Input variables'),
+  createCompletion('VAR_OUTPUT', 'keyword', 'Output variables'),
+  createCompletion('VAR_IN_OUT', 'keyword', 'In/Out variables'),
+  createCompletion('VAR_TEMP', 'keyword', 'Temporary variables'),
+  createCompletion('END_VAR', 'keyword'),
 
   // Control flow
-  { label: 'IF', type: 'keyword' },
-  { label: 'THEN', type: 'keyword' },
-  { label: 'ELSIF', type: 'keyword' },
-  { label: 'ELSE', type: 'keyword' },
-  { label: 'END_IF', type: 'keyword' },
-  { label: 'CASE', type: 'keyword' },
-  { label: 'OF', type: 'keyword' },
-  { label: 'END_CASE', type: 'keyword' },
-  { label: 'FOR', type: 'keyword' },
-  { label: 'TO', type: 'keyword' },
-  { label: 'BY', type: 'keyword' },
-  { label: 'DO', type: 'keyword' },
-  { label: 'END_FOR', type: 'keyword' },
-  { label: 'WHILE', type: 'keyword' },
-  { label: 'END_WHILE', type: 'keyword' },
-  { label: 'REPEAT', type: 'keyword' },
-  { label: 'UNTIL', type: 'keyword' },
-  { label: 'END_REPEAT', type: 'keyword' },
-  { label: 'RETURN', type: 'keyword' },
-  { label: 'EXIT', type: 'keyword' },
+  createCompletion('IF', 'keyword'),
+  createCompletion('THEN', 'keyword'),
+  createCompletion('ELSIF', 'keyword'),
+  createCompletion('ELSE', 'keyword'),
+  createCompletion('END_IF', 'keyword'),
+  createCompletion('CASE', 'keyword'),
+  createCompletion('OF', 'keyword'),
+  createCompletion('END_CASE', 'keyword'),
+  createCompletion('FOR', 'keyword'),
+  createCompletion('TO', 'keyword'),
+  createCompletion('BY', 'keyword'),
+  createCompletion('DO', 'keyword'),
+  createCompletion('END_FOR', 'keyword'),
+  createCompletion('WHILE', 'keyword'),
+  createCompletion('END_WHILE', 'keyword'),
+  createCompletion('REPEAT', 'keyword'),
+  createCompletion('UNTIL', 'keyword'),
+  createCompletion('END_REPEAT', 'keyword'),
+  createCompletion('RETURN', 'keyword'),
+  createCompletion('EXIT', 'keyword'),
 
   // Operators
-  { label: 'AND', type: 'keyword', detail: 'Logical AND' },
-  { label: 'OR', type: 'keyword', detail: 'Logical OR' },
-  { label: 'NOT', type: 'keyword', detail: 'Logical NOT' },
-  { label: 'XOR', type: 'keyword', detail: 'Logical XOR' },
-  { label: 'MOD', type: 'keyword', detail: 'Modulo operator' },
+  createCompletion('AND', 'keyword', 'Logical AND'),
+  createCompletion('OR', 'keyword', 'Logical OR'),
+  createCompletion('NOT', 'keyword', 'Logical NOT'),
+  createCompletion('XOR', 'keyword', 'Logical XOR'),
+  createCompletion('MOD', 'keyword', 'Modulo operator'),
 
-  // Data types
-  { label: 'BOOL', type: 'type', detail: 'Boolean type' },
-  { label: 'INT', type: 'type', detail: '16-bit signed integer' },
-  { label: 'DINT', type: 'type', detail: '32-bit signed integer' },
-  { label: 'UINT', type: 'type', detail: '16-bit unsigned integer' },
-  { label: 'REAL', type: 'type', detail: '32-bit floating point' },
-  { label: 'TIME', type: 'type', detail: 'Duration type' },
-  { label: 'STRING', type: 'type', detail: 'String type' },
+  // Data types (with documentation from st-docs)
+  createCompletion('BOOL', 'type', 'Boolean type'),
+  createCompletion('INT', 'type', '16-bit signed integer'),
+  createCompletion('DINT', 'type', '32-bit signed integer'),
+  createCompletion('UINT', 'type', '16-bit unsigned integer'),
+  createCompletion('REAL', 'type', '32-bit floating point'),
+  createCompletion('TIME', 'type', 'Duration type'),
+  createCompletion('STRING', 'type', 'String type'),
 
-  // Timer function blocks
-  { label: 'TON', type: 'type', detail: 'On-delay timer' },
-  { label: 'TOF', type: 'type', detail: 'Off-delay timer' },
-  { label: 'TP', type: 'type', detail: 'Pulse timer' },
+  // Timer function blocks (with detailed documentation)
+  createCompletion('TON', 'type', 'On-delay timer'),
+  createCompletion('TOF', 'type', 'Off-delay timer'),
+  createCompletion('TP', 'type', 'Pulse timer'),
 
-  // Counter function blocks
-  { label: 'CTU', type: 'type', detail: 'Count up counter' },
-  { label: 'CTD', type: 'type', detail: 'Count down counter' },
-  { label: 'CTUD', type: 'type', detail: 'Count up/down counter' },
+  // Counter function blocks (with detailed documentation)
+  createCompletion('CTU', 'type', 'Count up counter'),
+  createCompletion('CTD', 'type', 'Count down counter'),
+  createCompletion('CTUD', 'type', 'Count up/down counter'),
+
+  // Edge detection (with detailed documentation)
+  createCompletion('R_TRIG', 'type', 'Rising edge detector'),
+  createCompletion('F_TRIG', 'type', 'Falling edge detector'),
+
+  // Bistables (with detailed documentation)
+  createCompletion('SR', 'type', 'Set-dominant bistable'),
+  createCompletion('RS', 'type', 'Reset-dominant bistable'),
 
   // Constants
-  { label: 'TRUE', type: 'constant', detail: 'Boolean true' },
-  { label: 'FALSE', type: 'constant', detail: 'Boolean false' },
+  createCompletion('TRUE', 'constant', 'Boolean true'),
+  createCompletion('FALSE', 'constant', 'Boolean false'),
 
   // Array
-  { label: 'ARRAY', type: 'keyword' },
+  createCompletion('ARRAY', 'keyword'),
 ];
 
 // Snippets for common patterns
-const snippets = [
+const snippets: Completion[] = [
   {
     label: 'IF-THEN-END_IF',
     type: 'snippet',
     detail: 'If statement',
     apply: 'IF ${condition} THEN\n    ${}\nEND_IF;',
+    info: () => {
+      const el = document.createElement('div');
+      el.className = 'cm-completion-info';
+      el.textContent = 'Conditional execution block. Executes statements only when condition is TRUE.';
+      return el;
+    },
   },
   {
     label: 'IF-THEN-ELSE-END_IF',
@@ -164,18 +222,48 @@ const snippets = [
     type: 'snippet',
     detail: 'Case statement',
     apply: 'CASE ${expression} OF\n    0:\n        ${}\n    1:\n        ${}\nEND_CASE;',
+    info: () => {
+      const el = document.createElement('div');
+      el.className = 'cm-completion-info';
+      el.textContent = 'Multi-way branch. Selects statements based on expression value. Supports integer ranges (e.g., 1..5).';
+      return el;
+    },
   },
   {
     label: 'FOR-DO-END_FOR',
     type: 'snippet',
     detail: 'For loop',
     apply: 'FOR ${i} := 0 TO 10 DO\n    ${}\nEND_FOR;',
+    info: () => {
+      const el = document.createElement('div');
+      el.className = 'cm-completion-info';
+      el.textContent = 'Counted loop. Repeats statements a fixed number of times. Use BY clause for step values.';
+      return el;
+    },
   },
   {
     label: 'WHILE-DO-END_WHILE',
     type: 'snippet',
     detail: 'While loop',
     apply: 'WHILE ${condition} DO\n    ${}\nEND_WHILE;',
+    info: () => {
+      const el = document.createElement('div');
+      el.className = 'cm-completion-info';
+      el.textContent = 'Pre-test loop. Repeats statements while condition is TRUE. May execute zero times.';
+      return el;
+    },
+  },
+  {
+    label: 'REPEAT-UNTIL-END_REPEAT',
+    type: 'snippet',
+    detail: 'Repeat loop',
+    apply: 'REPEAT\n    ${}\nUNTIL ${condition} END_REPEAT;',
+    info: () => {
+      const el = document.createElement('div');
+      el.className = 'cm-completion-info';
+      el.textContent = 'Post-test loop. Repeats until condition is TRUE. Always executes at least once.';
+      return el;
+    },
   },
   {
     label: 'VAR-END_VAR',
@@ -188,6 +276,24 @@ const snippets = [
     type: 'snippet',
     detail: 'TON timer call',
     apply: '${TimerName}(IN := ${condition}, PT := T#${5}s);',
+    info: () => {
+      const el = document.createElement('div');
+      el.className = 'cm-completion-info';
+      el.textContent = 'On-delay timer. Output Q becomes TRUE after IN has been TRUE for preset time PT.';
+      return el;
+    },
+  },
+  {
+    label: 'CTU-counter',
+    type: 'snippet',
+    detail: 'CTU counter call',
+    apply: '${CounterName}(CU := ${countInput}, R := ${reset}, PV := ${10});',
+    info: () => {
+      const el = document.createElement('div');
+      el.className = 'cm-completion-info';
+      el.textContent = 'Count up counter. Increments CV on rising edge of CU. Q is TRUE when CV >= PV.';
+      return el;
+    },
   },
 ];
 
