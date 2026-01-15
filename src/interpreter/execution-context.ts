@@ -31,6 +31,15 @@ export interface SimulationStoreInterface extends FunctionBlockStore {
   getReal: (name: string) => number;
   getTime: (name: string) => number;
 
+  // Variable storage (for existence checks)
+  booleans: Record<string, boolean>;
+  integers: Record<string, number>;
+  reals: Record<string, number>;
+  times: Record<string, number>;
+
+  // Function block storage
+  counters: Record<string, { CU: boolean; CD: boolean; R: boolean; LD: boolean; PV: number; QU: boolean; QD: boolean; CV: number }>;
+
   // Timer operations
   initTimer: (name: string, pt: number) => void;
   setTimerInput: (name: string, input: boolean) => void;
@@ -92,23 +101,13 @@ export function createExecutionContext(
 
     // Expression evaluation context
     getVariable: (name: string) => {
-      // Try boolean first
-      const boolVal = store.getBool(name);
-      if (boolVal !== undefined && boolVal !== false) return boolVal;
+      // Check if variable exists in each store (not just truthy value)
+      if (name in store.booleans) return store.booleans[name];
+      if (name in store.integers) return store.integers[name];
+      if (name in store.reals) return store.reals[name];
+      if (name in store.times) return store.times[name];
 
-      // Then integer
-      const intVal = store.getInt(name);
-      if (intVal !== undefined && intVal !== 0) return intVal;
-
-      // Then real
-      const realVal = store.getReal(name);
-      if (realVal !== undefined && realVal !== 0) return realVal;
-
-      // Then time
-      const timeVal = store.getTime(name);
-      if (timeVal !== undefined && timeVal !== 0) return timeVal;
-
-      // Default to false/0
+      // Default to false for unknown variables
       return false;
     },
 
