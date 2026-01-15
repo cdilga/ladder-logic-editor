@@ -15,7 +15,7 @@
 .st-editor-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   padding: 8px 12px;
   background: #252526;
   border-bottom: 1px solid #3c3c3c;
@@ -30,6 +30,41 @@
 .st-editor-program-name {
   color: #808080;
   font-style: italic;
+}
+
+.st-editor-header-spacer {
+  flex: 1;
+}
+
+.st-editor-help-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 150ms, color 150ms;
+}
+
+.st-editor-help-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.st-editor-help-btn--active {
+  background-color: rgba(99, 102, 241, 0.2);
+  color: rgba(99, 102, 241, 1);
+}
+
+.st-editor-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
 }
 
 .st-editor-content {
