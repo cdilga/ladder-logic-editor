@@ -14,7 +14,7 @@ import type {
 } from '../models/project';
 import type { VariableDeclaration } from '../models/plc-types';
 import type { LadderNode, LadderEdge } from '../models/ladder-elements';
-import { createNewProject, createTrafficControllerProgram } from '../models/project';
+import { createNewProject, createTrafficControllerProgram, createDualPumpControllerProgram } from '../models/project';
 import { createDefaultIntersection } from '../models/traffic-controller';
 import { transformSTToLadder, type TransformResult } from '../transformer';
 
@@ -39,6 +39,7 @@ interface ProjectState {
   // Actions
   newProject: (name: string) => void;
   newTrafficControllerProject: (name: string) => void;
+  newDualPumpControllerProject: (name: string) => void;
   loadProject: (project: LadderProject, filePath?: string) => void;
   loadFromSTCode: (programName: string, stCode: string, fileName?: string) => void;
   saveProject: () => LadderProject | null;
@@ -109,6 +110,21 @@ export const useProjectStore = create<ProjectState>()(
           masterCycleTime: 130000,
         },
       };
+
+      set({
+        project,
+        currentProgramId: project.programs[0]?.id || null,
+        isDirty: false,
+        filePath: null,
+      });
+    },
+
+    // Create new dual pump controller project
+    newDualPumpControllerProject: (name: string) => {
+      const project = createNewProject(name);
+
+      // Replace default program with dual pump controller
+      project.programs = [createDualPumpControllerProgram()];
 
       set({
         project,

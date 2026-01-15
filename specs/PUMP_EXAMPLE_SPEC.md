@@ -417,6 +417,254 @@ describe('dual-pump-controller', () => {
 
 ---
 
+## Edge Cases and Design Decisions
+
+This section documents engineering decisions made for ambiguous or edge-case scenarios. Each decision includes the rationale and tradeoffs considered.
+
+### 1. Median Calculation Implementation
+
+**Decision:** Implement median using inline ST logic rather than a built-in function.
+
+**Implementation:**
+```st
+(* Median of 3 values using comparison logic *)
+IF LEVEL_1 >= LEVEL_2 THEN
+    IF LEVEL_2 >= LEVEL_3 THEN
+        Effective_Level := LEVEL_2;
+    ELSIF LEVEL_1 >= LEVEL_3 THEN
+        Effective_Level := LEVEL_3;
+    ELSE
+        Effective_Level := LEVEL_1;
+    END_IF;
+ELSE
+    IF LEVEL_1 >= LEVEL_3 THEN
+        Effective_Level := LEVEL_1;
+    ELSIF LEVEL_2 >= LEVEL_3 THEN
+        Effective_Level := LEVEL_3;
+    ELSE
+        Effective_Level := LEVEL_2;
+    END_IF;
+END_IF;
+```
+
+**Rationale:**
+- Portable across PLC platforms without requiring custom function blocks
+- Logic is visible in ladder diagram, aiding troubleshooting
+- No interpreter modifications required
+- Matches how production PLCs typically implement voting logic
+
+**Tradeoffs considered:**
+| Option | Pros | Cons |
+|--------|------|------|
+| Built-in `Median()` function | Cleaner ST code | Requires interpreter changes; less portable |
+| Average of 3 values | Simpler | Different semantics; outlier affects result |
+| **Inline comparison (chosen)** | Portable, visible, standard practice | More verbose ST code |
+
+---
+
+### 2. Simulation Time for Runtime Tracking
+
+**Decision:** Use simulation time with configurable alternation interval. Default to `T#30s` for demonstration, document `T#24h` for production.
+
+**Implementation:**
+```st
+(* Configurable - set to T#24h for production deployment *)
+AlternationInterval : TIME := T#30s;  (* Demo default *)
+```
+
+**Rationale:**
+- Real-time 24-hour cycles are impractical for testing and demonstration
+- Simulation acceleration makes the system observable within minutes
+- Configurability allows users to test alternation logic without waiting
+- Production deployments simply change the constant
+
+**Tradeoffs considered:**
+| Option | Pros | Cons |
+|--------|------|------|
+| Real wall-clock time | Realistic | Impractical for demos; can't test alternation |
+| Fixed short interval | Easy testing | Unrealistic for production understanding |
+| **Configurable (chosen)** | Flexible for both testing and production | Requires user to know to change for production |
+
+---
+
+### 3. 2oo3 Voting with Failed Sensor (Degraded Mode)
+
+**Decision:** When one sensor fails, use the **average** of the two remaining valid sensors.
+
+**Implementation:**
+```st
+IF Sensor3_Failed THEN
+    Effective_Level := (LEVEL_1 + LEVEL_2) / 2;
+ELSIF Sensor2_Failed THEN
+    Effective_Level := (LEVEL_1 + LEVEL_3) / 2;
+ELSIF Sensor1_Failed THEN
+    Effective_Level := (LEVEL_2 + LEVEL_3) / 2;
+ELSE
+    (* Normal 3-sensor median *)
+END_IF;
+```
+
+**Rationale:**
+- Average of two agreeing sensors is the most likely true value
+- More balanced than always using high or low value
+- Standard practice in process control for 2oo3 degraded operation
+- Maintains reasonable accuracy while flagging the degraded condition
+
+**Tradeoffs considered:**
+| Option | Pros | Cons |
+|--------|------|------|
+| Use lower value (conservative) | Safe for overflow prevention | May run pumps unnecessarily; wastes energy |
+| Use higher value | Ensures pumps respond | Risk of overflow if both sensors read low |
+| Require operator intervention | Maximum safety | Operational disruption; may be excessive |
+| **Average (chosen)** | Balanced, standard practice | Slight error if sensors disagree |
+
+**Safety note:** The system MUST alarm on degraded voting mode (`ALM_SENSOR_FAILED`) to prompt maintenance. Two-sensor operation is temporary pending repair.
+
+---
+
+### 4. HOA Mode Transition Behavior
+
+**Decision:**
+- **AUTO→HAND:** Pump state follows HAND command (not frozen at transition)
+- **HAND mode protections:** Bypasses level-based start/stop logic ONLY. All safety protections remain active except E-STOP is absolute.
+
+**Implementation:**
+```st
+(* HAND mode: direct control but safety protections active *)
+IF HOA_1 = 1 THEN  (* HAND *)
+    (* Operator commands pump directly *)
+    Pump1_Cmd := HAND_RUN_1;
+
+    (* Safety protections still apply - cannot be bypassed *)
+    IF DryRun_Fault_1 OR Overtemp_Fault_1 OR Motor_OL_1 THEN
+        Pump1_Cmd := FALSE;  (* Override operator command *)
+    END_IF;
+END_IF;
+
+(* E-STOP is absolute - overrides everything including HAND *)
+IF E_STOP THEN
+    Pump1_Cmd := FALSE;
+    Pump2_Cmd := FALSE;
+END_IF;
+```
+
+**Rationale:**
+- HAND mode exists for maintenance and testing, not for bypassing safety
+- Allowing HAND to bypass dry-run or overtemp could damage equipment
+- This matches industrial best practice where HAND allows manual operation within safety envelope
+- E-STOP must be absolute per safety standards (IEC 62061)
+
+**Tradeoffs considered:**
+| Option | Pros | Cons |
+|--------|------|------|
+| HAND bypasses ALL protections | Maximum operator control | Equipment damage risk; safety violation |
+| HAND bypasses nothing | Maximum safety | Defeats purpose of HAND mode |
+| **HAND bypasses level logic only (chosen)** | Balances control with safety | Operator may be confused if pump won't start |
+
+**Documentation requirement:** HMI should clearly indicate when HAND command is blocked by a safety condition.
+
+---
+
+### 5. Fault Reset Behavior
+
+**Decision:**
+- Single `FAULT_RESET` clears ALL latched faults on rising edge
+- If fault condition still exists, fault re-latches immediately on next scan
+- No retry delay or lockout period
+
+**Implementation:**
+```st
+(* Rising edge detection for fault reset *)
+IF FAULT_RESET AND NOT Prev_Fault_Reset THEN
+    (* Clear all latched faults *)
+    Pump1_Faulted := FALSE;
+    Pump2_Faulted := FALSE;
+    ALM_DRY_RUN_1 := FALSE;
+    ALM_DRY_RUN_2 := FALSE;
+    (* ... other fault flags ... *)
+END_IF;
+Prev_Fault_Reset := FAULT_RESET;
+
+(* Fault conditions re-evaluate immediately *)
+(* If motor still overloaded, fault re-latches this scan *)
+IF NOT MOTOR_OL_1 THEN
+    Pump1_Faulted := TRUE;
+    ALM_MOTOR_OL_1 := TRUE;
+END_IF;
+```
+
+**Rationale:**
+- Simple, predictable behavior for operators
+- Two-pump system doesn't warrant per-pump reset complexity
+- Immediate re-fault prevents unsafe restart attempts
+- No artificial retry delays that could confuse operators
+
+**Tradeoffs considered:**
+| Option | Pros | Cons |
+|--------|------|------|
+| Per-pump reset | Granular control | Added complexity; more buttons on HMI |
+| Refuse reset while fault exists | Prevents futile attempts | Confusing; fault clears but condition persists anyway |
+| Retry delay/lockout | Prevents rapid cycling | Adds complexity; delays legitimate restarts |
+| **Clear all, re-fault if needed (chosen)** | Simple, predictable | May briefly show "no fault" before re-faulting |
+
+---
+
+### 6. Runtime Balancing Configuration
+
+**Decision:** Runtime-based alternation is **disabled by default**. Users can enable it via configuration flag.
+
+**Implementation:**
+```st
+(* Configuration *)
+EnableRuntimeBalance : BOOL := FALSE;  (* Default: OFF *)
+RuntimeImbalanceThreshold : INT := 10;  (* Percentage *)
+
+(* Alternation logic *)
+IF EnableRuntimeBalance THEN
+    RuntimeDiff := ABS(Pump1_Runtime - Pump2_Runtime);
+    RuntimePercent := (RuntimeDiff * 100) / MAX(Pump1_Runtime, Pump2_Runtime);
+
+    IF RuntimePercent > RuntimeImbalanceThreshold THEN
+        (* Swap lead to lower-runtime pump *)
+        SwapLeadLag();
+    END_IF;
+END_IF;
+```
+
+**Rationale:**
+- Industry experts note that for critical systems, keeping one pump with low hours ensures a reliable backup
+- Runtime balancing is beneficial for non-critical applications where even wear is preferred
+- Making it optional with default OFF follows the principle of least surprise for safety-critical applications
+- Users who want balancing can explicitly enable it
+
+**Tradeoffs considered:**
+| Option | Pros | Cons |
+|--------|------|------|
+| Always balance runtime | Even wear on both pumps | No "fresh" backup; both pumps age together |
+| Never balance runtime | One pump stays fresh | Lead pump wears faster; more maintenance on one unit |
+| **Optional, default OFF (chosen)** | User choice; safe default | Requires configuration for those wanting balance |
+
+**Reference:** This decision informed by industry discussion noting that "keeping one unit with lower hours ensures a solid backup when the most-used pump needs work."
+
+---
+
+### Summary: Protection Hierarchy
+
+For clarity, here is the protection hierarchy from highest to lowest priority:
+
+```
+1. E-STOP          → Absolute. Stops everything. No override possible.
+2. Motor Overload  → Hardware interlock. Stops pump immediately.
+3. Dry Run         → Stops pump after delay. Latched fault.
+4. Overtemperature → Stops pump. Latched fault.
+5. Seal Leak       → Stops pump. Latched fault.
+6. Anti-Cycle      → Prevents start. Not a fault, just timing.
+7. Level Logic     → Normal operation control.
+8. HAND Mode       → Overrides level logic only (items 6-7).
+```
+
+---
+
 ## Future Enhancements
 
 1. **Visualization** - Connect variable outputs to animated pump/tank graphics
