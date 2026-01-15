@@ -365,8 +365,12 @@ ELSE
         PUMP_1_RUN := FALSE;
     ELSIF HOA_1 = 1 THEN
         (* HAND mode - operator direct control *)
-        (* Safety protections still apply (implemented in later iteration) *)
-        PUMP_1_RUN := HAND_RUN_1;
+        (* Safety protections still apply - cannot be bypassed *)
+        IF Pump1_Faulted THEN
+            PUMP_1_RUN := FALSE;  (* Safety override - fault blocks HAND *)
+        ELSE
+            PUMP_1_RUN := HAND_RUN_1;
+        END_IF;
     ELSE
         (* AUTO mode (HOA_1 = 2) - use state machine command *)
         PUMP_1_RUN := Pump1_AutoCmd AND Pump1_Available;
@@ -378,8 +382,12 @@ ELSE
         PUMP_2_RUN := FALSE;
     ELSIF HOA_2 = 1 THEN
         (* HAND mode - operator direct control *)
-        (* Safety protections still apply (implemented in later iteration) *)
-        PUMP_2_RUN := HAND_RUN_2;
+        (* Safety protections still apply - cannot be bypassed *)
+        IF Pump2_Faulted THEN
+            PUMP_2_RUN := FALSE;  (* Safety override - fault blocks HAND *)
+        ELSE
+            PUMP_2_RUN := HAND_RUN_2;
+        END_IF;
     ELSE
         (* AUTO mode (HOA_2 = 2) - use state machine command *)
         PUMP_2_RUN := Pump2_AutoCmd AND Pump2_Available;

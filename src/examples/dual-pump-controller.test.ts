@@ -861,18 +861,40 @@ describe('dual-pump-controller', () => {
       expect(store.getBool('ALM_BOTH_PUMPS_FAILED')).toBe(true);
     });
 
-    it('faulted pump does not run even in HAND mode with HAND_RUN', () => {
+    it('faulted pump does not run even in HAND mode with HAND_RUN (motor overload)', () => {
       store.setInt('HOA_1', 1); // HAND
       store.setBool('HAND_RUN_1', true);
-      store.setBool('MOTOR_OL_1', false); // Faulted
+      store.setBool('MOTOR_OL_1', false); // Faulted (FALSE = tripped)
 
       runCycle();
 
-      // Pump is faulted, should not run even in HAND mode
+      // Per spec: HAND mode bypasses level logic ONLY, safety protections remain active
       expect(store.getBool('Pump1_Faulted')).toBe(true);
-      // Note: Current implementation doesn't block HAND mode for faults
-      // This test documents current behavior - may need update per spec
-      expect(store.getBool('PUMP_1_RUN')).toBe(true); // HAND overrides fault in current impl
+      expect(store.getBool('PUMP_1_RUN')).toBe(false); // Safety protection stops pump
+    });
+
+    it('faulted pump does not run even in HAND mode with HAND_RUN (seal leak)', () => {
+      store.setInt('HOA_1', 1); // HAND
+      store.setBool('HAND_RUN_1', true);
+      store.setBool('SEAL_OK_1', false); // Seal leak (FALSE = leak)
+
+      runCycle();
+
+      expect(store.getBool('Pump1_Faulted')).toBe(true);
+      expect(store.getBool('ALM_SEAL_LEAK_1')).toBe(true);
+      expect(store.getBool('PUMP_1_RUN')).toBe(false); // Safety protection stops pump
+    });
+
+    it('faulted pump does not run even in HAND mode with HAND_RUN (overtemperature)', () => {
+      store.setInt('HOA_1', 1); // HAND
+      store.setBool('HAND_RUN_1', true);
+      store.setInt('TEMP_1', 96); // Over critical threshold (95)
+
+      runCycle();
+
+      expect(store.getBool('Pump1_Faulted')).toBe(true);
+      expect(store.getBool('ALM_OVERTEMP_1')).toBe(true);
+      expect(store.getBool('PUMP_1_RUN')).toBe(false); // Safety protection stops pump
     });
 
     it('pump 2 becomes available when pump 1 faults', () => {
