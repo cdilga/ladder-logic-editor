@@ -60,3 +60,47 @@
   font-size: 11px;
   color: var(--accent-color, #4da6ff);
 }
+
+/* ============================================================================
+   Mobile Layout Override (Phase 5)
+   ========================================================================= */
+
+@media (max-width: 767px) {
+  .properties-panel {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--border-color, #404040);
+  }
+
+  .properties-header {
+    padding: 12px 14px;
+    font-size: 11px;
+    background: var(--mobile-bg-surface, #222633);
+  }
+
+  .properties-empty {
+    padding: 30px 14px;
+    font-size: 12px;
+  }
+
+  .properties-content {
+    padding: 10px 0;
+  }
+
+  .property-row {
+    padding: 8px 14px;
+    gap: 10px;
+  }
+
+  .property-label {
+    font-size: 11px;
+  }
+
+  .property-value {
+    font-size: 11px;
+  }
+
+  .property-value.mono {
+    font-size: 10px;
+  }
+}

@@ -8,7 +8,7 @@
  */
 
 /* ============================================================================
-   Tab Bar Container
+   Tab Bar Container (Phase 5: scaled down 15%)
    ========================================================================= */
 
 .bottom-tab-bar {
@@ -28,7 +28,7 @@
   box-shadow:
     inset 0 1px 0 var(--mobile-border-accent),
     0 -1px 0 rgba(0, 212, 255, 0.05),
-    0 -4px 20px rgba(0, 0, 0, 0.2);
+    0 -3px 16px rgba(0, 0, 0, 0.2);
 }
 
 /* Safe area handling */
@@ -52,7 +52,7 @@
   top: 0;
   left: 0;
   width: 25%; /* 100% / 4 tabs */
-  height: 3px;
+  height: 2px;
   background: linear-gradient(
     90deg,
     transparent,
@@ -60,7 +60,7 @@
     var(--mobile-accent-primary) 80%,
     transparent
   );
-  box-shadow: 0 0 12px rgba(0, 212, 255, 0.6);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.6);
   transition: transform var(--mobile-transition-indicator);
   will-change: transform;
 }
@@ -75,13 +75,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   height: var(--mobile-tabbar-height);
   background: transparent;
   border: none;
   color: var(--mobile-text-tertiary);
   font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -90,7 +90,7 @@
   -webkit-tap-highlight-color: transparent;
 
   /* Ensure minimum touch target */
-  min-height: 44px;
+  min-height: 40px;
 }
 
 /* Technical grid background on active */
@@ -121,7 +121,7 @@
 
 /* Icon styling */
 .tab-icon {
-  font-size: 20px;
+  font-size: 17px;
   line-height: 1;
   transition: all var(--mobile-transition-fast);
   font-style: normal;
@@ -129,13 +129,13 @@
 }
 
 .tab-button.active .tab-icon {
-  filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.4));
+  filter: drop-shadow(0 0 6px rgba(0, 212, 255, 0.4));
   transform: translateY(-1px);
 }
 
 /* Label styling */
 .tab-label {
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.04em;
   transition: all var(--mobile-transition-fast);
@@ -143,7 +143,7 @@
 
 .tab-button.active .tab-label {
   font-weight: 700;
-  text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+  text-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
 }
 
 /* ============================================================================
@@ -172,21 +172,21 @@
 
 @media (orientation: landscape) and (max-height: 500px) {
   .bottom-tab-bar {
-    height: calc(48px + var(--mobile-safe-bottom));
+    height: calc(40px + var(--mobile-safe-bottom));
   }
 
   .tab-button {
-    height: 48px;
-    min-height: 44px;
-    gap: 2px;
+    height: 40px;
+    min-height: 38px;
+    gap: 1px;
   }
 
   .tab-icon {
-    font-size: 18px;
+    font-size: 15px;
   }
 
   .tab-label {
-    font-size: 9px;
+    font-size: 7px;
   }
 }
 
