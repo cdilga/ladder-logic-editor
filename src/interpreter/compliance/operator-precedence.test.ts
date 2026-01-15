@@ -524,6 +524,383 @@ describe('Complex Expression Precedence', () => {
 });
 
 // ============================================================================
+// Additional Precedence Tests (OPERATORS.md coverage)
+// ============================================================================
+
+describe('Additional Precedence Tests', () => {
+  describe('Multiple same-precedence operations', () => {
+    it('2 * 3 + 4 * 5 = 26', () => {
+      // (2 * 3) + (4 * 5) = 6 + 20 = 26
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := 2 * 3 + 4 * 5;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(26);
+    });
+
+    it('10 / 2 - 8 / 4 = 3', () => {
+      // (10 / 2) - (8 / 4) = 5 - 2 = 3
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := 10 / 2 - 8 / 4;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(3);
+    });
+  });
+
+  describe('Complex boolean expressions', () => {
+    it('a > b OR c < d AND e = f - AND binds tighter than OR', () => {
+      // a=1, b=2, c=5, d=10, e=3, f=3
+      // (1 > 2) OR ((5 < 10) AND (3 = 3)) = FALSE OR (TRUE AND TRUE) = FALSE OR TRUE = TRUE
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          a : INT := 1;
+          b : INT := 2;
+          c : INT := 5;
+          d : INT := 10;
+          e : INT := 3;
+          f : INT := 3;
+          Result : BOOL;
+        END_VAR
+        Result := a > b OR c < d AND e = f;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getBool('Result')).toBe(true);
+    });
+
+    it('complex mixed: 5 + 3 > 7 AND 10 - 2 < 9 OR 1 = 2', () => {
+      // ((5 + 3) > 7) AND ((10 - 2) < 9) OR (1 = 2)
+      // = (8 > 7) AND (8 < 9) OR FALSE
+      // = TRUE AND TRUE OR FALSE
+      // = (TRUE AND TRUE) OR FALSE (AND binds tighter)
+      // = TRUE OR FALSE = TRUE
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : BOOL;
+        END_VAR
+        Result := 5 + 3 > 7 AND 10 - 2 < 9 OR 1 = 2;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getBool('Result')).toBe(true);
+    });
+  });
+
+  describe('Deeply nested parentheses', () => {
+    it('(((1 + 2) * 3) + 4) * 5 = 65', () => {
+      // ((3 * 3) + 4) * 5 = (9 + 4) * 5 = 13 * 5 = 65
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := (((1 + 2) * 3) + 4) * 5;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(65);
+    });
+
+    it('((((10)))) = 10', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := ((((10))));
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(10);
+    });
+
+    it('((1 + 2) * (3 + (4 * 5))) = 69', () => {
+      // (1 + 2) * (3 + 20) = 3 * 23 = 69
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := (1 + 2) * (3 + (4 * 5));
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(69);
+    });
+  });
+
+  describe('Double NOT (NOT NOT)', () => {
+    it('NOT NOT TRUE = TRUE', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : BOOL;
+        END_VAR
+        Result := NOT NOT TRUE;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getBool('Result')).toBe(true);
+    });
+
+    it('NOT NOT FALSE = FALSE', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : BOOL;
+        END_VAR
+        Result := NOT NOT FALSE;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getBool('Result')).toBe(false);
+    });
+
+    it('NOT NOT NOT TRUE = FALSE (triple NOT)', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : BOOL;
+        END_VAR
+        Result := NOT NOT NOT TRUE;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getBool('Result')).toBe(false);
+    });
+
+    it('NOT NOT variable preserves value', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          x : BOOL := TRUE;
+          Result : BOOL;
+        END_VAR
+        Result := NOT NOT x;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getBool('Result')).toBe(true);
+    });
+  });
+
+  describe('Double negation (--x)', () => {
+    it('--5 = 5', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := --5;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(5);
+    });
+
+    it('---5 = -5 (triple negation)', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := ---5;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(-5);
+    });
+
+    it('--x for variable returns original value', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          x : INT := 42;
+          Result : INT;
+        END_VAR
+        Result := --x;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(42);
+    });
+  });
+
+  describe('Boundary comparisons (equal cases)', () => {
+    it('<= returns TRUE when operands are equal', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : BOOL;
+        END_VAR
+        Result := 5 <= 5;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getBool('Result')).toBe(true);
+    });
+
+    it('>= returns TRUE when operands are equal', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : BOOL;
+        END_VAR
+        Result := 5 >= 5;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getBool('Result')).toBe(true);
+    });
+
+    it('<= returns FALSE when left > right', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : BOOL;
+        END_VAR
+        Result := 6 <= 5;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getBool('Result')).toBe(false);
+    });
+
+    it('>= returns FALSE when left < right', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : BOOL;
+        END_VAR
+        Result := 4 >= 5;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getBool('Result')).toBe(false);
+    });
+
+    it('<= at INT boundary: 32767 <= 32767', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : BOOL;
+        END_VAR
+        Result := 32767 <= 32767;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getBool('Result')).toBe(true);
+    });
+
+    it('>= at INT boundary: -32768 >= -32768', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : BOOL;
+        END_VAR
+        Result := -32768 >= -32768;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getBool('Result')).toBe(true);
+    });
+  });
+});
+
+// ============================================================================
 // Left-to-Right Associativity Tests
 // ============================================================================
 

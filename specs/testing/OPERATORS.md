@@ -1,9 +1,9 @@
 # Operators & Precedence Compliance Tests
 
 **IEC 61131-3 Section:** 3.3
-**Status:** 🟢 Complete (70 tests, 100%)
+**Status:** 🟢 Complete (90 tests, 100%)
 **Test Files:**
-- `src/interpreter/compliance/operator-precedence.test.ts` (23 tests)
+- `src/interpreter/compliance/operator-precedence.test.ts` (43 tests)
 - `src/interpreter/property/arithmetic-properties.test.ts` (47 tests)
 
 ---
@@ -69,7 +69,8 @@
 ### Unary Negation (-)
 - [x] -INT
 - [x] -REAL
-- [ ] --x (double negation)
+- [x] --x (double negation)
+- [x] ---x (triple negation)
 - [ ] -(-32768) overflow
 
 ---
@@ -102,11 +103,13 @@
 
 ### Less or Equal (<=)
 - [x] Basic comparison
-- [ ] Equal case
+- [x] Equal case (5 <= 5 returns TRUE)
+- [x] Boundary: 32767 <= 32767
 
 ### Greater or Equal (>=)
 - [x] Basic comparison
-- [ ] Equal case
+- [x] Equal case (5 >= 5 returns TRUE)
+- [x] Boundary: -32768 >= -32768
 
 ---
 
@@ -115,7 +118,8 @@
 ### NOT
 - [x] NOT TRUE = FALSE
 - [x] NOT FALSE = TRUE
-- [ ] Double NOT: NOT NOT x = x
+- [x] Double NOT: NOT NOT x = x
+- [x] Triple NOT: NOT NOT NOT TRUE = FALSE
 
 ### AND / &
 - [x] TRUE AND TRUE = TRUE
@@ -148,7 +152,8 @@ Result := 2 + 3 * 4;
 ```
 - [x] `2 + 3 * 4 = 14`
 - [x] `10 - 6 / 2 = 7`
-- [ ] `2 * 3 + 4 * 5 = 26`
+- [x] `2 * 3 + 4 * 5 = 26`
+- [x] `10 / 2 - 8 / 4 = 3`
 
 ### Comparison vs Boolean
 ```st
@@ -157,16 +162,20 @@ Result := a > b AND c < d;
 ```
 - [x] Comparison binds tighter than AND
 - [x] Comparison binds tighter than OR
-- [ ] Complex: `a > b OR c < d AND e = f`
+- [x] Complex: `a > b OR c < d AND e = f`
+- [x] Complex mixed: `5 + 3 > 7 AND 10 - 2 < 9 OR 1 = 2`
 
 ### Parentheses Override
 - [x] `(2 + 3) * 4 = 20`
 - [x] `NOT (a AND b) = NOT a OR NOT b`
-- [ ] Deeply nested parentheses
+- [x] Deeply nested parentheses: `(((1 + 2) * 3) + 4) * 5 = 65`
+- [x] Redundant parentheses: `((((10)))) = 10`
+- [x] Mixed nesting: `(1 + 2) * (3 + (4 * 5)) = 69`
 
 ### Right-to-Left Associativity
-- [ ] `2 ** 3 ** 2 = 512` (right-associative: 2 ** 9)
-- [ ] `NOT NOT TRUE = TRUE`
+- [ ] `2 ** 3 ** 2 = 512` (right-associative: 2 ** 9) - Exponentiation not implemented
+- [x] `NOT NOT TRUE = TRUE`
+- [x] `NOT NOT FALSE = FALSE`
 
 ---
 
@@ -200,9 +209,9 @@ fc.assert(fc.property(fc.boolean(), fc.boolean(), (a, b) => {
 
 | Test File | Tests | Status |
 |-----------|-------|--------|
-| `operator-precedence.test.ts` | 23 | ✅ Complete |
+| `operator-precedence.test.ts` | 43 | ✅ Complete |
 | `arithmetic-properties.test.ts` | 47 | ✅ Complete |
-| **Total** | **70** | ✅ |
+| **Total** | **90** | ✅ |
 
 ---
 
