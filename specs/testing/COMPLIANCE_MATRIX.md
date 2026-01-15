@@ -234,9 +234,10 @@ This document maps every relevant IEC 61131-3 section to our implementation, ser
 | [PROPERTY_TESTS](./PROPERTY_TESTS.md) | - | 86 | 86 | 86 | 100% |
 | [BOUNDS](./BOUNDS.md) | - | 69 | 69 | 69 | 100% |
 | [INTEGRATION](./INTEGRATION.md) | - | 105 | 105 | 105 | 100% |
-| **TOTAL** | | **~826** | **~826** | **~826** | **100%** |
+| Additional Edge Cases | - | 37 | 37 | 37 | 100% |
+| **TOTAL** | | **~863** | **~863** | **~863** | **100%** |
 
-**Target:** 600+ tests, 95%+ passing ✅ ACHIEVED (1067 total tests, 100% passing)
+**Target:** 600+ tests, 95%+ passing ✅ ACHIEVED (1104 total tests, 100% passing)
 
 ---
 
@@ -276,7 +277,7 @@ When the standard is unclear, document decisions here:
 ## Validation Checklist
 
 ### Phase 1: Self-Validation
-- [x] All unit tests pass (1067 tests)
+- [x] All unit tests pass (1104 tests)
 - [x] All property tests pass (86 tests)
 - [x] All integration tests pass (105 tests)
 - [x] No known bugs blocking tests
@@ -300,6 +301,12 @@ When the standard is unclear, document decisions here:
 ---
 
 ## Changelog
+
+### 2026-01-16 (Update 5)
+- Added 37 new edge case tests in additional-edge-cases.test.ts
+- Tests cover: deeply nested expressions, control flow edge cases, function block interactions
+- Total tests increased from 1067 to 1104
+- All tests verified passing (1104 total)
 
 ### 2026-01-16 (Update 4)
 - Updated total test count from 1063 to 1067 in validation checklist
