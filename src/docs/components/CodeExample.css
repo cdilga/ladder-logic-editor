@@ -1,0 +1,97 @@
+/**
+ * Code Example Component Styles
+ */
+
+.code-example {
+  margin: 20px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #181825;
+  border: 1px solid #313244;
+}
+
+.code-example__title {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #a6adc8;
+  background: #1e1e2e;
+  border-bottom: 1px solid #313244;
+}
+
+.code-example__container {
+  position: relative;
+}
+
+.code-example__code {
+  margin: 0;
+  padding: 16px;
+  overflow-x: auto;
+  font-family: 'Fira Code', 'Monaco', 'Menlo', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.code-example__code code {
+  background: none !important;
+  padding: 0 !important;
+  color: #cdd6f4;
+}
+
+.code-example__actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid #313244;
+}
+
+.code-example__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 150ms, transform 100ms;
+}
+
+.code-example__btn:active {
+  transform: scale(0.98);
+}
+
+.code-example__btn--copy {
+  background: #313244;
+  color: #cdd6f4;
+}
+
+.code-example__btn--copy:hover {
+  background: #45475a;
+}
+
+.code-example__btn--try {
+  background: #89b4fa;
+  color: #1e1e2e;
+}
+
+.code-example__btn--try:hover {
+  background: #b4befe;
+}
+
+.code-example__btn svg {
+  flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .code-example__actions {
+    flex-direction: column;
+  }
+
+  .code-example__btn {
+    justify-content: center;
+  }
+}

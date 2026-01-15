@@ -1,0 +1,196 @@
+/**
+ * Documentation Sidebar Styles
+ */
+
+/* ============================================================================
+   Sidebar Container
+   ============================================================================ */
+
+.docs-sidebar {
+  grid-area: sidebar;
+  display: flex;
+  flex-direction: column;
+  background: #181825;
+  border-right: 1px solid #313244;
+  overflow-y: auto;
+}
+
+/* ============================================================================
+   Sidebar Header
+   ============================================================================ */
+
+.docs-sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #313244;
+}
+
+.docs-sidebar__logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #cdd6f4;
+  text-decoration: none;
+}
+
+.docs-sidebar__logo svg {
+  color: #89b4fa;
+}
+
+.docs-sidebar__close {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #a6adc8;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.docs-sidebar__close:hover {
+  background: #313244;
+  color: #cdd6f4;
+}
+
+/* ============================================================================
+   Navigation
+   ============================================================================ */
+
+.docs-sidebar__nav {
+  flex: 1;
+  padding: 12px 0;
+  overflow-y: auto;
+}
+
+.docs-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.docs-nav__item {
+  margin: 0;
+}
+
+.docs-nav__link {
+  display: block;
+  padding: 8px 20px;
+  font-size: 14px;
+  color: #a6adc8;
+  text-decoration: none;
+  transition: background-color 150ms, color 150ms;
+}
+
+.docs-nav__link:hover {
+  color: #cdd6f4;
+  background: rgba(137, 180, 250, 0.1);
+}
+
+.docs-nav__link--active {
+  color: #89b4fa;
+  background: rgba(137, 180, 250, 0.15);
+  border-right: 3px solid #89b4fa;
+}
+
+/* ============================================================================
+   Section Navigation
+   ============================================================================ */
+
+.docs-nav__section {
+  margin: 4px 0;
+}
+
+.docs-nav__section-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: #cdd6f4;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms;
+}
+
+.docs-nav__section-btn:hover {
+  background: rgba(137, 180, 250, 0.1);
+}
+
+.docs-nav__chevron {
+  flex-shrink: 0;
+  transition: transform 200ms;
+}
+
+.docs-nav__section-btn--expanded .docs-nav__chevron {
+  transform: rotate(180deg);
+}
+
+.docs-nav__children {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.docs-nav__children .docs-nav__link {
+  padding-left: 44px;
+  font-size: 13px;
+}
+
+/* ============================================================================
+   Sidebar Footer
+   ============================================================================ */
+
+.docs-sidebar__footer {
+  padding: 16px 20px;
+  border-top: 1px solid #313244;
+}
+
+.docs-sidebar__back-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #89b4fa;
+  text-decoration: none;
+}
+
+.docs-sidebar__back-link:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================================
+   Mobile Styles
+   ============================================================================ */
+
+@media (max-width: 900px) {
+  .docs-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 300ms ease;
+  }
+
+  .docs-sidebar--open {
+    transform: translateX(0);
+  }
+
+  .docs-sidebar__close {
+    display: flex;
+  }
+}

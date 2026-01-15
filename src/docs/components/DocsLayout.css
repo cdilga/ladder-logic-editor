@@ -1,0 +1,286 @@
+/**
+ * Documentation Layout Styles
+ */
+
+/* ============================================================================
+   Layout Container
+   ============================================================================ */
+
+.docs-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "header header"
+    "sidebar main";
+  min-height: 100vh;
+  background: #1e1e2e;
+  color: #cdd6f4;
+}
+
+/* ============================================================================
+   Header (Mobile)
+   ============================================================================ */
+
+.docs-header {
+  grid-area: header;
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #181825;
+  border-bottom: 1px solid #313244;
+}
+
+.docs-header__menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #cdd6f4;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.docs-header__menu-btn:hover {
+  background: #313244;
+}
+
+.docs-header__title {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 600;
+  color: #cdd6f4;
+  text-decoration: none;
+}
+
+.docs-header__back {
+  font-size: 13px;
+  color: #89b4fa;
+  text-decoration: none;
+}
+
+.docs-header__back:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================================
+   Main Content Area
+   ============================================================================ */
+
+.docs-main {
+  grid-area: main;
+  overflow-y: auto;
+  padding: 32px 48px;
+  max-width: 900px;
+}
+
+/* ============================================================================
+   Article Styles
+   ============================================================================ */
+
+.docs-article__header {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #313244;
+}
+
+.docs-article__header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #cdd6f4;
+  margin: 0 0 8px;
+}
+
+.docs-article__desc {
+  font-size: 16px;
+  color: #a6adc8;
+  margin: 0;
+}
+
+.docs-article__content {
+  line-height: 1.7;
+}
+
+.docs-article__content h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #cdd6f4;
+  margin: 32px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #313244;
+}
+
+.docs-article__content h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #cdd6f4;
+  margin: 24px 0 12px;
+}
+
+.docs-article__content h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #a6adc8;
+  margin: 20px 0 8px;
+}
+
+.docs-article__content p {
+  margin: 0 0 16px;
+}
+
+.docs-article__content ul,
+.docs-article__content ol {
+  margin: 0 0 16px;
+  padding-left: 24px;
+}
+
+.docs-article__content li {
+  margin: 8px 0;
+}
+
+.docs-article__content a {
+  color: #89b4fa;
+  text-decoration: none;
+}
+
+.docs-article__content a:hover {
+  text-decoration: underline;
+}
+
+.docs-article__content code {
+  font-family: 'Fira Code', 'Monaco', 'Menlo', monospace;
+  font-size: 0.9em;
+  background: #313244;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #f5c2e7;
+}
+
+.docs-article__content pre {
+  margin: 16px 0;
+  padding: 16px;
+  background: #181825;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.docs-article__content pre code {
+  background: none;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #cdd6f4;
+}
+
+.docs-article__content blockquote {
+  margin: 16px 0;
+  padding: 12px 16px;
+  border-left: 4px solid #89b4fa;
+  background: rgba(137, 180, 250, 0.1);
+  border-radius: 0 8px 8px 0;
+}
+
+.docs-article__content blockquote p {
+  margin: 0;
+}
+
+.docs-article__content table {
+  width: 100%;
+  margin: 16px 0;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.docs-article__content th,
+.docs-article__content td {
+  padding: 10px 12px;
+  text-align: left;
+  border: 1px solid #313244;
+}
+
+.docs-article__content th {
+  background: #181825;
+  font-weight: 600;
+  color: #cdd6f4;
+}
+
+.docs-article__content td {
+  background: #1e1e2e;
+}
+
+/* ============================================================================
+   Code Block with Syntax Highlighting
+   ============================================================================ */
+
+.code-block {
+  margin: 16px 0;
+  padding: 16px;
+  background: #181825;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-family: 'Fira Code', 'Monaco', 'Menlo', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.code-block code {
+  background: none;
+  padding: 0;
+  color: #cdd6f4;
+}
+
+/* ============================================================================
+   Sidebar Overlay (Mobile)
+   ============================================================================ */
+
+.docs-sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+}
+
+/* ============================================================================
+   Responsive Design
+   ============================================================================ */
+
+@media (max-width: 900px) {
+  .docs-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "header"
+      "main";
+  }
+
+  .docs-header {
+    display: flex;
+  }
+
+  .docs-main {
+    padding: 24px 20px;
+  }
+
+  .docs-sidebar-overlay {
+    display: block;
+  }
+}
+
+@media (max-width: 600px) {
+  .docs-article__header h1 {
+    font-size: 24px;
+  }
+
+  .docs-article__content h2 {
+    font-size: 20px;
+  }
+
+  .docs-article__content h3 {
+    font-size: 16px;
+  }
+}
