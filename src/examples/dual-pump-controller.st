@@ -67,6 +67,8 @@ VAR_OUTPUT
     ALM_HIGH_LEVEL : BOOL;
     ALM_OVERFLOW : BOOL;
     ALM_BOTH_PUMPS_FAILED : BOOL;
+    ALM_TEMP_WARN_1 : BOOL;   (* Temperature warning for pump 1 *)
+    ALM_TEMP_WARN_2 : BOOL;   (* Temperature warning for pump 2 *)
 END_VAR
 
 VAR
@@ -123,6 +125,16 @@ VAR
     AlternationInterval : TIME := T#30s;  (* Demo default - use T#24h for production *)
     AlternationTimer : TON;               (* Timer for automatic alternation *)
     Prev_Force_Alternate : BOOL := FALSE; (* Edge detection for manual alternation *)
+
+    (* Anti-cycle protection *)
+    MIN_OFF_TIME : TIME := T#30s;  (* Minimum time pump must be off before restart *)
+    MIN_ON_TIME : TIME := T#10s;   (* Minimum time pump must run before stopping *)
+    AntiCycleTimer1 : TON;         (* Time since pump 1 stopped *)
+    AntiCycleTimer2 : TON;         (* Time since pump 2 stopped *)
+    Pump1_CanStart : BOOL := TRUE; (* TRUE if pump 1 has been off long enough *)
+    Pump2_CanStart : BOOL := TRUE; (* TRUE if pump 2 has been off long enough *)
+    Prev_Pump1_Running : BOOL := FALSE;  (* Previous cycle pump 1 state for stop detection *)
+    Prev_Pump2_Running : BOOL := FALSE;  (* Previous cycle pump 2 state for stop detection *)
 END_VAR
 
 (* ============================================================================
@@ -271,6 +283,11 @@ IF NOT SEAL_OK_2 THEN
 END_IF;
 
 (* Overtemperature detection *)
+(* Warning at TEMP_HIGH threshold - alarm only, pump continues *)
+ALM_TEMP_WARN_1 := TEMP_1 > TEMP_HIGH;
+ALM_TEMP_WARN_2 := TEMP_2 > TEMP_HIGH;
+
+(* Critical at TEMP_CRITICAL threshold - fault and stop pump *)
 IF TEMP_1 > TEMP_CRITICAL THEN
     Pump1_Faulted := TRUE;
     ALM_OVERTEMP_1 := TRUE;
@@ -305,13 +322,44 @@ END_IF;
 ALM_BOTH_PUMPS_FAILED := Pump1_Faulted AND Pump2_Faulted;
 
 (* ============================================================================
-   PUMP AVAILABILITY
-   A pump is available for AUTO control if HOA is in AUTO and not faulted
-   (Anti-cycle protection is applied as post-processing on pump output)
+   ANTI-CYCLE PROTECTION
+   Prevents rapid pump cycling that damages motors.
+   Timer starts when pump stops, pump cannot restart until MIN_OFF_TIME elapsed.
+   On first scan (cold start), pumps are allowed to start immediately.
    ============================================================================ *)
 
-Pump1_Available := (HOA_1 = 2) AND NOT Pump1_Faulted;
-Pump2_Available := (HOA_2 = 2) AND NOT Pump2_Faulted;
+(* Pump 1 anti-cycle timer *)
+(* Timer runs when pump is NOT running and hasn't completed yet *)
+(* Timer stays complete (Q=TRUE) until pump starts again *)
+AntiCycleTimer1(IN := NOT Pump1_Running, PT := MIN_OFF_TIME);
+
+(* Pump can start if:
+   - Cold start: pump has never run before (Prev_Pump1_Running = FALSE)
+   - Timer completed (Q = TRUE, meaning 30s has elapsed)
+   - Already running *)
+Pump1_CanStart := Pump1_Running OR AntiCycleTimer1.Q OR NOT Prev_Pump1_Running;
+
+(* Pump 2 anti-cycle timer *)
+AntiCycleTimer2(IN := NOT Pump2_Running, PT := MIN_OFF_TIME);
+Pump2_CanStart := Pump2_Running OR AntiCycleTimer2.Q OR NOT Prev_Pump2_Running;
+
+(* Update previous running states for next scan cycle - these persist across scans *)
+(* Once set TRUE, these stay TRUE (latch) so we know pump has run before *)
+IF Pump1_Running THEN
+    Prev_Pump1_Running := TRUE;
+END_IF;
+IF Pump2_Running THEN
+    Prev_Pump2_Running := TRUE;
+END_IF;
+
+(* ============================================================================
+   PUMP AVAILABILITY
+   A pump is available for AUTO control if HOA is in AUTO, not faulted,
+   and anti-cycle timer has elapsed
+   ============================================================================ *)
+
+Pump1_Available := (HOA_1 = 2) AND NOT Pump1_Faulted AND Pump1_CanStart;
+Pump2_Available := (HOA_2 = 2) AND NOT Pump2_Faulted AND Pump2_CanStart;
 
 (* ============================================================================
    LEAD/LAG ASSIGNMENT WITH FAILOVER

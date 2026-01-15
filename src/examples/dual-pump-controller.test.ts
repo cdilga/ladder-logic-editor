@@ -1329,4 +1329,342 @@ describe('dual-pump-controller', () => {
       expect(store.getInt('LEAD_PUMP')).toBe(2);
     });
   });
+
+  // ==========================================================================
+  // Temperature Warning Tests (from spec: Overtemperature Protection)
+  // ==========================================================================
+
+  describe('temperature warnings', () => {
+    beforeEach(() => {
+      setAutoMode();
+      setNormalConditions();
+    });
+
+    it('sets ALM_TEMP_WARN_1 when temperature exceeds HIGH threshold (80C)', () => {
+      store.setInt('TEMP_1', 81);
+      store.setInt('TEMP_2', 25);
+
+      runCycle();
+
+      expect(store.getBool('ALM_TEMP_WARN_1')).toBe(true);
+      expect(store.getBool('ALM_TEMP_WARN_2')).toBe(false);
+      // Should NOT fault at warning level - pump can still run
+      expect(store.getBool('Pump1_Faulted')).toBe(false);
+      expect(store.getBool('ALM_OVERTEMP_1')).toBe(false);
+    });
+
+    it('does not set ALM_TEMP_WARN when temperature is at or below HIGH threshold', () => {
+      store.setInt('TEMP_1', 80);
+      store.setInt('TEMP_2', 75);
+
+      runCycle();
+
+      expect(store.getBool('ALM_TEMP_WARN_1')).toBe(false);
+      expect(store.getBool('ALM_TEMP_WARN_2')).toBe(false);
+    });
+
+    it('sets both warning and fault when temperature exceeds CRITICAL threshold', () => {
+      store.setInt('TEMP_1', 96);
+
+      runCycle();
+
+      // Warning should be set (96 > 80)
+      expect(store.getBool('ALM_TEMP_WARN_1')).toBe(true);
+      // Fault should also be set (96 > 95)
+      expect(store.getBool('ALM_OVERTEMP_1')).toBe(true);
+      expect(store.getBool('Pump1_Faulted')).toBe(true);
+    });
+
+    it('pump continues running at warning level but not at fault level', () => {
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+
+      // Start pump with normal temperature
+      store.setInt('TEMP_1', 25);
+      runCycle();
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
+
+      // Raise to warning level - pump should still run
+      store.setInt('TEMP_1', 85);
+      runCycle();
+      expect(store.getBool('ALM_TEMP_WARN_1')).toBe(true);
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
+
+      // Raise to fault level - pump should stop
+      store.setInt('TEMP_1', 96);
+      runCycle();
+      expect(store.getBool('ALM_OVERTEMP_1')).toBe(true);
+      expect(store.getBool('PUMP_1_RUN')).toBe(false);
+    });
+
+    it('sets ALM_TEMP_WARN_2 for pump 2', () => {
+      store.setInt('TEMP_1', 25);
+      store.setInt('TEMP_2', 85);
+
+      runCycle();
+
+      expect(store.getBool('ALM_TEMP_WARN_1')).toBe(false);
+      expect(store.getBool('ALM_TEMP_WARN_2')).toBe(true);
+    });
+  });
+
+  // ==========================================================================
+  // Anti-Cycle Protection Tests (from spec: Anti-Cycle Protection)
+  // ==========================================================================
+
+  describe('anti-cycle protection', () => {
+    beforeEach(() => {
+      setAutoMode();
+      setNormalConditions();
+    });
+
+    it('allows pump to start on cold start (first run)', () => {
+      // Cold start - pump has never run before
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+
+      runCycle();
+
+      // Pump should start immediately on cold start
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
+    });
+
+    it('prevents pump from restarting before MIN_OFF_TIME (30s) after stopping', () => {
+      // Start pump
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+      runCycle();
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
+
+      // Stop pump by dropping level below LOW
+      store.setInt('LEVEL_1', 15);
+      store.setInt('LEVEL_2', 15);
+      store.setInt('LEVEL_3', 15);
+      runCycle();
+      expect(store.getBool('PUMP_1_RUN')).toBe(false);
+
+      // Wait only 10 seconds (100 cycles at 100ms) - not enough time
+      for (let i = 0; i < 100; i++) {
+        runCycle();
+      }
+
+      // Try to restart - level goes high again
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+      runCycle();
+
+      // Pump should NOT start (anti-cycle timer not complete)
+      expect(store.getBool('PUMP_1_RUN')).toBe(false);
+      expect(store.getBool('Pump1_CanStart')).toBe(false);
+    });
+
+    it('allows pump to restart after MIN_OFF_TIME (30s) has elapsed', () => {
+      // Start pump
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+      runCycle();
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
+
+      // Stop pump
+      store.setInt('LEVEL_1', 15);
+      store.setInt('LEVEL_2', 15);
+      store.setInt('LEVEL_3', 15);
+      runCycle();
+      expect(store.getBool('PUMP_1_RUN')).toBe(false);
+
+      // Wait 30 seconds (300 cycles at 100ms)
+      // Note: This also triggers lead/lag alternation (30s interval)
+      for (let i = 0; i < 300; i++) {
+        runCycle();
+      }
+
+      // Now try to restart
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+      runCycle();
+
+      // Lead pump should start (anti-cycle timer complete)
+      // After 30s, alternation occurred so pump 2 is now lead
+      const leadPump = store.getInt('LEAD_PUMP');
+      if (leadPump === 1) {
+        expect(store.getBool('PUMP_1_RUN')).toBe(true);
+        expect(store.getBool('Pump1_CanStart')).toBe(true);
+      } else {
+        // Pump 2 is lead after alternation
+        expect(store.getBool('PUMP_2_RUN')).toBe(true);
+        expect(store.getBool('Pump2_CanStart')).toBe(true);
+      }
+    });
+
+    it('anti-cycle protection applies to pump 2 as well', () => {
+      // Start with pump 2 as lead
+      store.setInt('LeadPumpNum', 2);
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+      runCycle();
+      expect(store.getBool('PUMP_2_RUN')).toBe(true);
+
+      // Stop pump 2
+      store.setInt('LEVEL_1', 15);
+      store.setInt('LEVEL_2', 15);
+      store.setInt('LEVEL_3', 15);
+      runCycle();
+      expect(store.getBool('PUMP_2_RUN')).toBe(false);
+
+      // Wait only 10 seconds - not enough
+      for (let i = 0; i < 100; i++) {
+        runCycle();
+      }
+
+      // Try to restart
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+      runCycle();
+
+      // Pump 2 should NOT start (blocked by anti-cycle)
+      // Note: lead may have swapped due to alternation timer
+      expect(store.getBool('Pump2_CanStart')).toBe(false);
+
+      // Wait remaining 20 seconds (this takes us to 30s total)
+      // Note: alternation timer fires at 30s
+      for (let i = 0; i < 200; i++) {
+        runCycle();
+      }
+
+      // Check current lead pump and verify that pump can start
+      const leadPump = store.getInt('LEAD_PUMP');
+      runCycle(); // One more cycle to allow pump to start
+
+      // Either lead pump should be running now
+      if (leadPump === 2) {
+        expect(store.getBool('PUMP_2_RUN')).toBe(true);
+      } else {
+        // Alternation may have made pump 1 lead
+        expect(store.getBool('PUMP_1_RUN')).toBe(true);
+      }
+    });
+
+    it('anti-cycle timer resets when pump starts running', () => {
+      // Start pump
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+      runCycle();
+      const initialLead = store.getInt('LEAD_PUMP');
+      expect(initialLead === 1 ? store.getBool('PUMP_1_RUN') : store.getBool('PUMP_2_RUN')).toBe(true);
+
+      // Run for 5 seconds (50 cycles) - short enough to not trigger alternation
+      for (let i = 0; i < 50; i++) {
+        runCycle();
+      }
+
+      // Stop pump
+      store.setInt('LEVEL_1', 15);
+      store.setInt('LEVEL_2', 15);
+      store.setInt('LEVEL_3', 15);
+      runCycle();
+
+      // Wait 30 seconds for anti-cycle timer
+      // (This also triggers alternation at 30s mark)
+      for (let i = 0; i < 300; i++) {
+        runCycle();
+      }
+
+      // Restart pump - whichever is lead
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+      runCycle();
+      const leadAfterRestart = store.getInt('LEAD_PUMP');
+      // Lead pump should be running
+      expect(leadAfterRestart === 1 ? store.getBool('PUMP_1_RUN') : store.getBool('PUMP_2_RUN')).toBe(true);
+
+      // Stop again
+      store.setInt('LEVEL_1', 15);
+      store.setInt('LEVEL_2', 15);
+      store.setInt('LEVEL_3', 15);
+      runCycle();
+      expect(store.getBool('PUMP_1_RUN')).toBe(false);
+      expect(store.getBool('PUMP_2_RUN')).toBe(false);
+
+      // Anti-cycle timer should have reset - need to wait 30s again
+      // Wait only 10 seconds (100 cycles) - not enough for anti-cycle
+      for (let i = 0; i < 100; i++) {
+        runCycle();
+      }
+
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+      runCycle();
+
+      // Lead pump's anti-cycle timer should not have completed yet
+      const currentLead = store.getInt('LEAD_PUMP');
+      const canStart = currentLead === 1 ? store.getBool('Pump1_CanStart') : store.getBool('Pump2_CanStart');
+
+      // The lead pump that just stopped should NOT be able to start
+      // (only 10s since it stopped, need 30s)
+      expect(canStart).toBe(false);
+    });
+
+    it('failover to lag pump respects anti-cycle protection', () => {
+      // Start pump 1 as lead
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+      runCycle();
+      expect(store.getBool('PUMP_1_RUN')).toBe(true);
+      expect(store.getBool('PUMP_2_RUN')).toBe(false);
+
+      // Also start pump 2 briefly by going to HIGH_HIGH
+      store.setInt('LEVEL_1', 90);
+      store.setInt('LEVEL_2', 90);
+      store.setInt('LEVEL_3', 90);
+      runCycle();
+      expect(store.getBool('PUMP_2_RUN')).toBe(true);
+
+      // Stop both by dropping level
+      store.setInt('LEVEL_1', 15);
+      store.setInt('LEVEL_2', 15);
+      store.setInt('LEVEL_3', 15);
+      runCycle();
+      runCycle(); // Need extra cycle for state transition
+      expect(store.getBool('PUMP_1_RUN')).toBe(false);
+      expect(store.getBool('PUMP_2_RUN')).toBe(false);
+
+      // Wait only 15 seconds
+      for (let i = 0; i < 150; i++) {
+        runCycle();
+      }
+
+      // Now fault pump 1 and try to start pumps
+      store.setBool('MOTOR_OL_1', false);
+      store.setInt('LEVEL_1', 75);
+      store.setInt('LEVEL_2', 75);
+      store.setInt('LEVEL_3', 75);
+      runCycle();
+
+      // Pump 1 is faulted, pump 2 should failover but is blocked by anti-cycle
+      expect(store.getBool('PUMP_1_RUN')).toBe(false);
+      expect(store.getBool('PUMP_2_RUN')).toBe(false); // Anti-cycle blocks it
+      expect(store.getInt('LEAD_PUMP')).toBe(2); // Lead swapped to pump 2
+
+      // Wait remaining 15 seconds
+      for (let i = 0; i < 150; i++) {
+        runCycle();
+      }
+      runCycle();
+
+      // Now pump 2 can start
+      expect(store.getBool('PUMP_2_RUN')).toBe(true);
+    });
+  });
 });
