@@ -21,14 +21,15 @@ Master specification for PLC interpreter IEC 61131-3 compliance testing.
 | [Bistables](./testing/BISTABLES.md) | ~32 | 26 | 81% | 🟢 Good |
 | [Variables & Scope](./testing/VARIABLES.md) | ~49 | 39 | 80% | 🟢 Good |
 | [Integration Programs](./testing/INTEGRATION.md) | ~50 | 20 | 40% | 🟡 Partial |
-| [Error Handling](./testing/ERROR_HANDLING.md) | ~30 | 0 | 0% | 🔴 Not Started |
+| [Error Handling](./testing/ERROR_HANDLING.md) | ~49 | 20 | 41% | 🟡 Partial |
 | [Property-Based Tests](./testing/PROPERTY_TESTS.md) | ~50 | 35 | 70% | 🟢 Good |
 | [Bounds & Edge Cases](./testing/BOUNDS.md) | ~63 | 40 | 63% | 🟢 Good |
-| **Total** | **~602** | **~320** | **53%** | 🟡 |
+| **Total** | **~621** | **~340** | **55%** | 🟡 |
 
 **Target for Industrial Simulation:** 600+ tests, 95%+ passing
 
 ### Current Test Count by File (2026-01-15)
+- `error-handling.test.ts`: 20 tests ✅
 - `bounds.test.ts`: 40 tests ✅
 - `edge-detection.test.ts`: 19 tests ✅
 - `bistable.test.ts`: 26 tests ✅
@@ -36,8 +37,8 @@ Master specification for PLC interpreter IEC 61131-3 compliance testing.
 - `timer-compliance.test.ts`: 10 tests ✅
 - `operator-precedence.test.ts`: 23 tests ✅
 - `arithmetic-properties.test.ts`: 35 tests ✅
-- Total interpreter tests: ~320 passing
-- Total all tests: 452 passing
+- Total interpreter tests: ~340 passing
+- Total all tests: 472 passing
 
 ---
 

@@ -1,6 +1,6 @@
 # Error Handling Compliance Tests
 
-**Status:** 🔴 Not Started
+**Status:** 🟡 Partial (20 tests, 41% coverage)
 **Test File:** `src/interpreter/compliance/error-handling.test.ts`
 
 ---
