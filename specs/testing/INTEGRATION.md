@@ -1,6 +1,6 @@
 # Integration Program Tests
 
-**Status:** 🟢 Complete (59 tests)
+**Status:** 🟢 Complete (82 tests)
 **Last Updated:** 2026-01-16
 **Test File:** `src/interpreter/integration/`
 
@@ -12,73 +12,103 @@ Integration tests verify complete programs work correctly end-to-end. These are 
 
 ---
 
-## Traffic Light Controller (Future Work)
+## Traffic Light Controller
 
 Classic 4-phase traffic light with timer-based phase transitions.
-
-*Note: This integration test is not yet implemented. The program structure below shows the intended design.*
+**Test File:** `src/interpreter/integration/traffic-light.test.ts`
+**Tests:** 23
 
 ### Program Structure
 ```st
 PROGRAM TrafficLight
-VAR
-  Running : BOOL := FALSE;
-  Phase : INT := 0;
-  PhaseTimer : TON;
-
-  (* Timing constants *)
-  GreenTime : TIME := T#5s;
-  YellowTime : TIME := T#2s;
-
-  (* Outputs *)
+VAR_INPUT
+  Running : BOOL;
+END_VAR
+VAR_OUTPUT
   NS_Red, NS_Yellow, NS_Green : BOOL;
   EW_Red, EW_Yellow, EW_Green : BOOL;
 END_VAR
+VAR
+  Phase : INT := 0;
+  PhaseTimer : TON;
+  GreenTime : TIME := T#5s;
+  YellowTime : TIME := T#2s;
+  CurrentPhaseTime : TIME;
+END_VAR
+
+(* Determine phase time *)
+IF Phase = 0 OR Phase = 2 THEN
+  CurrentPhaseTime := GreenTime;
+ELSE
+  CurrentPhaseTime := YellowTime;
+END_IF;
 
 (* Phase timer with auto-reset *)
-PhaseTimer(IN := Running AND NOT PhaseTimer.Q, PT := (* phase-dependent *));
+PhaseTimer(IN := Running AND NOT PhaseTimer.Q, PT := CurrentPhaseTime);
 
 (* Phase transition on timer complete *)
-IF PhaseTimer.Q THEN
-  Phase := (Phase + 1) MOD 4;
+IF PhaseTimer.Q AND Running THEN
+  Phase := Phase + 1;
+  IF Phase > 3 THEN
+    Phase := 0;
+  END_IF;
 END_IF;
 
 (* Output logic based on phase *)
-CASE Phase OF
-  0: NS_Green := TRUE; NS_Yellow := FALSE; NS_Red := FALSE;
-     EW_Green := FALSE; EW_Yellow := FALSE; EW_Red := TRUE;
-  1: NS_Green := FALSE; NS_Yellow := TRUE; NS_Red := FALSE;
-     EW_Green := FALSE; EW_Yellow := FALSE; EW_Red := TRUE;
-  (* ... etc *)
-END_CASE;
+IF Running THEN
+  CASE Phase OF
+    0: NS_Green := TRUE; NS_Yellow := FALSE; NS_Red := FALSE;
+       EW_Green := FALSE; EW_Yellow := FALSE; EW_Red := TRUE;
+    1: NS_Green := FALSE; NS_Yellow := TRUE; NS_Red := FALSE;
+       EW_Green := FALSE; EW_Yellow := FALSE; EW_Red := TRUE;
+    2: NS_Green := FALSE; NS_Yellow := FALSE; NS_Red := TRUE;
+       EW_Green := TRUE; EW_Yellow := FALSE; EW_Red := FALSE;
+    3: NS_Green := FALSE; NS_Yellow := FALSE; NS_Red := TRUE;
+       EW_Green := FALSE; EW_Yellow := TRUE; EW_Red := FALSE;
+  END_CASE;
+ELSE
+  NS_Green := FALSE; NS_Yellow := FALSE; NS_Red := FALSE;
+  EW_Green := FALSE; EW_Yellow := FALSE; EW_Red := FALSE;
+END_IF;
 END_PROGRAM
 ```
 
-### Planned Test Cases
+### Test Cases
 
 #### Phase Correctness
-- [ ] Phase 0: N/S green, E/W red
-- [ ] Phase 1: N/S yellow, E/W red
-- [ ] Phase 2: N/S red, E/W green
-- [ ] Phase 3: N/S red, E/W yellow
-- [ ] Phase wraps 3 → 0
+- [x] Phase 0: N/S green, E/W red
+- [x] Phase 1: N/S yellow, E/W red
+- [x] Phase 2: N/S red, E/W green
+- [x] Phase 3: N/S red, E/W yellow
+- [x] Phase wraps 3 → 0
 
 #### Timing
-- [ ] Phase 0 lasts GreenTime (5s)
-- [ ] Phase 1 lasts YellowTime (2s)
-- [ ] Phase 2 lasts GreenTime (5s)
-- [ ] Phase 3 lasts YellowTime (2s)
-- [ ] Full cycle: 2*(GreenTime + YellowTime) = 14s
+- [x] Phase 0 lasts GreenTime (5s)
+- [x] Phase 1 lasts YellowTime (2s)
+- [x] Phase 2 lasts GreenTime (5s)
+- [x] Phase 3 lasts YellowTime (2s)
+- [x] Full cycle: 2*(GreenTime + YellowTime) = 14s
 
 #### Control
-- [ ] Running=FALSE stops phase transitions
-- [ ] Running=TRUE resumes from current phase
-- [ ] Phase maintains value when stopped
+- [x] Running=FALSE stops phase transitions
+- [x] Running=TRUE resumes from current phase
+- [x] Phase maintains value when stopped
 
 #### Safety
-- [ ] Never N/S green AND E/W green simultaneously
-- [ ] Never both directions yellow simultaneously
-- [ ] At least one direction always red
+- [x] Never N/S green AND E/W green simultaneously
+- [x] Never both directions yellow simultaneously
+- [x] At least one direction always red when running
+- [x] All lights off when not running
+- [x] Exactly one light per direction when running
+
+#### Property-Based Tests
+- [x] Safety invariant holds for any running sequence
+- [x] Phase always in valid range [0, 3]
+
+#### Edge Cases
+- [x] Rapid start/stop does not corrupt state
+- [x] First scan after start has correct output
+- [x] Stopping mid-phase preserves phase state
 
 ---
 
@@ -369,12 +399,12 @@ fc.assert(fc.property(
 
 | Program | Tests | Status |
 |---------|-------|--------|
+| Traffic Light | 23 | ✅ Complete |
 | Motor Starter | 17 | ✅ Complete |
 | Pump Level Control | 22 | ✅ Complete |
 | Batch Sequencer | 20 | ✅ Complete |
-| Traffic Light | - | Future |
 | Conveyor | - | Future |
-| **Total** | **59** | ✅ |
+| **Total** | **82** | ✅ |
 
 ---
 
