@@ -10,6 +10,10 @@ VAR_INPUT
     LEVEL_2 : INT;
     LEVEL_3 : INT;
 
+    (* Flow Sensors *)
+    FLOW_1 : BOOL;          (* TRUE = flow detected *)
+    FLOW_2 : BOOL;
+
     (* Operator Controls *)
     HOA_1 : INT;            (* 0=OFF, 1=HAND, 2=AUTO *)
     HOA_2 : INT;
@@ -29,6 +33,8 @@ VAR_OUTPUT
     ALM_SENSOR_DISAGREE : BOOL;
     ALM_HIGH_LEVEL : BOOL;
     ALM_OVERFLOW : BOOL;
+    ALM_DRY_RUN_1 : BOOL;
+    ALM_DRY_RUN_2 : BOOL;
 END_VAR
 
 VAR
@@ -36,6 +42,13 @@ VAR
     Min12 : INT;
     Max12 : INT;
     Median : INT;
+
+    (* Sensor disagreement calculation *)
+    Diff12 : INT;
+    Diff13 : INT;
+    Diff23 : INT;
+    MaxDiff : INT;
+    Tolerance : INT := 5;   (* 5% tolerance *)
 
     (* Setpoints *)
     SP_LOW : INT := 20;
@@ -48,6 +61,13 @@ VAR
     LagPumpCmd : BOOL;
     Pump1InAuto : BOOL;
     Pump2InAuto : BOOL;
+
+    (* Dry run protection *)
+    DryRunTimer1 : TON;
+    DryRunTimer2 : TON;
+    DryRunDelay : TIME := T#5s;
+    Pump1Faulted : BOOL := FALSE;
+    Pump2Faulted : BOOL := FALSE;
 END_VAR
 
 (* ========================================================================== *)
@@ -79,6 +99,41 @@ END_IF;
 EFFECTIVE_LEVEL := Median;
 
 (* ========================================================================== *)
+(* Sensor Disagreement Detection                                              *)
+(* ========================================================================== *)
+
+(* Calculate absolute differences between sensors *)
+IF LEVEL_1 > LEVEL_2 THEN
+    Diff12 := LEVEL_1 - LEVEL_2;
+ELSE
+    Diff12 := LEVEL_2 - LEVEL_1;
+END_IF;
+
+IF LEVEL_1 > LEVEL_3 THEN
+    Diff13 := LEVEL_1 - LEVEL_3;
+ELSE
+    Diff13 := LEVEL_3 - LEVEL_1;
+END_IF;
+
+IF LEVEL_2 > LEVEL_3 THEN
+    Diff23 := LEVEL_2 - LEVEL_3;
+ELSE
+    Diff23 := LEVEL_3 - LEVEL_2;
+END_IF;
+
+(* Find maximum difference *)
+MaxDiff := Diff12;
+IF Diff13 > MaxDiff THEN
+    MaxDiff := Diff13;
+END_IF;
+IF Diff23 > MaxDiff THEN
+    MaxDiff := Diff23;
+END_IF;
+
+(* Set alarm if any sensor differs by more than tolerance *)
+ALM_SENSOR_DISAGREE := MaxDiff > Tolerance;
+
+(* ========================================================================== *)
 (* Level Alarms                                                               *)
 (* ========================================================================== *)
 
@@ -104,7 +159,7 @@ ELSE
     (* Lead pump control in AUTO *)
     IF LEAD_PUMP = 1 THEN
         (* Pump 1 is lead *)
-        IF Pump1InAuto THEN
+        IF Pump1InAuto AND NOT Pump1Faulted THEN
             (* Start lead on HIGH, stop on LOW *)
             IF EFFECTIVE_LEVEL >= SP_HIGH THEN
                 LeadPumpCmd := TRUE;
@@ -116,7 +171,7 @@ ELSE
         END_IF;
 
         (* Lag pump (Pump 2) assists on HIGH_HIGH *)
-        IF Pump2InAuto THEN
+        IF Pump2InAuto AND NOT Pump2Faulted THEN
             IF EFFECTIVE_LEVEL >= SP_HIGH_HIGH THEN
                 LagPumpCmd := TRUE;
             ELSIF EFFECTIVE_LEVEL < SP_LOW + 5 THEN
@@ -132,7 +187,7 @@ ELSE
         PUMP_2_RUN := LagPumpCmd;
     ELSE
         (* Pump 2 is lead (swap roles) *)
-        IF Pump2InAuto THEN
+        IF Pump2InAuto AND NOT Pump2Faulted THEN
             IF EFFECTIVE_LEVEL >= SP_HIGH THEN
                 LeadPumpCmd := TRUE;
             ELSIF EFFECTIVE_LEVEL < SP_LOW THEN
@@ -142,7 +197,7 @@ ELSE
             LeadPumpCmd := FALSE;
         END_IF;
 
-        IF Pump1InAuto THEN
+        IF Pump1InAuto AND NOT Pump1Faulted THEN
             IF EFFECTIVE_LEVEL >= SP_HIGH_HIGH THEN
                 LagPumpCmd := TRUE;
             ELSIF EFFECTIVE_LEVEL < SP_LOW + 5 THEN
@@ -157,10 +212,10 @@ ELSE
     END_IF;
 
     (* HAND mode override - runs pump regardless of level *)
-    IF HOA_1 = 1 THEN
+    IF HOA_1 = 1 AND NOT Pump1Faulted THEN
         PUMP_1_RUN := TRUE;
     END_IF;
-    IF HOA_2 = 1 THEN
+    IF HOA_2 = 1 AND NOT Pump2Faulted THEN
         PUMP_2_RUN := TRUE;
     END_IF;
 
@@ -171,6 +226,26 @@ ELSE
     IF HOA_2 = 0 THEN
         PUMP_2_RUN := FALSE;
     END_IF;
+END_IF;
+
+(* ========================================================================== *)
+(* Dry Run Protection                                                         *)
+(* ========================================================================== *)
+
+(* Pump 1 dry run detection *)
+DryRunTimer1(IN := PUMP_1_RUN AND NOT FLOW_1 AND NOT DryRunTimer1.Q, PT := DryRunDelay);
+IF DryRunTimer1.Q THEN
+    ALM_DRY_RUN_1 := TRUE;
+    Pump1Faulted := TRUE;
+    PUMP_1_RUN := FALSE;
+END_IF;
+
+(* Pump 2 dry run detection *)
+DryRunTimer2(IN := PUMP_2_RUN AND NOT FLOW_2 AND NOT DryRunTimer2.Q, PT := DryRunDelay);
+IF DryRunTimer2.Q THEN
+    ALM_DRY_RUN_2 := TRUE;
+    Pump2Faulted := TRUE;
+    PUMP_2_RUN := FALSE;
 END_IF;
 
 END_PROGRAM

@@ -374,3 +374,125 @@ describe('Emergency Stop', () => {
     expect(store.getBool('PUMP_2_RUN')).toBe(false);
   });
 });
+
+// ============================================================================
+// Sensor Disagreement Tests
+// ============================================================================
+
+describe('Sensor Disagreement Detection', () => {
+  let store: SimulationStoreInterface;
+  let ast: ReturnType<typeof parseSTToAST>;
+  let runtimeState: ReturnType<typeof createRuntimeState>;
+
+  beforeEach(() => {
+    store = createTestStore();
+    const code = loadPumpControllerCode();
+    ast = parseSTToAST(code);
+    initializeVariables(ast, store);
+    runtimeState = createRuntimeState(ast);
+  });
+
+  it('should NOT set alarm when all sensors agree within tolerance', () => {
+    // All within 5% tolerance
+    store.setInt('LEVEL_1', 50);
+    store.setInt('LEVEL_2', 52);
+    store.setInt('LEVEL_3', 48);
+
+    runScanCycle(ast, store, runtimeState);
+
+    expect(store.getBool('ALM_SENSOR_DISAGREE')).toBe(false);
+  });
+
+  it('should set alarm when one sensor differs significantly', () => {
+    // L3 differs by more than 5%
+    store.setInt('LEVEL_1', 50);
+    store.setInt('LEVEL_2', 50);
+    store.setInt('LEVEL_3', 80);
+
+    runScanCycle(ast, store, runtimeState);
+
+    expect(store.getBool('ALM_SENSOR_DISAGREE')).toBe(true);
+    expect(store.getInt('EFFECTIVE_LEVEL')).toBe(50); // Use agreeing value
+  });
+
+  it('should set alarm when all sensors differ significantly', () => {
+    // All three differ by more than 5%
+    store.setInt('LEVEL_1', 30);
+    store.setInt('LEVEL_2', 50);
+    store.setInt('LEVEL_3', 70);
+
+    runScanCycle(ast, store, runtimeState);
+
+    expect(store.getBool('ALM_SENSOR_DISAGREE')).toBe(true);
+    expect(store.getInt('EFFECTIVE_LEVEL')).toBe(50); // Median
+  });
+});
+
+// ============================================================================
+// Dry Run Protection Tests
+// ============================================================================
+
+describe('Dry Run Protection', () => {
+  let store: SimulationStoreInterface;
+  let ast: ReturnType<typeof parseSTToAST>;
+  let runtimeState: ReturnType<typeof createRuntimeState>;
+
+  beforeEach(() => {
+    store = createTestStore();
+    const code = loadPumpControllerCode();
+    ast = parseSTToAST(code);
+    initializeVariables(ast, store);
+    runtimeState = createRuntimeState(ast);
+    store.setInt('HOA_1', 2);
+    store.setInt('HOA_2', 2);
+  });
+
+  it('should NOT fault when pump running with flow detected', () => {
+    // High level, pump running
+    store.setInt('LEVEL_1', 75);
+    store.setInt('LEVEL_2', 75);
+    store.setInt('LEVEL_3', 75);
+    store.setBool('FLOW_1', true); // Flow detected
+
+    runScanCycle(ast, store, runtimeState);
+
+    expect(store.getBool('PUMP_1_RUN')).toBe(true);
+    expect(store.getBool('ALM_DRY_RUN_1')).toBe(false);
+  });
+
+  it('should set dry run alarm after delay when pump running without flow', () => {
+    // Start pump
+    store.setInt('LEVEL_1', 75);
+    store.setInt('LEVEL_2', 75);
+    store.setInt('LEVEL_3', 75);
+    store.setBool('FLOW_1', false); // No flow
+
+    // Run scan cycles until timer expires (5 seconds = 50 scans at 100ms)
+    for (let i = 0; i < 60; i++) {
+      runScanCycle(ast, store, runtimeState);
+    }
+
+    expect(store.getBool('ALM_DRY_RUN_1')).toBe(true);
+    expect(store.getBool('PUMP_1_RUN')).toBe(false); // Pump should stop
+  });
+
+  it('should NOT fault if flow is restored before delay expires', () => {
+    // Start pump without flow
+    store.setInt('LEVEL_1', 75);
+    store.setInt('LEVEL_2', 75);
+    store.setInt('LEVEL_3', 75);
+    store.setBool('FLOW_1', false);
+
+    // Run for 2 seconds (20 scans)
+    for (let i = 0; i < 20; i++) {
+      runScanCycle(ast, store, runtimeState);
+    }
+
+    // Restore flow
+    store.setBool('FLOW_1', true);
+    runScanCycle(ast, store, runtimeState);
+
+    expect(store.getBool('ALM_DRY_RUN_1')).toBe(false);
+    expect(store.getBool('PUMP_1_RUN')).toBe(true);
+  });
+});
