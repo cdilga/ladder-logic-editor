@@ -111,3 +111,81 @@
 .ladder-canvas .react-flow__attribution {
   display: none;
 }
+
+/* ============================================================================
+   Mobile Touch Optimizations
+   ========================================================================= */
+
+@media (max-width: 768px) {
+  /* Remove header on mobile for more vertical space */
+  .ladder-canvas-header {
+    display: none;
+  }
+
+  /* Full-screen canvas on mobile */
+  .ladder-canvas {
+    border-radius: 0;
+  }
+
+  /* Larger touch targets for mobile */
+  .ladder-canvas .react-flow__node {
+    cursor: pointer;
+  }
+
+  /* Improved touch feedback */
+  .ladder-canvas .react-flow__node.selected {
+    box-shadow:
+      0 0 0 2px var(--mobile-accent-primary, #00d4ff),
+      0 4px 12px rgba(0, 212, 255, 0.3);
+  }
+
+  /* Prevent text selection during touch interactions */
+  .ladder-canvas .react-flow__node {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Smooth panning */
+  .ladder-canvas .react-flow__pane {
+    cursor: grab;
+  }
+
+  .ladder-canvas .react-flow__pane:active {
+    cursor: grabbing;
+  }
+
+  /* Better touch scrolling */
+  .ladder-canvas .react-flow__viewport {
+    touch-action: none; /* Allow React Flow to handle all touch */
+  }
+
+  /* Hide zoom on mobile (use pinch instead) */
+  .ladder-canvas .react-flow__controls {
+    display: none;
+  }
+
+  /* Hide minimap on mobile */
+  .ladder-canvas .react-flow__minimap {
+    display: none;
+  }
+
+  /* Ensure background doesn't interfere with touch */
+  .ladder-canvas .react-flow__background {
+    pointer-events: none;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 600px) and (max-width: 768px) {
+  /* Show simplified controls on tablet */
+  .ladder-canvas .react-flow__controls {
+    display: block;
+    opacity: 0.6;
+    transition: opacity 200ms;
+  }
+
+  .ladder-canvas .react-flow__controls:hover {
+    opacity: 1;
+  }
+}

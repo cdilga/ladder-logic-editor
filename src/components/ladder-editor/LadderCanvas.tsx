@@ -21,6 +21,7 @@ import 'reactflow/dist/style.css';
 
 import { ladderNodeTypes } from './nodes';
 import type { LadderNode, LadderEdge } from '../../models/ladder-elements';
+import { useIsMobile } from '../../hooks';
 
 import './LadderCanvas.css';
 
@@ -41,6 +42,7 @@ export function LadderCanvas({
   onSelectionChange,
   className = '',
 }: LadderCanvasProps) {
+  const isMobile = useIsMobile();
   const [nodes, setNodes, onNodesChangeInternal] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChangeInternal] = useEdgesState(initialEdges);
 
@@ -130,9 +132,11 @@ export function LadderCanvas({
 
   return (
     <div className={`ladder-canvas ${className}`}>
-      <div className="ladder-canvas-header">
-        <span className="ladder-canvas-title">Ladder Diagram</span>
-      </div>
+      {!isMobile && (
+        <div className="ladder-canvas-header">
+          <span className="ladder-canvas-title">Ladder Diagram</span>
+        </div>
+      )}
       <div className="ladder-canvas-content">
         <ReactFlow
           nodes={nodes}
@@ -149,6 +153,15 @@ export function LadderCanvas({
             type: 'smoothstep',
             style: { stroke: '#d4d4d4', strokeWidth: 2 },
           }}
+          // Enhanced mobile touch support
+          panOnDrag={true}
+          zoomOnScroll={!isMobile} // Disable scroll zoom on mobile
+          zoomOnPinch={true} // Enable pinch-to-zoom on mobile
+          zoomOnDoubleClick={!isMobile} // Disable double-click zoom on mobile
+          preventScrolling={true} // Prevent page scroll when panning
+          minZoom={0.2}
+          maxZoom={4}
+          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         >
           <Background
             variant={BackgroundVariant.Dots}
@@ -156,13 +169,15 @@ export function LadderCanvas({
             size={1}
             color="#404040"
           />
-          <Controls />
-          <MiniMap
-            nodeColor={nodeColor}
-            nodeStrokeWidth={3}
-            zoomable
-            pannable
-          />
+          {!isMobile && <Controls />}
+          {!isMobile && (
+            <MiniMap
+              nodeColor={nodeColor}
+              nodeStrokeWidth={3}
+              zoomable
+              pannable
+            />
+          )}
         </ReactFlow>
       </div>
     </div>
