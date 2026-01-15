@@ -570,5 +570,188 @@ describe('Comparison Properties', () => {
         { numRuns: 100 }
       );
     });
+
+    it('trichotomy: exactly one of a < b, a = b, a > b is TRUE', () => {
+      fc.assert(
+        fc.property(smallInt, smallInt, (a, b) => {
+          const store = createTestStore();
+          const code = `
+            PROGRAM Test
+            VAR
+              LT : BOOL;
+              EQ : BOOL;
+              GT : BOOL;
+            END_VAR
+            LT := ${a} < ${b};
+            EQ := ${a} = ${b};
+            GT := ${a} > ${b};
+            END_PROGRAM
+          `;
+          const ast = parseSTToAST(code);
+          initializeVariables(ast, store);
+          runScanCycle(ast, store, createRuntimeState(ast));
+
+          const lt = store.getBool('LT');
+          const eq = store.getBool('EQ');
+          const gt = store.getBool('GT');
+
+          const trueCount = [lt, eq, gt].filter(x => x).length;
+          return trueCount === 1;
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('transitivity: if a < b and b < c then a < c', () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: -100, max: 100 }),
+          fc.integer({ min: 1, max: 50 }),
+          fc.integer({ min: 1, max: 50 }),
+          (a, diff1, diff2) => {
+            const b = a + diff1;  // b > a
+            const c = b + diff2;  // c > b
+
+            const store = createTestStore();
+            const code = `
+              PROGRAM Test
+              VAR
+                AB : BOOL;
+                BC : BOOL;
+                AC : BOOL;
+              END_VAR
+              AB := ${a} < ${b};
+              BC := ${b} < ${c};
+              AC := ${a} < ${c};
+              END_PROGRAM
+            `;
+            const ast = parseSTToAST(code);
+            initializeVariables(ast, store);
+            runScanCycle(ast, store, createRuntimeState(ast));
+
+            const ab = store.getBool('AB');
+            const bc = store.getBool('BC');
+            const ac = store.getBool('AC');
+
+            // If a < b and b < c, then a < c must be true
+            if (ab && bc) {
+              return ac === true;
+            }
+            return true;  // Property doesn't apply
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+  });
+});
+
+// ============================================================================
+// Additional Boolean Properties - Absorption
+// ============================================================================
+
+describe('Boolean Absorption Properties', () => {
+  it('a AND (a OR b) = a', () => {
+    fc.assert(
+      fc.property(fc.boolean(), fc.boolean(), (a, b) => {
+        const store = createTestStore();
+        const code = `
+          PROGRAM Test
+          VAR
+            X : BOOL := ${a ? 'TRUE' : 'FALSE'};
+            Y : BOOL := ${b ? 'TRUE' : 'FALSE'};
+            Result : BOOL;
+          END_VAR
+          Result := X AND (X OR Y);
+          END_PROGRAM
+        `;
+        const ast = parseSTToAST(code);
+        initializeVariables(ast, store);
+        runScanCycle(ast, store, createRuntimeState(ast));
+        return store.getBool('Result') === a;
+      }),
+      { numRuns: 50 }
+    );
+  });
+
+  it('a OR (a AND b) = a', () => {
+    fc.assert(
+      fc.property(fc.boolean(), fc.boolean(), (a, b) => {
+        const store = createTestStore();
+        const code = `
+          PROGRAM Test
+          VAR
+            X : BOOL := ${a ? 'TRUE' : 'FALSE'};
+            Y : BOOL := ${b ? 'TRUE' : 'FALSE'};
+            Result : BOOL;
+          END_VAR
+          Result := X OR (X AND Y);
+          END_PROGRAM
+        `;
+        const ast = parseSTToAST(code);
+        initializeVariables(ast, store);
+        runScanCycle(ast, store, createRuntimeState(ast));
+        return store.getBool('Result') === a;
+      }),
+      { numRuns: 50 }
+    );
+  });
+
+  it('a AND (NOT a OR b) = a AND b (De Morgan application)', () => {
+    fc.assert(
+      fc.property(fc.boolean(), fc.boolean(), (a, b) => {
+        const store = createTestStore();
+        const code = `
+          PROGRAM Test
+          VAR
+            X : BOOL := ${a ? 'TRUE' : 'FALSE'};
+            Y : BOOL := ${b ? 'TRUE' : 'FALSE'};
+            Result1 : BOOL;
+            Result2 : BOOL;
+          END_VAR
+          Result1 := X AND (NOT X OR Y);
+          Result2 := X AND Y;
+          END_PROGRAM
+        `;
+        const ast = parseSTToAST(code);
+        initializeVariables(ast, store);
+        runScanCycle(ast, store, createRuntimeState(ast));
+        return store.getBool('Result1') === store.getBool('Result2');
+      }),
+      { numRuns: 50 }
+    );
+  });
+});
+
+// ============================================================================
+// Subtraction Non-Commutativity Verification
+// ============================================================================
+
+describe('Subtraction Non-Commutativity', () => {
+  const smallInt = fc.integer({ min: 1, max: 100 });
+
+  it('subtraction is NOT commutative (a - b ≠ b - a for a ≠ b)', () => {
+    fc.assert(
+      fc.property(smallInt, smallInt, (a, b) => {
+        if (a === b) return true;  // Skip equal values, commutativity trivially holds
+        const result1 = evalInt(`${a} - ${b}`);
+        const result2 = evalInt(`${b} - ${a}`);
+        // For a ≠ b, a-b and b-a should be different (actually opposites)
+        return result1 !== result2;
+      }),
+      { numRuns: 50 }
+    );
+  });
+
+  it('subtraction produces inverse: a - b = -(b - a)', () => {
+    fc.assert(
+      fc.property(smallInt, smallInt, (a, b) => {
+        const result1 = evalInt(`${a} - ${b}`);
+        const result2 = evalInt(`${b} - ${a}`);
+        // a - b = -(b - a), so result1 = -result2
+        return result1 === -result2;
+      }),
+      { numRuns: 50 }
+    );
   });
 });
