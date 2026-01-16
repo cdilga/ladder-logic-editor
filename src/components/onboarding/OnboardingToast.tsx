@@ -102,15 +102,33 @@ function useToastPosition(
           const viewportWidth = window.innerWidth;
           const viewportHeight = window.innerHeight;
           const offset = 16;
+          const toastWidth = 360; // max-width of toast
+          const toastHeight = 200; // approximate height
 
           // Determine best position (right of element by default)
           let newPosition: ToastPosition = {};
 
           // If element is on the right side, position toast to the left
           if (rect.right > viewportWidth / 2) {
-            newPosition.right = `${viewportWidth - rect.left + offset}px`;
+            // Position to the left of element
+            const rightValue = viewportWidth - rect.left + offset;
+            // Ensure toast stays within viewport (with at least offset from edges)
+            if (rightValue + toastWidth <= viewportWidth - offset) {
+              newPosition.right = `${rightValue}px`;
+            } else {
+              // Fallback: position from left side
+              newPosition.left = `${offset}px`;
+            }
           } else {
-            newPosition.left = `${rect.right + offset}px`;
+            // Position to the right of element
+            const leftValue = rect.right + offset;
+            // Ensure toast stays within viewport
+            if (leftValue + toastWidth <= viewportWidth - offset) {
+              newPosition.left = `${leftValue}px`;
+            } else {
+              // Fallback: position from right side
+              newPosition.right = `${offset}px`;
+            }
           }
 
           // Vertical centering relative to element
@@ -118,13 +136,16 @@ function useToastPosition(
 
           if (elementCenterY < viewportHeight / 3) {
             // Element in top third - position below
-            newPosition.top = `${rect.bottom + offset}px`;
+            const topValue = rect.bottom + offset;
+            newPosition.top = `${Math.min(topValue, viewportHeight - toastHeight - offset)}px`;
           } else if (elementCenterY > (viewportHeight * 2) / 3) {
             // Element in bottom third - position above
-            newPosition.bottom = `${viewportHeight - rect.top + offset}px`;
+            const bottomValue = viewportHeight - rect.top + offset;
+            newPosition.bottom = `${Math.min(bottomValue, viewportHeight - toastHeight - offset)}px`;
           } else {
-            // Element in middle - center vertically
-            newPosition.top = `${Math.max(offset, rect.top)}px`;
+            // Element in middle - center vertically, but ensure it's visible
+            const topValue = Math.max(offset, Math.min(rect.top, viewportHeight - toastHeight - offset));
+            newPosition.top = `${topValue}px`;
           }
 
           setToastPosition(newPosition);

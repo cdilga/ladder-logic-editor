@@ -7,7 +7,10 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
 import { useProjectStore } from '../../store';
+import { saveToLocalStorage } from '../../services/file-service';
+import type { ProgramUnit } from '../../models/project';
 import './CodeExample.css';
 
 interface CodeExampleProps {
@@ -30,13 +33,38 @@ export function CodeExample({ code, title }: CodeExampleProps) {
   };
 
   const handleTryInEditor = () => {
-    // Get the current program to update
     const state = useProjectStore.getState();
-    const currentProgramId = state.currentProgramId;
 
-    if (currentProgramId) {
-      // Update the current program's ST code
-      state.updateProgramST(currentProgramId, code);
+    // Generate a unique name for the new program
+    const baseName = title || 'Example';
+    const existingNames = state.project?.programs.map((p) => p.name) ?? [];
+    let programName = baseName;
+    let counter = 1;
+    while (existingNames.includes(programName)) {
+      programName = `${baseName} ${counter}`;
+      counter++;
+    }
+
+    // Create a new program with the example code
+    const newProgram: ProgramUnit = {
+      id: uuidv4(),
+      name: programName,
+      type: 'PROGRAM',
+      structuredText: code,
+      syncValid: true,
+      lastSyncSource: 'st',
+      variables: [],
+    };
+
+    // Add the new program and switch to it
+    state.addProgram(newProgram);
+    state.setCurrentProgram(newProgram.id);
+
+    // Save immediately so it persists before navigation
+    // (MainLayout loads from localStorage on mount)
+    const updatedProject = useProjectStore.getState().project;
+    if (updatedProject) {
+      saveToLocalStorage(updatedProject);
     }
 
     // Navigate to the editor

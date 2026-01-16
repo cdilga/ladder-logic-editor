@@ -20,13 +20,14 @@ import './DocsLayout.css';
 
 interface MarkdownRendererProps {
   content: string;
+  pageTitle?: string;
 }
 
 // ============================================================================
 // Markdown Renderer
 // ============================================================================
 
-function MarkdownRenderer({ content }: MarkdownRendererProps) {
+function MarkdownRenderer({ content, pageTitle }: MarkdownRendererProps) {
   return (
     <Markdown
       remarkPlugins={[remarkGfm]}
@@ -39,7 +40,7 @@ function MarkdownRenderer({ content }: MarkdownRendererProps) {
 
           // Check if this is a ST code block that should be interactive
           if (language === 'st' || language === 'iecst') {
-            return <CodeExample code={codeString} />;
+            return <CodeExample code={codeString} title={pageTitle} />;
           }
 
           // Regular inline code or other languages
@@ -83,7 +84,7 @@ function DocPageContent({ page }: { page: DocPage }) {
         {page.description && <p className="docs-article__desc">{page.description}</p>}
       </header>
       <div className="docs-article__content">
-        <MarkdownRenderer content={page.content} />
+        <MarkdownRenderer content={page.content} pageTitle={page.title} />
       </div>
     </article>
   );
@@ -140,10 +141,12 @@ export function DocsLayout() {
 
       {/* Main content */}
       <main className="docs-main">
-        <Routes>
-          <Route path="/" element={<DocPageContent page={currentPage} />} />
-          <Route path="/*" element={<DocPageContent page={currentPage} />} />
-        </Routes>
+        <div className="docs-main__content">
+          <Routes>
+            <Route path="/" element={<DocPageContent page={currentPage} />} />
+            <Route path="/*" element={<DocPageContent page={currentPage} />} />
+          </Routes>
+        </div>
       </main>
     </div>
   );

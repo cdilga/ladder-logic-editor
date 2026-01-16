@@ -78,8 +78,11 @@
 .docs-main {
   grid-area: main;
   overflow-y: auto;
-  padding: 32px 48px;
+}
+
+.docs-main__content {
   max-width: 900px;
+  padding: 32px 48px;
 }
 
 /* ============================================================================
@@ -268,7 +271,7 @@
     display: flex;
   }
 
-  .docs-main {
+  .docs-main__content {
     padding: 24px 20px;
   }
 
