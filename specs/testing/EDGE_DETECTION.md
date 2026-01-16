@@ -1,6 +1,6 @@
 # Edge Detection Compliance Tests
 
-**IEC 61131-3 Section:** 2.5.3
+**IEC 61131-3 Section:** 2.5.2.3.2 (Third Edition), Tables 44.1-44.2
 **Status:** 🟢 Complete (35 tests, 95% coverage)
 **Test File:** `src/interpreter/compliance/edge-detection.test.ts`
 **Last Updated:** 2026-01-16
@@ -102,7 +102,7 @@ END_IF;
 #### Edge Sequence
 - [x] Multiple falling edges detected correctly
 - [x] Rapid toggle: TRUE → FALSE → TRUE → FALSE detects 2 edges
-- [x] Initial state: FALSE startup doesn't count as falling edge
+- [x] Initial state: FALSE startup doesn't count as falling edge (M starts as TRUE per IEC 61131-3)
 
 ---
 
@@ -201,31 +201,47 @@ fc.assert(fc.property(
 
 ### State Structure
 ```typescript
-interface EdgeDetectorState {
+interface RTRIGState {
   CLK: boolean;      // Current input
   Q: boolean;        // Output (single-scan pulse)
-  M: boolean;        // Memory (previous CLK value)
+  M: boolean;        // Memory - initialized to FALSE (stores CLK)
+}
+
+interface FTRIGState {
+  CLK: boolean;      // Current input
+  Q: boolean;        // Output (single-scan pulse)
+  M: boolean;        // Memory - initialized to TRUE (stores NOT CLK)
 }
 ```
 
-### Algorithm
+**Key Difference:** In R_TRIG, M stores `CLK`. In F_TRIG, M stores `NOT CLK`.
+
+### Algorithm (IEC 61131-3 Compliant)
+
+Per IEC 61131-3 Third Edition Table 44.1 (R_TRIG) and Table 44.2 (F_TRIG):
+
 ```typescript
-// R_TRIG
+// R_TRIG - IEC 61131-3 Table 44.1
+// M is initialized to FALSE
 function updateRTRIG(state: EdgeDetectorState, clk: boolean): void {
-  state.Q = clk && !state.M;  // Rising edge: CLK AND NOT previous
-  state.M = clk;              // Remember current for next scan
+  state.Q = clk && !state.M;  // Q := CLK AND NOT M
+  state.M = clk;              // M := CLK
 }
 
-// F_TRIG
+// F_TRIG - IEC 61131-3 Table 44.2
+// IMPORTANT: M is initialized to TRUE (not FALSE!)
+// This uses NOT M (not M) in the Q calculation
 function updateFTRIG(state: EdgeDetectorState, clk: boolean): void {
-  state.Q = !clk && state.M;  // Falling edge: NOT CLK AND previous
-  state.M = clk;              // Remember current for next scan
+  state.Q = !clk && !state.M; // Q := NOT CLK AND NOT M
+  state.M = !clk;             // M := NOT CLK
 }
 ```
 
-### Initialization
-- R_TRIG: M starts as FALSE, so first TRUE is detected as rising edge
-- F_TRIG: M starts as FALSE, so first FALSE is NOT detected as falling edge
+### Initialization (IEC 61131-3 Standard)
+- **R_TRIG:** M starts as FALSE, so first TRUE is detected as rising edge
+- **F_TRIG:** M starts as TRUE, so first FALSE is NOT detected as falling edge (requires CLK to be TRUE first, then FALSE)
+
+**Note on IEC 61131-8 Recommendation:** IEC 61131-8 Section 3.8.1.2 recommends that F_TRIG's CLK input must first be detected as TRUE before a TRUE→FALSE transition is detected. The IEC 61131-3 standard algorithm with M:=TRUE initialization satisfies this recommendation. Some implementations may override M to FALSE for stricter IEC 61131-3 behavior where a cold restart with CLK disconnected/FALSE would trigger Q=TRUE on first scan.
 
 ---
 
@@ -249,5 +265,15 @@ function updateFTRIG(state: EdgeDetectorState, clk: boolean): void {
 
 ## References
 
-- IEC 61131-3:2013 Section 2.5.3 - Edge detection
-- IEC 61131-3:2013 Table 37 - Standard edge detection function blocks
+### IEC 61131-3 Standard
+- IEC 61131-3 Second Edition: Table 35.1 (R_TRIG), Table 35.2 (F_TRIG)
+- IEC 61131-3 Third Edition: Table 44.1 (R_TRIG), Table 44.2 (F_TRIG)
+- IEC 61131-3 Second Edition: Table 33.8 (R_EDGE/F_EDGE data types)
+- IEC 61131-3 Third Edition: Table 40.6 (R_EDGE/F_EDGE data types)
+- IEC 61131-8 Section 3.8.1.2 - Use of edge-triggered function blocks (guidelines)
+
+### Reference Implementations
+- [Fernhill Software - R_TRIG and F_TRIG](https://www.fernhillsoftware.com/help/iec-61131/common-elements/standard-function-blocks/edge.html)
+- [CODESYS Standard Library](https://content.helpme-codesys.com/en/libs/Standard/Current/Trigger/)
+- [Beremiz/MATIEC IEC 61131-3 Compiler](https://github.com/beremiz/matiec)
+- [PLCnext F_TRIG Documentation](https://engineer.plcnext.help/latest/F_TRIG.htm)
