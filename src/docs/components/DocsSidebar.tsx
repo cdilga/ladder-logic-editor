@@ -2,72 +2,15 @@
  * Documentation Sidebar Navigation
  *
  * Collapsible sidebar with hierarchical navigation structure.
+ * Navigation is auto-generated from markdown frontmatter.
  */
 
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { DocsSearch } from './DocsSearch';
 import { Logo } from '../../components/Logo';
+import { NAV_STRUCTURE } from '../content';
 import './DocsSidebar.css';
-
-// ============================================================================
-// Navigation Structure
-// ============================================================================
-
-interface NavItem {
-  title: string;
-  path: string;
-  children?: NavItem[];
-}
-
-const NAV_STRUCTURE: NavItem[] = [
-  {
-    title: 'Getting Started',
-    path: '/docs/getting-started',
-    children: [
-      { title: 'Introduction', path: '/docs/getting-started' },
-      { title: 'First Program', path: '/docs/getting-started/first-program' },
-      { title: 'Interface Overview', path: '/docs/getting-started/interface' },
-    ],
-  },
-  {
-    title: 'Language Reference',
-    path: '/docs/language',
-    children: [
-      { title: 'Variables', path: '/docs/language/variables' },
-      { title: 'Data Types', path: '/docs/language/data-types' },
-      { title: 'Operators', path: '/docs/language/operators' },
-      { title: 'Statements', path: '/docs/language/statements' },
-    ],
-  },
-  {
-    title: 'Function Blocks',
-    path: '/docs/function-blocks',
-    children: [
-      { title: 'Timers', path: '/docs/function-blocks/timers' },
-      { title: 'Counters', path: '/docs/function-blocks/counters' },
-      { title: 'Edge Detection', path: '/docs/function-blocks/edge-detection' },
-      { title: 'Bistables', path: '/docs/function-blocks/bistables' },
-    ],
-  },
-  {
-    title: 'Examples',
-    path: '/docs/examples',
-    children: [
-      { title: 'Dual Pump Controller', path: '/docs/examples/dual-pump' },
-      { title: '4-Way Intersection', path: '/docs/examples/traffic-light' },
-      { title: 'Simple Pump Control', path: '/docs/examples/pump-control' },
-    ],
-  },
-  {
-    title: 'Reference',
-    path: '/docs/reference',
-    children: [
-      { title: 'Supported Features', path: '/docs/reference/supported-features' },
-      { title: 'Known Limitations', path: '/docs/reference/known-limitations' },
-    ],
-  },
-];
 
 // ============================================================================
 // Components
@@ -189,6 +132,14 @@ export function DocsSidebar({ isOpen, onClose }: DocsSidebarProps) {
         <Link to="/" className="docs-sidebar__back-link">
           &larr; Back to Editor
         </Link>
+        <a
+          href="https://github.com/cdilga/ladder-logic-editor/blob/main/specs/IEC_61131_3_REFERENCE.md"
+          className="docs-sidebar__iec-link"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          IEC 61131-3 Reference
+        </a>
       </div>
     </aside>
   );

@@ -321,6 +321,13 @@ Automatically deployed to **GitHub Pages** on every push to `main`.
 
 <br/>
 
+## 📚 Documentation
+
+- [User Guide](https://cdilga.github.io/ladder-logic-editor/#/docs) — Tutorials and getting started
+- [IEC 61131-3 Reference](./specs/IEC_61131_3_REFERENCE.md) — Full standard specification
+
+<br/>
+
 ## 📄 License
 
 MIT License — use freely for personal and commercial projects.
