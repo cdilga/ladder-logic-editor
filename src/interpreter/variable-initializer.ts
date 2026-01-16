@@ -15,7 +15,7 @@ import type { STAST, STVarBlock, STVariableDecl, STLiteral } from '../transforme
 /**
  * Declared data type categories for variable storage.
  */
-export type DeclaredType = 'BOOL' | 'INT' | 'REAL' | 'TIME' | 'TIMER' | 'COUNTER' | 'R_TRIG' | 'F_TRIG' | 'BISTABLE' | 'ARRAY' | 'UNKNOWN';
+export type DeclaredType = 'BOOL' | 'INT' | 'REAL' | 'TIME' | 'STRING' | 'TIMER' | 'COUNTER' | 'R_TRIG' | 'F_TRIG' | 'BISTABLE' | 'ARRAY' | 'UNKNOWN';
 
 /**
  * Registry mapping variable names to their declared types.
@@ -55,6 +55,7 @@ export interface InitializableStore {
   setInt: (name: string, value: number) => void;
   setReal: (name: string, value: number) => void;
   setTime: (name: string, value: number) => void;
+  setString: (name: string, value: string) => void;
   initTimer: (name: string, pt: number, timerType?: TimerType) => void;
   initCounter: (name: string, pv: number) => void;
   initArray?: (name: string, metadata: ArrayMetadata, values: (boolean | number)[]) => void;
@@ -170,8 +171,8 @@ function initializeDeclaration(decl: STVariableDecl, store: InitializableStore):
         break;
 
       case 'STRING':
-        // Strings not directly supported in simulation store yet
-        // Could add setString if needed
+      case 'WSTRING':
+        store.setString(name, initialValue ? extractStringValue(initialValue) : '');
         break;
 
       default:
@@ -269,6 +270,18 @@ function extractTimeValue(expr: STVariableDecl['initialValue']): number {
   return 0;
 }
 
+function extractStringValue(expr: STVariableDecl['initialValue']): string {
+  if (!expr) return '';
+  if (expr.type === 'Literal' && expr.literalType === 'STRING') {
+    return String(expr.value);
+  }
+  // For other expressions, try to coerce to string
+  if (expr.type === 'Literal') {
+    return String(expr.value);
+  }
+  return '';
+}
+
 function extractTimerPreset(_decl: STVariableDecl): number {
   // Timer preset might be in initial value or default to 0
   // In IEC 61131-3, timers are typically initialized with PT in the call
@@ -300,6 +313,9 @@ function initializeFromValue(name: string, expr: STVariableDecl['initialValue'],
     case 'TIME':
       // TIME literals are stored as strings - need to parse them
       store.setTime(name, parseTimeString(String(literal.value)));
+      break;
+    case 'STRING':
+      store.setString(name, literal.value as string);
       break;
   }
 }
@@ -426,6 +442,11 @@ function categorizeType(typeName: string): DeclaredType {
   // Time
   if (typeName === 'TIME') {
     return 'TIME';
+  }
+
+  // String types
+  if (['STRING', 'WSTRING'].includes(typeName)) {
+    return 'STRING';
   }
 
   // Timer function blocks

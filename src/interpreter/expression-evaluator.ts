@@ -186,18 +186,31 @@ function applyBinaryOperator(operator: BinaryOperator, left: Value, right: Value
     case 'XOR':
       return toBoolean(left) !== toBoolean(right);
 
-    // Comparison operators
+    // Comparison operators (handle strings specially)
     case '=':
       return left === right;
     case '<>':
       return left !== right;
     case '<':
+      // For strings, use lexicographic comparison
+      if (typeof left === 'string' && typeof right === 'string') {
+        return left < right;
+      }
       return toNumber(left) < toNumber(right);
     case '>':
+      if (typeof left === 'string' && typeof right === 'string') {
+        return left > right;
+      }
       return toNumber(left) > toNumber(right);
     case '<=':
+      if (typeof left === 'string' && typeof right === 'string') {
+        return left <= right;
+      }
       return toNumber(left) <= toNumber(right);
     case '>=':
+      if (typeof left === 'string' && typeof right === 'string') {
+        return left >= right;
+      }
       return toNumber(left) >= toNumber(right);
 
     // Arithmetic operators
@@ -311,6 +324,59 @@ function evaluateFunctionCall(expr: STFunctionCall, context: EvaluationContext):
       const mx = toNumber(args[2]);
       return Math.max(mn, Math.min(inVal, mx));
 
+    // String functions (IEC 61131-3 §6.6.2.5.12)
+    case 'CONCAT':
+      // CONCAT(IN1, IN2, ...) concatenates all string arguments
+      return args.map(arg => toString(arg)).join('');
+
+    case 'LEN':
+      // LEN(IN) returns the length of the string
+      return toString(args[0]).length;
+
+    case 'LEFT':
+      // LEFT(IN, L) returns the leftmost L characters
+      return toString(args[0]).substring(0, Math.max(0, toNumber(args[1])));
+
+    case 'RIGHT':
+      // RIGHT(IN, L) returns the rightmost L characters
+      const rightStr = toString(args[0]);
+      const rightLen = Math.max(0, toNumber(args[1]));
+      return rightStr.substring(Math.max(0, rightStr.length - rightLen));
+
+    case 'MID':
+      // MID(IN, L, P) returns L characters starting at position P (1-based)
+      const midStr = toString(args[0]);
+      const midLen = Math.max(0, toNumber(args[1]));
+      const midPos = Math.max(1, toNumber(args[2])) - 1; // Convert to 0-based
+      return midStr.substring(midPos, midPos + midLen);
+
+    case 'FIND':
+      // FIND(IN1, IN2) returns the position of IN2 in IN1 (1-based, 0 if not found)
+      const findResult = toString(args[0]).indexOf(toString(args[1]));
+      return findResult >= 0 ? findResult + 1 : 0;
+
+    case 'INSERT':
+      // INSERT(IN1, IN2, P) inserts IN2 into IN1 at position P (1-based)
+      const insertStr = toString(args[0]);
+      const insertVal = toString(args[1]);
+      const insertPos = Math.max(1, toNumber(args[2])) - 1; // Convert to 0-based
+      return insertStr.substring(0, insertPos) + insertVal + insertStr.substring(insertPos);
+
+    case 'DELETE':
+      // DELETE(IN, L, P) deletes L characters from IN starting at position P (1-based)
+      const deleteStr = toString(args[0]);
+      const deleteLen = Math.max(0, toNumber(args[1]));
+      const deletePos = Math.max(1, toNumber(args[2])) - 1; // Convert to 0-based
+      return deleteStr.substring(0, deletePos) + deleteStr.substring(deletePos + deleteLen);
+
+    case 'REPLACE':
+      // REPLACE(IN1, IN2, L, P) replaces L characters in IN1 starting at P with IN2
+      const replaceStr = toString(args[0]);
+      const replaceVal = toString(args[1]);
+      const replaceLen = Math.max(0, toNumber(args[2]));
+      const replacePos = Math.max(1, toNumber(args[3])) - 1; // Convert to 0-based
+      return replaceStr.substring(0, replacePos) + replaceVal + replaceStr.substring(replacePos + replaceLen);
+
     default:
       // Try user-defined function if available
       if (context.invokeUserFunction) {
@@ -368,4 +434,23 @@ function toNumber(value: Value): number {
     return isNaN(parsed) ? 0 : parsed;
   }
   return 0;
+}
+
+/**
+ * Convert a value to string.
+ * - string: as-is
+ * - boolean: 'TRUE' or 'FALSE'
+ * - number: numeric string representation
+ */
+function toString(value: Value): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value === 'boolean') {
+    return value ? 'TRUE' : 'FALSE';
+  }
+  if (typeof value === 'number') {
+    return String(value);
+  }
+  return String(value);
 }

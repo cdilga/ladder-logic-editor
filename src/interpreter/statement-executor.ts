@@ -73,12 +73,16 @@ export interface ExecutionContext extends EvaluationContext {
   setReal: (name: string, value: number) => void;
   /** Set a time variable */
   setTime: (name: string, value: number) => void;
+  /** Set a string variable */
+  setString: (name: string, value: string) => void;
   /** Get a boolean variable */
   getBool: (name: string) => boolean;
   /** Get an integer variable */
   getInt: (name: string) => number;
   /** Get a real variable */
   getReal: (name: string) => number;
+  /** Get a string variable */
+  getString: (name: string) => string;
   /** Get the declared type of a variable */
   getVariableType: (name: string) => DeclaredType | undefined;
   /** Check if a variable is declared as CONSTANT */
@@ -204,6 +208,11 @@ function executeAssignment(stmt: STAssignment, context: ExecutionContext): void 
         context.setTime(targetName, Math.trunc(toNumber(value)));
         return;
 
+      case 'STRING':
+        // STRING values are stored as strings
+        context.setString(targetName, toString(value));
+        return;
+
       case 'TIMER':
       case 'COUNTER':
         // Function blocks are handled differently, skip
@@ -230,8 +239,11 @@ function executeAssignment(stmt: STAssignment, context: ExecutionContext): void 
     } else {
       context.setReal(targetName, value);
     }
+  } else if (typeof value === 'string') {
+    // String value - store as string
+    context.setString(targetName, value);
   } else {
-    // String or other - treat as boolean false for now
+    // Unknown type
     console.warn(`Unsupported assignment value type: ${typeof value}`);
   }
 }
@@ -475,4 +487,17 @@ function toNumber(value: Value): number {
     return isNaN(parsed) ? 0 : parsed;
   }
   return 0;
+}
+
+function toString(value: Value): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value === 'boolean') {
+    return value ? 'TRUE' : 'FALSE';
+  }
+  if (typeof value === 'number') {
+    return String(value);
+  }
+  return String(value);
 }

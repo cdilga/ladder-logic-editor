@@ -19,6 +19,7 @@ function createTestStore(): SimulationStoreInterface {
     integers: {} as Record<string, number>,
     reals: {} as Record<string, number>,
     times: {} as Record<string, number>,
+    strings: {} as Record<string, string>,
     timers: {} as Record<string, { IN: boolean; PT: number; Q: boolean; ET: number; running: boolean }>,
     counters: {} as Record<string, { CU: boolean; CD: boolean; R: boolean; LD: boolean; PV: number; QU: boolean; QD: boolean; CV: number }>,
     scanTime: 100,
@@ -33,6 +34,8 @@ function createTestStore(): SimulationStoreInterface {
     getReal: (name: string) => store.reals[name] ?? 0,
     setTime: (name: string, value: number) => { store.times[name] = value; },
     getTime: (name: string) => store.times[name] ?? 0,
+    setString: (name: string, value: string) => { store.strings[name] = value; },
+    getString: (name: string) => store.strings[name] ?? '',
     initTimer: (name: string, pt: number) => {
       store.timers[name] = { IN: false, PT: pt, Q: false, ET: 0, running: false };
     },
@@ -75,6 +78,7 @@ function createTestStore(): SimulationStoreInterface {
       store.integers = {};
       store.reals = {};
       store.times = {};
+      store.strings = {};
       store.timers = {};
       store.counters = {};
     },

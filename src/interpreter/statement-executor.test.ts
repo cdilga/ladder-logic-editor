@@ -127,9 +127,11 @@ describe('executeStatement', () => {
       setInt,
       setReal,
       setTime: vi.fn(),
+      setString: vi.fn(),
       getBool,
       getInt,
       getReal: vi.fn().mockReturnValue(0),
+      getString: vi.fn().mockReturnValue(''),
       getVariable,
       getVariableType: vi.fn().mockReturnValue(undefined),  // Default: no type info
       isConstant: vi.fn().mockReturnValue(false),  // Default: not constant

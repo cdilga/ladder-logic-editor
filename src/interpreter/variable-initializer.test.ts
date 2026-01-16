@@ -18,6 +18,7 @@ describe('initializeVariables', () => {
       setInt: vi.fn(),
       setReal: vi.fn(),
       setTime: vi.fn(),
+      setString: vi.fn(),
       initTimer: vi.fn(),
       initCounter: vi.fn(),
       clearAll: vi.fn(),

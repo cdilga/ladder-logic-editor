@@ -34,18 +34,21 @@ export interface SimulationStoreInterface extends FunctionBlockStore {
   setInt: (name: string, value: number) => void;
   setReal: (name: string, value: number) => void;
   setTime: (name: string, value: number) => void;
+  setString: (name: string, value: string) => void;
 
   // Variable getters
   getBool: (name: string) => boolean;
   getInt: (name: string) => number;
   getReal: (name: string) => number;
   getTime: (name: string) => number;
+  getString: (name: string) => string;
 
   // Variable storage (for existence checks)
   booleans: Record<string, boolean>;
   integers: Record<string, number>;
   reals: Record<string, number>;
   times: Record<string, number>;
+  strings: Record<string, string>;
 
   // Array storage
   arrays?: Record<string, ArrayStorage>;
@@ -106,6 +109,8 @@ export interface UserFBInstanceState {
   reals: Record<string, number>;
   /** Time variables (VAR, VAR_OUTPUT) */
   times: Record<string, number>;
+  /** String variables (VAR, VAR_OUTPUT) */
+  strings: Record<string, string>;
 }
 
 /**
@@ -150,11 +155,13 @@ export function createExecutionContext(
     setInt: store.setInt,
     setReal: store.setReal,
     setTime: store.setTime,
+    setString: store.setString,
 
     // Variable getters
     getBool: store.getBool,
     getInt: store.getInt,
     getReal: store.getReal,
+    getString: store.getString,
 
     // Type registry lookup
     getVariableType: (name: string) => runtimeState.typeRegistry[name],
@@ -169,6 +176,7 @@ export function createExecutionContext(
       if (name in store.integers) return store.integers[name];
       if (name in store.reals) return store.reals[name];
       if (name in store.times) return store.times[name];
+      if (name in store.strings) return store.strings[name];
 
       // Default to false for unknown variables
       return false;
@@ -234,6 +242,7 @@ export function createExecutionContext(
       if (field in instance.integers) return instance.integers[field];
       if (field in instance.reals) return instance.reals[field];
       if (field in instance.times) return instance.times[field];
+      if (field in instance.strings) return instance.strings[field];
 
       // Field not found in instance - return 0 as default (it's a valid user FB but unknown field)
       return 0;
@@ -343,6 +352,7 @@ function initializeUserFBInstances(
       integers: {},
       reals: {},
       times: {},
+      strings: {},
     };
 
     for (const varBlock of fbDef.varBlocks) {
@@ -361,6 +371,10 @@ function initializeUserFBInstances(
                 break;
               case 'TIME':
                 state.times[varName] = 0;
+                break;
+              case 'STRING':
+              case 'WSTRING':
+                state.strings[varName] = '';
                 break;
               default:
                 state.integers[varName] = 0;
@@ -401,6 +415,9 @@ function getDefaultValue(typeName: string): Value {
     case 'REAL':
     case 'LREAL':
       return 0.0;
+    case 'STRING':
+    case 'WSTRING':
+      return '';
     case 'INT':
     case 'SINT':
     case 'DINT':
@@ -487,6 +504,7 @@ function invokeUserFunction(
   const localIntegers: Record<string, number> = {};
   const localReals: Record<string, number> = {};
   const localTimes: Record<string, number> = {};
+  const localStrings: Record<string, string> = {};
 
   // Get input parameters and bind them to argument values
   const inputParams = getInputParameters(func);
@@ -505,6 +523,10 @@ function invokeUserFunction(
         break;
       case 'TIME':
         localTimes[param.name] = typeof argValue === 'number' ? argValue : Number(argValue);
+        break;
+      case 'STRING':
+      case 'WSTRING':
+        localStrings[param.name] = typeof argValue === 'string' ? argValue : String(argValue);
         break;
       default:
         // INT and other integer types
@@ -528,6 +550,10 @@ function invokeUserFunction(
       case 'TIME':
         localTimes[local.name] = 0;
         break;
+      case 'STRING':
+      case 'WSTRING':
+        localStrings[local.name] = '';
+        break;
       default:
         localIntegers[local.name] = 0;
         break;
@@ -546,6 +572,10 @@ function invokeUserFunction(
       break;
     case 'TIME':
       localTimes[name] = 0;
+      break;
+    case 'STRING':
+    case 'WSTRING':
+      localStrings[name] = '';
       break;
     default:
       localIntegers[name] = 0;
@@ -577,6 +607,9 @@ function invokeUserFunction(
     setTime: (varName: string, value: number) => {
       localTimes[varName] = Math.trunc(value);
     },
+    setString: (varName: string, value: string) => {
+      localStrings[varName] = value;
+    },
 
     // Variable getters (read from local storage first, then global)
     getBool: (varName: string) => {
@@ -590,6 +623,10 @@ function invokeUserFunction(
     getReal: (varName: string) => {
       if (varName in localReals) return localReals[varName];
       return store.getReal(varName);
+    },
+    getString: (varName: string) => {
+      if (varName in localStrings) return localStrings[varName];
+      return store.getString(varName);
     },
 
     // Type registry lookup (local first, then global)
@@ -611,12 +648,14 @@ function invokeUserFunction(
       if (varName in localIntegers) return localIntegers[varName];
       if (varName in localReals) return localReals[varName];
       if (varName in localTimes) return localTimes[varName];
+      if (varName in localStrings) return localStrings[varName];
 
       // Fall back to global store
       if (varName in store.booleans) return store.booleans[varName];
       if (varName in store.integers) return store.integers[varName];
       if (varName in store.reals) return store.reals[varName];
       if (varName in store.times) return store.times[varName];
+      if (varName in store.strings) return store.strings[varName];
 
       return false;
     },
@@ -700,6 +739,10 @@ function invokeUserFunction(
       break;
     case 'TIME':
       returnValue = localTimes[name] ?? 0;
+      break;
+    case 'STRING':
+    case 'WSTRING':
+      returnValue = localStrings[name] ?? '';
       break;
     default:
       returnValue = localIntegers[name] ?? 0;
@@ -844,6 +887,9 @@ function invokeUserFunctionBlock(
     setTime: (varName: string, value: number) => {
       instanceState.times[varName] = Math.trunc(value);
     },
+    setString: (varName: string, value: string) => {
+      instanceState.strings[varName] = value;
+    },
 
     // Variable getters (read from inputs first, then instance state, then global)
     getBool: (varName: string) => {
@@ -860,6 +906,11 @@ function invokeUserFunctionBlock(
       if (varName in localInputs) return Number(localInputs[varName]);
       if (varName in instanceState.reals) return instanceState.reals[varName];
       return store.getReal(varName);
+    },
+    getString: (varName: string) => {
+      if (varName in localInputs) return String(localInputs[varName]);
+      if (varName in instanceState.strings) return instanceState.strings[varName];
+      return store.getString(varName);
     },
 
     // Type registry lookup (local first, then global)
@@ -884,12 +935,14 @@ function invokeUserFunctionBlock(
       if (varName in instanceState.integers) return instanceState.integers[varName];
       if (varName in instanceState.reals) return instanceState.reals[varName];
       if (varName in instanceState.times) return instanceState.times[varName];
+      if (varName in instanceState.strings) return instanceState.strings[varName];
 
       // Fall back to global store
       if (varName in store.booleans) return store.booleans[varName];
       if (varName in store.integers) return store.integers[varName];
       if (varName in store.reals) return store.reals[varName];
       if (varName in store.times) return store.times[varName];
+      if (varName in store.strings) return store.strings[varName];
 
       return false;
     },
@@ -987,6 +1040,9 @@ function mapTypeName(typeName: string): DeclaredType {
       return 'REAL';
     case 'TIME':
       return 'TIME';
+    case 'STRING':
+    case 'WSTRING':
+      return 'STRING';
     default:
       return 'UNKNOWN';
   }

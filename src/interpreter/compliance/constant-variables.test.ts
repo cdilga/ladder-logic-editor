@@ -28,6 +28,7 @@ function createTestStore(): SimulationStoreInterface {
   const integers: Record<string, number> = {};
   const reals: Record<string, number> = {};
   const times: Record<string, number> = {};
+  const strings: Record<string, string> = {};
   const timers: Record<string, { IN: boolean; PT: number; Q: boolean; ET: number; running: boolean; timerType?: 'TON' | 'TOF' | 'TP' }> = {};
   const counters: Record<string, { CU: boolean; CD: boolean; R: boolean; LD: boolean; PV: number; QU: boolean; QD: boolean; CV: number }> = {};
   const edgeDetectors: Record<string, { CLK: boolean; Q: boolean; M: boolean }> = {};
@@ -38,6 +39,7 @@ function createTestStore(): SimulationStoreInterface {
     integers,
     reals,
     times,
+    strings,
     timers,
     counters,
     edgeDetectors,
@@ -48,11 +50,13 @@ function createTestStore(): SimulationStoreInterface {
     setInt: (name, value) => { integers[name] = value; },
     setReal: (name, value) => { reals[name] = value; },
     setTime: (name, value) => { times[name] = value; },
+    setString: (name, value) => { strings[name] = value; },
 
     getBool: (name) => booleans[name] ?? false,
     getInt: (name) => integers[name] ?? 0,
     getReal: (name) => reals[name] ?? 0,
     getTime: (name) => times[name] ?? 0,
+    getString: (name) => strings[name] ?? '',
 
     initTimer: (name, pt, timerType = 'TON') => {
       timers[name] = { IN: false, PT: pt, Q: false, ET: 0, running: false, timerType };

@@ -10,12 +10,13 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 | Category | Implemented | Total | Coverage |
 |----------|-------------|-------|----------|
-| Data Types | 17 | 21 | 81% |
+| Data Types | 19 | 21 | 90% |
 | Variables | 5 | 10 | 50% |
 | Operators | 16 | 17 | 94% |
 | Control Flow | 7 | 7 | 100% |
 | Standard FBs | 10 | 10+ | 100%* |
 | POUs | 3 | 3 | 100% |
+| String Functions | 8 | 8+ | 100%* |
 
 \* Standard function blocks fully implemented; user-defined FBs fully supported (FUNCTION and FUNCTION_BLOCK)
 
@@ -42,8 +43,8 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | DATE | §2.1.4 | ❌ | - | |
 | TIME_OF_DAY | §2.1.4 | ❌ | - | |
 | DATE_AND_TIME | §2.1.4 | ❌ | - | |
-| STRING | §2.1.5 | ❌ | - | |
-| WSTRING | §2.1.5 | ❌ | - | |
+| STRING | §2.1.5 | ✅ | 35 | Full support with string functions |
+| WSTRING | §2.1.5 | ✅ | ✓ | Maps to STRING type |
 | BYTE | §2.1.6 | ✅ | 6 | 8-bit, 16#/2# literals |
 | WORD | §2.1.6 | ✅ | 5 | 16-bit, 16#/2# literals |
 | DWORD | §2.1.6 | ✅ | 4 | 32-bit, 16#/2# literals |
@@ -200,7 +201,15 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | SEL | §8.3 | ✅ | Binary selection (G, IN0, IN1) |
 | MUX | §8.3 | ✅ | Multiplexer (K, IN0...INn) |
 | LIMIT | §8.3 | ✅ | Value clamping (MN, IN, MX) |
-| String (LEN, LEFT, etc.) | §8.4 | ❌ | |
+| CONCAT | §8.4 | ✅ | Concatenate strings |
+| LEN | §8.4 | ✅ | String length |
+| LEFT | §8.4 | ✅ | Leftmost characters |
+| RIGHT | §8.4 | ✅ | Rightmost characters |
+| MID | §8.4 | ✅ | Middle substring (1-based) |
+| FIND | §8.4 | ✅ | Find substring position (1-based) |
+| INSERT | §8.4 | ✅ | Insert string at position |
+| DELETE | §8.4 | ✅ | Delete characters from string |
+| REPLACE | §8.4 | ✅ | Replace portion of string |
 
 ---
 
@@ -228,7 +237,8 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | ARRAY Types | 24 | ✅ 100% |
 | User Functions | 22 | ✅ 100% |
 | User Function Blocks | 18 | ✅ 100% |
-| **Total** | **1480** | ✅ 100% |
+| STRING Types | 35 | ✅ 100% |
+| **Total** | **1515** | ✅ 100% |
 
 ---
 
@@ -237,15 +247,15 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 ### Next Priorities
 
 1. **Multi-dimensional ARRAYs** - Currently single-dimensional only
-2. **STRING support** - Character string operations
-3. **STRUCT support** - User-defined structured types
+2. **STRUCT support** - User-defined structured types
+3. **VAR_IN_OUT** - Pass by reference parameters
 
 ### Future Consideration
 
 - Multi-dimensional ARRAY support
-- STRING support
 - STRUCT support
 - DATE/TIME_OF_DAY/DATE_AND_TIME types
+- Explicit type conversion functions (INT_TO_REAL, etc.)
 
 ---
 
@@ -253,6 +263,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 | Date | Change |
 |------|--------|
+| 2026-01-16 | Added STRING and WSTRING data types with full string function support (CONCAT, LEN, LEFT, RIGHT, MID, FIND, INSERT, DELETE, REPLACE), string comparison operators, type registry - 35 new tests, data types now 90% |
 | 2026-01-16 | Added user-defined FUNCTION_BLOCK support with VAR_INPUT, VAR_OUTPUT, VAR internal state, state persistence across scan cycles, multiple instances - 18 new tests, POUs now 100% |
 | 2026-01-16 | Added user-defined FUNCTION support with VAR_INPUT, VAR local variables, RETURN statement - 22 new tests, POUs now 67% |
 | 2026-01-16 | Added single-dimensional ARRAY type with indexed access (read/write) - 24 new tests, data types now 81% |

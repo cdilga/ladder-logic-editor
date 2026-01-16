@@ -74,6 +74,7 @@ interface SimulationState {
   integers: Record<string, number>;
   reals: Record<string, number>;
   times: Record<string, number>; // Time values in ms
+  strings: Record<string, string>; // String values (IEC 61131-3 STRING type)
 
   // Timer instances
   timers: Record<string, TimerState>;
@@ -103,6 +104,8 @@ interface SimulationState {
   getReal: (name: string) => number;
   setTime: (name: string, value: number) => void;
   getTime: (name: string) => number;
+  setString: (name: string, value: string) => void;
+  getString: (name: string) => string;
 
   // Timer operations
   initTimer: (name: string, pt: number, timerType?: TimerType) => void;
@@ -206,6 +209,7 @@ export const useSimulationStore = create<SimulationState>()(
     integers: {},
     reals: {},
     times: {},
+    strings: {},
     timers: {},
     counters: {},
     edgeDetectors: {},
@@ -225,6 +229,7 @@ export const useSimulationStore = create<SimulationState>()(
         integers: {},
         reals: {},
         times: {},
+        strings: {},
         timers: {},
         counters: {},
         edgeDetectors: {},
@@ -282,6 +287,17 @@ export const useSimulationStore = create<SimulationState>()(
 
     getTime: (name: string) => {
       return get().times[name] ?? 0;
+    },
+
+    // String variables
+    setString: (name: string, value: string) => {
+      set((state) => ({
+        strings: { ...state.strings, [name]: value },
+      }));
+    },
+
+    getString: (name: string) => {
+      return get().strings[name] ?? '';
     },
 
     // Timer operations
@@ -701,6 +717,7 @@ export const useSimulationStore = create<SimulationState>()(
         integers: {},
         reals: {},
         times: {},
+        strings: {},
         timers: {},
         counters: {},
         edgeDetectors: {},
