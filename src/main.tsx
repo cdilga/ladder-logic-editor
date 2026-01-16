@@ -6,13 +6,17 @@ import App from './App.tsx'
 import { DocsLayout } from './docs/components/DocsLayout'
 import { initializeMobileStore } from './store/mobile-store'
 import { initializeOnboarding } from './store/onboarding-store'
-import { initializeProjectStore } from './store/project-store'
+import { initializeEditorStore } from './store/editor-store'
+import { initializeUIStore } from './store/ui-store'
 
 // Initialize mobile store to detect device type and set up listeners
 initializeMobileStore();
 
-// Initialize project store from localStorage (once on app start)
-initializeProjectStore();
+// Initialize editor store from localStorage (once on app start)
+initializeEditorStore();
+
+// Initialize UI store (panel visibility, etc.)
+initializeUIStore();
 
 // Initialize onboarding for first-time visitors
 initializeOnboarding();

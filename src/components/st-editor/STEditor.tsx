@@ -13,7 +13,7 @@ import { syntaxHighlighting, defaultHighlightStyle, bracketMatching } from '@cod
 import { autocompletion, completionKeymap } from '@codemirror/autocomplete';
 import { structuredText } from '../../lang';
 import { stHoverTooltip } from '../../lang/st-hover';
-import { useProjectStore } from '../../store';
+import { useEditorStore } from '../../store';
 import { QuickReference } from '../quick-reference';
 
 import './STEditor.css';
@@ -27,26 +27,23 @@ export function STEditor({ className = '' }: STEditorProps) {
   const viewRef = useRef<EditorView | null>(null);
   const [showQuickRef, setShowQuickRef] = useState(false);
 
-  // Use ref to always have latest program ID in the callback
-  const currentProgramIdRef = useRef<string | null>(null);
+  // Use ref to always have latest file ID in the callback
+  const activeFileIdRef = useRef<string | null>(null);
 
-  const currentProgram = useProjectStore((state) => {
-    const project = state.project;
-    const currentId = state.currentProgramId;
-    if (!project || !currentId) return null;
-    return project.programs.find((p) => p.id === currentId) || null;
-  });
+  const activeFile = useEditorStore((state) => state.getActiveFile());
+  const activeFileId = useEditorStore((state) => state.activeFileId);
+  const updateFileContent = useEditorStore((state) => state.updateFileContent);
 
-  // Keep ref updated with current program ID
+  // Keep ref updated with current file ID
   useEffect(() => {
-    currentProgramIdRef.current = currentProgram?.id || null;
-  }, [currentProgram?.id]);
+    activeFileIdRef.current = activeFileId;
+  }, [activeFileId]);
 
   // Initialize editor
   useEffect(() => {
     if (!editorRef.current) return;
 
-    const initialContent = currentProgram?.structuredText || '';
+    const initialContent = activeFile?.content || '';
 
     const state = EditorState.create({
       doc: initialContent,
@@ -62,11 +59,10 @@ export function STEditor({ className = '' }: STEditorProps) {
         keymap.of([...defaultKeymap, ...historyKeymap, ...completionKeymap]),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
-            // Use ref to get latest program ID
-            const programId = currentProgramIdRef.current;
-            if (programId) {
-              // Get the latest updateProgramST from store
-              useProjectStore.getState().updateProgramST(programId, update.state.doc.toString());
+            // Use ref to get latest file ID
+            const fileId = activeFileIdRef.current;
+            if (fileId) {
+              updateFileContent(fileId, update.state.doc.toString());
             }
           }
         }),
@@ -102,13 +98,13 @@ export function STEditor({ className = '' }: STEditorProps) {
     };
   }, []); // Only run once on mount
 
-  // Update content when program changes
+  // Update content when file changes
   useEffect(() => {
     const view = viewRef.current;
-    if (!view || !currentProgram) return;
+    if (!view || !activeFile) return;
 
     const currentContent = view.state.doc.toString();
-    const newContent = currentProgram.structuredText;
+    const newContent = activeFile.content;
 
     // Only update if content is different (avoid cursor jump)
     if (currentContent !== newContent) {
@@ -120,14 +116,17 @@ export function STEditor({ className = '' }: STEditorProps) {
         },
       });
     }
-  }, [currentProgram?.id]); // Only when program ID changes
+  }, [activeFileId]); // Only when file ID changes
+
+  // Extract program name from file name
+  const programName = activeFile?.name.replace(/\.st$/i, '') || '';
 
   return (
     <div className={`st-editor ${className} ${showQuickRef ? 'st-editor--with-panel' : ''}`}>
       <div className="st-editor-header">
         <span className="st-editor-title">Structured Text</span>
-        {currentProgram && (
-          <span className="st-editor-program-name">{currentProgram.name}</span>
+        {activeFile && (
+          <span className="st-editor-program-name">{programName}</span>
         )}
         <div className="st-editor-header-spacer" />
         <button

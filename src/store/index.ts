@@ -17,3 +17,11 @@ export {
   AUTO_DISMISS_TIMEOUT,
 } from './onboarding-store';
 export type { OnboardingState, OnboardingActions, OnboardingStore } from './onboarding-store';
+export {
+  useEditorStore,
+  initializeEditorStore,
+  saveEditorState,
+  scheduleEditorAutoSave,
+} from './editor-store';
+export type { OpenFile } from './editor-store';
+export { useUIStore, initializeUIStore, saveUIState } from './ui-store';

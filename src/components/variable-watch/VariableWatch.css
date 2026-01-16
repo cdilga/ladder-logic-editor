@@ -1,72 +1,88 @@
 /**
  * Variable Watch Panel Styles
+ *
+ * Unified color palette matching the rest of the app.
+ * Collapsible accordion-style panel.
  */
 
 .variable-watch {
   display: flex;
   flex-direction: column;
-  background: #1e1e1e;
-  border-left: 1px solid #252526;
-  width: 280px;
-  height: 100%;
+  background: var(--bg-surface, #252526);
   overflow: hidden;
+  flex: 1;
+  min-height: 0;
 }
 
 .variable-watch.collapsed {
-  width: 40px;
-  cursor: pointer;
+  flex: 0 0 auto;
 }
 
-.variable-watch.collapsed .watch-header {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  padding: 12px 8px;
-  justify-content: flex-start;
-  gap: 8px;
+.variable-watch.expanded {
+  flex: 1;
+  min-height: 0;
 }
 
+/* Header - clickable to toggle */
 .watch-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: #252526;
-  border-bottom: 1px solid #333;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--bg-elevated, #2d2d2d);
+  border-bottom: 1px solid var(--border, #333);
   cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.watch-header:hover {
+  background: var(--bg-hover, #383838);
+}
+
+.watch-chevron {
+  font-size: 10px;
+  color: var(--text-muted, #808080);
+  width: 12px;
+  text-align: center;
 }
 
 .watch-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  color: #d4d4d4;
+  color: var(--text-secondary, #d4d4d4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .watch-badge {
-  background: #007acc;
+  background: var(--accent-primary, #007acc);
   color: white;
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 10px;
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 8px;
+  margin-left: auto;
 }
 
 .watch-status {
-  font-size: 11px;
-  color: #808080;
+  font-size: 10px;
+  color: var(--text-muted, #808080);
+  margin-left: 4px;
 }
 
 .watch-status.running {
-  color: #27ae60;
+  color: var(--accent-success, #27ae60);
 }
 
 .watch-status.paused {
-  color: #f1c40f;
+  color: var(--accent-warning, #f1c40f);
 }
 
 /* Tabs */
 .watch-tabs {
   display: flex;
-  background: #2d2d2d;
-  border-bottom: 1px solid #333;
+  background: var(--bg-surface, #252526);
+  border-bottom: 1px solid var(--border, #333);
 }
 
 .watch-tab {
@@ -74,21 +90,21 @@
   padding: 6px 4px;
   background: transparent;
   border: none;
-  color: #808080;
+  color: var(--text-muted, #808080);
   font-size: 10px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .watch-tab:hover {
-  background: #333;
-  color: #d4d4d4;
+  background: var(--bg-hover, #333);
+  color: var(--text-primary, #d4d4d4);
 }
 
 .watch-tab.active {
-  background: #1e1e1e;
-  color: #d4d4d4;
-  border-bottom: 2px solid #007acc;
+  background: var(--bg-surface, #252526);
+  color: var(--text-primary, #d4d4d4);
+  border-bottom: 2px solid var(--accent-primary, #007acc);
 }
 
 /* Content */
@@ -102,9 +118,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 80px;
-  color: #606060;
-  font-size: 12px;
+  height: 60px;
+  color: var(--text-muted, #606060);
+  font-size: 11px;
   font-style: italic;
 }
 
@@ -120,31 +136,31 @@
   flex-direction: column;
   gap: 4px;
   padding: 8px;
-  background: #2d2d2d;
+  background: var(--bg-elevated, #2d2d2d);
   border-radius: 4px;
   font-size: 11px;
 }
 
 .item-name {
-  color: #9cdcfe;
+  color: var(--accent-code, #9cdcfe);
   font-family: 'SF Mono', 'Consolas', monospace;
   font-weight: 500;
 }
 
 .item-type {
-  color: #569cd6;
+  color: var(--accent-type, #569cd6);
   font-size: 10px;
 }
 
 .item-value {
-  color: #b5cea8;
+  color: var(--accent-value, #b5cea8);
   cursor: pointer;
   padding: 2px 4px;
   border-radius: 2px;
 }
 
 .item-value:hover {
-  background: #333;
+  background: var(--bg-hover, #333);
 }
 
 /* Boolean Toggle */

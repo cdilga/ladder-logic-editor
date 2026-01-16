@@ -1,117 +1,150 @@
+/**
+ * Properties Panel Styles
+ *
+ * Unified color palette matching the rest of the app.
+ * Collapsible accordion-style panel.
+ */
+
 .properties-panel {
-  background: var(--bg-secondary, #2d2d2d);
-  border-left: 1px solid var(--border-color, #404040);
-  width: 220px;
   display: flex;
   flex-direction: column;
+  background: var(--bg-surface, #252526);
+  overflow: hidden;
   flex-shrink: 0;
 }
 
-.properties-header {
-  padding: 10px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-secondary, #888);
-  border-bottom: 1px solid var(--border-color, #404040);
+.properties-panel.collapsed {
+  flex: 0 0 auto;
 }
 
-.properties-empty {
-  padding: 20px 12px;
-  color: var(--text-secondary, #888);
-  font-size: 13px;
+.properties-panel.expanded {
+  flex: 0 0 auto;
+}
+
+/* Header - clickable to toggle */
+.properties-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--bg-elevated, #2d2d2d);
+  border-bottom: 1px solid var(--border, #333);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.properties-header:hover {
+  background: var(--bg-hover, #383838);
+}
+
+.properties-chevron {
+  font-size: 10px;
+  color: var(--text-muted, #808080);
+  width: 12px;
   text-align: center;
 }
 
-.properties-content {
-  padding: 8px 0;
-  overflow-y: auto;
-  flex: 1;
+.properties-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary, #d4d4d4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
+.properties-badge {
+  color: var(--accent-primary, #007acc);
+  font-size: 14px;
+  line-height: 1;
+  margin-left: auto;
+}
+
+/* Content */
+.properties-content {
+  padding: 6px 0;
+  overflow-y: auto;
+  max-height: 200px;
+}
+
+.properties-empty {
+  padding: 12px 10px;
+  color: var(--text-muted, #808080);
+  font-size: 11px;
+  text-align: center;
+  font-style: italic;
+}
+
+/* Type badge row */
+.properties-type-row {
+  padding: 4px 10px 6px;
+  display: flex;
+  justify-content: center;
+}
+
+.properties-type-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent-primary, #007acc);
+  background: rgba(0, 122, 204, 0.15);
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+/* Property rows */
 .property-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 6px 12px;
+  padding: 4px 10px;
   gap: 8px;
 }
 
 .property-row:hover {
-  background: var(--bg-hover, #3d3d3d);
+  background: var(--bg-hover, #333);
 }
 
 .property-label {
-  font-size: 12px;
-  color: var(--text-secondary, #888);
+  font-size: 11px;
+  color: var(--text-muted, #808080);
   flex-shrink: 0;
 }
 
 .property-value {
-  font-size: 12px;
-  color: var(--text-primary, #e0e0e0);
+  font-size: 11px;
+  color: var(--text-primary, #d4d4d4);
   text-align: right;
   word-break: break-word;
 }
 
 .property-value.mono {
-  font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 11px;
-  color: var(--accent-color, #4da6ff);
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-size: 10px;
+  color: var(--accent-code, #9cdcfe);
 }
 
 /* ============================================================================
-   Mobile Layout Override (Phase 5)
+   Mobile Layout Override
    ========================================================================= */
 
 @media (max-width: 767px) {
   .properties-panel {
     width: 100%;
     border-left: none;
-    border-top: 1px solid var(--border-color, #404040);
-    overflow-x: hidden;
   }
 
   .properties-header {
-    padding: 12px 16px;
-    font-size: 11px;
-    background: var(--mobile-bg-surface, #222633);
-  }
-
-  .properties-empty {
-    padding: 30px 16px;
-    font-size: 12px;
+    padding: 10px 12px;
   }
 
   .properties-content {
-    padding: 10px 0;
-    overflow-x: hidden;
+    padding: 8px 0;
+    max-height: none;
   }
 
   .property-row {
-    padding: 8px 16px;
-    gap: 12px;
-    min-width: 0;
-    overflow: hidden;
-  }
-
-  .property-label {
-    font-size: 11px;
-    flex-shrink: 0;
-    min-width: 80px;
-  }
-
-  .property-value {
-    font-size: 11px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-width: 0;
-    flex: 1;
-  }
-
-  .property-value.mono {
-    font-size: 10px;
+    padding: 6px 12px;
   }
 }

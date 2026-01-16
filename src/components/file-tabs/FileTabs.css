@@ -1,0 +1,121 @@
+/**
+ * File Tabs Styles
+ */
+
+.file-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 400px;
+  overflow: hidden;
+}
+
+.file-tabs-list {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.file-tabs-list::-webkit-scrollbar {
+  display: none;
+}
+
+.file-tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  background: var(--bg-elevated, #2a2f3d);
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 4px 4px 0 0;
+  color: var(--text-secondary, #9ba3af);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  max-width: 150px;
+  transition: all 0.15s;
+}
+
+.file-tab:hover {
+  background: var(--bg-surface, #222633);
+  color: var(--text-primary, #e4e7eb);
+}
+
+.file-tab.active {
+  background: var(--bg-surface, #222633);
+  border-bottom-color: var(--accent-primary, #00d4ff);
+  color: var(--text-primary, #e4e7eb);
+}
+
+.file-tab.dirty .file-tab-name {
+  color: var(--accent-secondary, #ffb627);
+}
+
+.file-tab.dirty.active .file-tab-name {
+  color: var(--accent-secondary, #ffb627);
+}
+
+.file-tab-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+.dirty-indicator {
+  color: var(--accent-secondary, #ffb627);
+  margin-left: 2px;
+}
+
+.file-tab-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: var(--text-muted, #6b7280);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s;
+}
+
+.file-tab:hover .file-tab-close {
+  opacity: 1;
+}
+
+.file-tab-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #e4e7eb);
+}
+
+.file-tab-new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-muted, #6b7280);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.file-tab-new:hover {
+  background: var(--bg-elevated, #2a2f3d);
+  color: var(--text-primary, #e4e7eb);
+}
