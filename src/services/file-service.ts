@@ -23,6 +23,7 @@ export interface ProjectFile {
   fileVersion: string;
   exportedAt: string;
   project: LadderProject;
+  currentProgramId?: string; // Track which program is currently selected
 }
 
 // ============================================================================
@@ -32,13 +33,14 @@ export interface ProjectFile {
 /**
  * Save project to localStorage
  */
-export function saveToLocalStorage(project: LadderProject): void {
+export function saveToLocalStorage(project: LadderProject, currentProgramId?: string): void {
   try {
     const data: ProjectFile = {
       $schema: 'https://ladder-logic-editor/schema/project-v1.json',
       fileVersion: '1.0',
       exportedAt: new Date().toISOString(),
       project,
+      currentProgramId,
     };
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
   } catch (error) {
@@ -50,13 +52,16 @@ export function saveToLocalStorage(project: LadderProject): void {
 /**
  * Load project from localStorage
  */
-export function loadFromLocalStorage(): LadderProject | null {
+export function loadFromLocalStorage(): { project: LadderProject; currentProgramId?: string } | null {
   try {
     const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (!stored) return null;
 
     const data = JSON.parse(stored) as ProjectFile;
-    return data.project;
+    return {
+      project: data.project,
+      currentProgramId: data.currentProgramId
+    };
   } catch (error) {
     console.error('Failed to load project from localStorage:', error);
     return null;
@@ -157,13 +162,13 @@ let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
 /**
  * Schedule an auto-save operation (debounced)
  */
-export function scheduleAutoSave(project: LadderProject): void {
+export function scheduleAutoSave(project: LadderProject, currentProgramId?: string): void {
   if (autoSaveTimer) {
     clearTimeout(autoSaveTimer);
   }
 
   autoSaveTimer = setTimeout(() => {
-    saveToLocalStorage(project);
+    saveToLocalStorage(project, currentProgramId);
     autoSaveTimer = null;
   }, AUTO_SAVE_DEBOUNCE_MS);
 }

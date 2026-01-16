@@ -307,6 +307,111 @@
 }
 
 /* ============================================================================
+   Properties Tab (integrated from PropertiesPanel)
+   ============================================================================ */
+
+.watch-tab--props {
+  flex: 0 0 auto;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.watch-tab--props svg {
+  opacity: 0.6;
+}
+
+.watch-tab--props.active svg,
+.watch-tab--props:hover svg {
+  opacity: 1;
+}
+
+.watch-tab--has-selection {
+  position: relative;
+}
+
+.watch-tab--has-selection::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: #007acc;
+  border-radius: 50%;
+}
+
+.properties-empty {
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px 16px;
+  text-align: center;
+  height: auto;
+}
+
+.properties-empty__icon {
+  opacity: 0.4;
+}
+
+.properties-list {
+  gap: 0;
+}
+
+.properties-node-type {
+  padding: 8px;
+  margin-bottom: 8px;
+  background: #252526;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.properties-type-badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #007acc;
+}
+
+.property-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 8px;
+  gap: 8px;
+  border-bottom: 1px solid #333;
+}
+
+.property-row:last-child {
+  border-bottom: none;
+}
+
+.property-row:hover {
+  background: #2d2d2d;
+}
+
+.property-label {
+  font-size: 11px;
+  color: #808080;
+  flex-shrink: 0;
+}
+
+.property-value {
+  font-size: 11px;
+  color: #d4d4d4;
+  text-align: right;
+  word-break: break-word;
+}
+
+.property-value.mono {
+  font-family: 'SF Mono', 'Consolas', monospace;
+  color: #9cdcfe;
+}
+
+/* ============================================================================
    Mobile Layout Override (Phase 5)
    ========================================================================= */
 

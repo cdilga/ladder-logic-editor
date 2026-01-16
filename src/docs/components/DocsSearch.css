@@ -1,0 +1,121 @@
+/**
+ * Documentation Search Styles
+ *
+ * VS Code theme consistent styling
+ */
+
+.docs-search {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+}
+
+.docs-search__input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.docs-search__icon {
+  position: absolute;
+  left: 10px;
+  color: #606060;
+  pointer-events: none;
+}
+
+.docs-search__input {
+  width: 100%;
+  padding: 8px 32px;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-size: 13px;
+  transition: border-color 150ms, background-color 150ms;
+}
+
+.docs-search__input::placeholder {
+  color: #606060;
+}
+
+.docs-search__input:focus {
+  outline: none;
+  border-color: #007acc;
+  background: #252526;
+}
+
+.docs-search__clear {
+  position: absolute;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #606060;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.docs-search__clear:hover {
+  background: #3d3d3d;
+  color: #d4d4d4;
+}
+
+/* Results Dropdown */
+.docs-search__results {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 400px;
+  overflow-y: auto;
+  background: #252526;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+}
+
+.docs-search__result {
+  display: block;
+  padding: 10px 14px;
+  text-decoration: none;
+  border-bottom: 1px solid #404040;
+  transition: background-color 150ms;
+}
+
+.docs-search__result:last-child {
+  border-bottom: none;
+}
+
+.docs-search__result:hover,
+.docs-search__result--selected {
+  background: rgba(0, 122, 204, 0.1);
+}
+
+.docs-search__result-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #d4d4d4;
+  margin-bottom: 4px;
+}
+
+.docs-search__result-match {
+  font-size: 11px;
+  color: #808080;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docs-search__no-results {
+  padding: 14px;
+  text-align: center;
+  color: #606060;
+  font-size: 13px;
+}

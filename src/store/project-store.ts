@@ -17,6 +17,7 @@ import type { LadderNode, LadderEdge } from '../models/ladder-elements';
 import { createNewProject, createTrafficControllerProgram, createDualPumpControllerProgram } from '../models/project';
 import { createDefaultIntersection } from '../models/traffic-controller';
 import { transformSTToLadder, type TransformResult } from '../transformer';
+import { loadFromLocalStorage } from '../services/file-service';
 
 // ============================================================================
 // State Interface
@@ -40,7 +41,7 @@ interface ProjectState {
   newProject: (name: string) => void;
   newTrafficControllerProject: (name: string) => void;
   newDualPumpControllerProject: (name: string) => void;
-  loadProject: (project: LadderProject, filePath?: string) => void;
+  loadProject: (project: LadderProject, filePath?: string, currentProgramId?: string) => void;
   loadFromSTCode: (programName: string, stCode: string, fileName?: string) => void;
   saveProject: () => LadderProject | null;
   markDirty: () => void;
@@ -135,10 +136,15 @@ export const useProjectStore = create<ProjectState>()(
     },
 
     // Load existing project
-    loadProject: (project: LadderProject, filePath?: string) => {
+    loadProject: (project: LadderProject, filePath?: string, currentProgramId?: string) => {
+      // Use provided currentProgramId if valid, otherwise fall back to first program
+      const validProgramId = currentProgramId && project.programs.some(p => p.id === currentProgramId)
+        ? currentProgramId
+        : project.programs[0]?.id || null;
+
       set({
         project,
-        currentProgramId: project.programs[0]?.id || null,
+        currentProgramId: validProgramId,
         isDirty: false,
         filePath: filePath || null,
       });
@@ -352,3 +358,25 @@ export const useProjectStore = create<ProjectState>()(
     },
   }))
 );
+
+// ============================================================================
+// Initialization (call once on app startup)
+// ============================================================================
+
+let initialized = false;
+
+/**
+ * Initialize the project store from localStorage on app startup.
+ * Should be called once in main.tsx before the app renders.
+ */
+export function initializeProjectStore(): void {
+  if (initialized) return;
+  initialized = true;
+
+  const saved = loadFromLocalStorage();
+  if (saved) {
+    useProjectStore.getState().loadProject(saved.project, undefined, saved.currentProgramId);
+  } else {
+    useProjectStore.getState().newProject('New Project');
+  }
+}

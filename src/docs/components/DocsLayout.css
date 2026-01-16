@@ -1,0 +1,295 @@
+/**
+ * Documentation Layout Styles
+ *
+ * VS Code theme consistent styling
+ */
+
+/* ============================================================================
+   Layout Container
+   ============================================================================ */
+
+.docs-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "header header"
+    "sidebar main";
+  height: 100vh;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  overflow: hidden;
+}
+
+/* ============================================================================
+   Header (Mobile)
+   ============================================================================ */
+
+.docs-header {
+  grid-area: header;
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #252526;
+  border-bottom: 1px solid #404040;
+}
+
+.docs-header__menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #d4d4d4;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.docs-header__menu-btn:hover {
+  background: #3d3d3d;
+}
+
+.docs-header__title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: #d4d4d4;
+  text-decoration: none;
+}
+
+.docs-header__back {
+  font-size: 12px;
+  color: #007acc;
+  text-decoration: none;
+}
+
+.docs-header__back:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================================
+   Main Content Area
+   ============================================================================ */
+
+.docs-main {
+  grid-area: main;
+  overflow-y: auto;
+}
+
+.docs-main__content {
+  max-width: 900px;
+  padding: 32px 48px;
+}
+
+/* ============================================================================
+   Article Styles
+   ============================================================================ */
+
+.docs-article__header {
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #404040;
+}
+
+.docs-article__header h1 {
+  font-size: 28px;
+  font-weight: 600;
+  color: #d4d4d4;
+  margin: 0 0 8px;
+}
+
+.docs-article__desc {
+  font-size: 14px;
+  color: #808080;
+  margin: 0;
+}
+
+.docs-article__content {
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.docs-article__content h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #d4d4d4;
+  margin: 28px 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #404040;
+}
+
+.docs-article__content h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #d4d4d4;
+  margin: 22px 0 10px;
+}
+
+.docs-article__content h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #808080;
+  margin: 18px 0 8px;
+}
+
+.docs-article__content p {
+  margin: 0 0 14px;
+}
+
+.docs-article__content ul,
+.docs-article__content ol {
+  margin: 0 0 14px;
+  padding-left: 24px;
+}
+
+.docs-article__content li {
+  margin: 6px 0;
+}
+
+.docs-article__content a {
+  color: #007acc;
+  text-decoration: none;
+}
+
+.docs-article__content a:hover {
+  text-decoration: underline;
+}
+
+.docs-article__content code {
+  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+  font-size: 0.9em;
+  background: #2d2d2d;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #9cdcfe;
+}
+
+.docs-article__content pre {
+  margin: 14px 0;
+  padding: 14px;
+  background: #252526;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.docs-article__content pre code {
+  background: none;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #d4d4d4;
+}
+
+.docs-article__content blockquote {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-left: 3px solid #007acc;
+  background: rgba(0, 122, 204, 0.08);
+  border-radius: 0 4px 4px 0;
+}
+
+.docs-article__content blockquote p {
+  margin: 0;
+}
+
+.docs-article__content table {
+  width: 100%;
+  margin: 14px 0;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.docs-article__content th,
+.docs-article__content td {
+  padding: 10px 12px;
+  text-align: left;
+  border: 1px solid #404040;
+}
+
+.docs-article__content th {
+  background: #252526;
+  font-weight: 600;
+  color: #d4d4d4;
+}
+
+.docs-article__content td {
+  background: #1e1e1e;
+}
+
+/* ============================================================================
+   Code Block with Syntax Highlighting
+   ============================================================================ */
+
+.code-block {
+  margin: 14px 0;
+  padding: 14px;
+  background: #252526;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.code-block code {
+  background: none;
+  padding: 0;
+  color: #d4d4d4;
+}
+
+/* ============================================================================
+   Sidebar Overlay (Mobile)
+   ============================================================================ */
+
+.docs-sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+}
+
+/* ============================================================================
+   Responsive Design
+   ============================================================================ */
+
+@media (max-width: 900px) {
+  .docs-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "header"
+      "main";
+  }
+
+  .docs-header {
+    display: flex;
+  }
+
+  .docs-main__content {
+    padding: 24px 20px;
+  }
+
+  .docs-sidebar-overlay {
+    display: block;
+  }
+}
+
+@media (max-width: 600px) {
+  .docs-article__header h1 {
+    font-size: 22px;
+  }
+
+  .docs-article__content h2 {
+    font-size: 18px;
+  }
+
+  .docs-article__content h3 {
+    font-size: 15px;
+  }
+}

@@ -7,6 +7,7 @@
 import { useEffect } from 'react';
 import { MainLayout } from './components/layout/MainLayout';
 import { MobileLayout } from './components/mobile/MobileLayout';
+import { OnboardingManager } from './components/onboarding';
 import { useProjectStore } from './store';
 import { useMobileStore } from './store/mobile-store';
 
@@ -29,6 +30,7 @@ function App() {
   return (
     <div className="app">
       {isMobile ? <MobileLayout /> : <MainLayout />}
+      <OnboardingManager />
     </div>
   );
 }

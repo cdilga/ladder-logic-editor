@@ -1,0 +1,213 @@
+/**
+ * Documentation Sidebar Styles
+ *
+ * VS Code theme consistent styling
+ */
+
+/* ============================================================================
+   Sidebar Container
+   ============================================================================ */
+
+.docs-sidebar {
+  grid-area: sidebar;
+  display: flex;
+  flex-direction: column;
+  background: #252526;
+  border-right: 1px solid #404040;
+  overflow: hidden;
+  min-height: 0; /* Enable scrolling in grid context */
+}
+
+/* ============================================================================
+   Sidebar Header
+   ============================================================================ */
+
+.docs-sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #404040;
+}
+
+.docs-sidebar__logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #d4d4d4;
+  text-decoration: none;
+}
+
+.docs-sidebar__logo svg {
+  color: #007acc;
+}
+
+.docs-sidebar__close {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #808080;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.docs-sidebar__close:hover {
+  background: #3d3d3d;
+  color: #d4d4d4;
+}
+
+/* ============================================================================
+   Search
+   ============================================================================ */
+
+.docs-sidebar__search {
+  padding: 12px 14px;
+  border-bottom: 1px solid #404040;
+}
+
+.docs-sidebar__search .docs-search {
+  max-width: none;
+}
+
+/* ============================================================================
+   Navigation
+   ============================================================================ */
+
+.docs-sidebar__nav {
+  flex: 1;
+  padding: 8px 0;
+  overflow-y: auto;
+  min-height: 0; /* Enable scrolling in flex context */
+}
+
+.docs-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.docs-nav__item {
+  margin: 0;
+}
+
+.docs-nav__link {
+  display: block;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #808080;
+  text-decoration: none;
+  transition: background-color 150ms, color 150ms;
+}
+
+.docs-nav__link:hover {
+  color: #d4d4d4;
+  background: #2d2d2d;
+}
+
+.docs-nav__link--active {
+  color: #007acc;
+  background: rgba(0, 122, 204, 0.1);
+  border-right: 2px solid #007acc;
+}
+
+/* ============================================================================
+   Section Navigation
+   ============================================================================ */
+
+.docs-nav__section {
+  margin: 4px 0;
+}
+
+.docs-nav__section-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: #d4d4d4;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms;
+}
+
+.docs-nav__section-btn:hover {
+  background: #2d2d2d;
+}
+
+.docs-nav__chevron {
+  flex-shrink: 0;
+  transition: transform 200ms;
+}
+
+.docs-nav__section-btn--expanded .docs-nav__chevron {
+  transform: rotate(180deg);
+}
+
+.docs-nav__children {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.docs-nav__children .docs-nav__link {
+  padding-left: 40px;
+  font-size: 12px;
+}
+
+/* ============================================================================
+   Sidebar Footer
+   ============================================================================ */
+
+.docs-sidebar__footer {
+  padding: 14px 16px;
+  border-top: 1px solid #404040;
+}
+
+.docs-sidebar__back-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #007acc;
+  text-decoration: none;
+}
+
+.docs-sidebar__back-link:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================================
+   Mobile Styles
+   ============================================================================ */
+
+@media (max-width: 900px) {
+  .docs-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 260px;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 250ms ease;
+  }
+
+  .docs-sidebar--open {
+    transform: translateX(0);
+  }
+
+  .docs-sidebar__close {
+    display: flex;
+  }
+}

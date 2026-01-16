@@ -15,7 +15,7 @@
 .st-editor-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   padding: 8px 12px;
   background: #252526;
   border-bottom: 1px solid #3c3c3c;
@@ -30,6 +30,41 @@
 .st-editor-program-name {
   color: #808080;
   font-style: italic;
+}
+
+.st-editor-header-spacer {
+  flex: 1;
+}
+
+.st-editor-help-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 150ms, color 150ms;
+}
+
+.st-editor-help-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.st-editor-help-btn--active {
+  background-color: rgba(0, 122, 204, 0.2);
+  color: #007acc;
+}
+
+.st-editor-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
 }
 
 .st-editor-content {
@@ -157,4 +192,108 @@
 .st-editor .cm-completionIcon-snippet::after {
   content: 'S';
   color: #dcdcaa;
+}
+
+.st-editor .cm-completionIcon-constant::after {
+  content: 'C';
+  color: #569cd6;
+}
+
+/* Autocomplete Info Panel (extended documentation) */
+.st-editor .cm-completionInfo {
+  padding: 8px 12px;
+  max-width: 400px;
+  max-height: 300px;
+  overflow: auto;
+  background: #2d2d2d;
+  border-left: 1px solid #454545;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.st-editor .cm-completion-info {
+  color: #cccccc;
+}
+
+/* ============================================================================
+   Hover Tooltip Styles
+   ============================================================================ */
+
+.st-hover-tooltip {
+  background: #252526;
+  border: 1px solid #454545;
+  border-radius: 6px;
+  padding: 12px;
+  max-width: 450px;
+  max-height: 350px;
+  overflow: auto;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.st-hover-tooltip .doc-signature {
+  font-family: 'Fira Code', 'Monaco', 'Menlo', monospace;
+  background: #1e1e1e;
+  padding: 6px 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.st-hover-tooltip .doc-signature code {
+  color: #4ec9b0;
+}
+
+.st-hover-tooltip .doc-description {
+  color: #d4d4d4;
+  margin-bottom: 10px;
+}
+
+.st-hover-tooltip .doc-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #3c3c3c;
+}
+
+.st-hover-tooltip .doc-section strong {
+  color: #cccccc;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.st-hover-tooltip .doc-section ul {
+  margin: 0;
+  padding-left: 16px;
+  list-style-type: disc;
+}
+
+.st-hover-tooltip .doc-section li {
+  margin: 4px 0;
+  color: #b4b4b4;
+}
+
+.st-hover-tooltip .doc-section li code {
+  color: #9cdcfe;
+  font-family: 'Fira Code', 'Monaco', 'Menlo', monospace;
+  font-size: 11px;
+}
+
+.st-hover-tooltip .doc-section pre {
+  background: #1e1e1e;
+  padding: 8px 10px;
+  border-radius: 4px;
+  margin: 8px 0 0 0;
+  font-size: 11px;
+  font-family: 'Fira Code', 'Monaco', 'Menlo', monospace;
+  overflow-x: auto;
+  color: #d4d4d4;
+}
+
+.st-hover-tooltip .doc-see-also {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #3c3c3c;
+  color: #808080;
+  font-size: 11px;
 }

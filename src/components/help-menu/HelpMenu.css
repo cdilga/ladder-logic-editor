@@ -1,0 +1,143 @@
+/**
+ * HelpMenu Styles
+ *
+ * VS Code theme consistent dropdown menu styling.
+ */
+
+.help-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* ============================================================================
+   Trigger Button
+   ============================================================================ */
+
+.help-menu__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: color 150ms, background-color 150ms;
+}
+
+.help-menu__trigger:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.help-menu__trigger--active {
+  color: rgba(255, 255, 255, 1);
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.help-menu__trigger:focus {
+  outline: none;
+}
+
+.help-menu__trigger:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.4);
+  outline-offset: 1px;
+}
+
+/* ============================================================================
+   Dropdown Menu
+   ============================================================================ */
+
+.help-menu__dropdown {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  background-color: #252526;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  padding: 4px;
+  z-index: 10001;
+
+  /* Animation */
+  animation: help-menu-enter 150ms ease-out;
+}
+
+@keyframes help-menu-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================================
+   Menu Items
+   ============================================================================ */
+
+.help-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: #d4d4d4;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 150ms;
+}
+
+.help-menu__item:hover {
+  background-color: #3d3d3d;
+}
+
+.help-menu__item:focus {
+  outline: none;
+  background-color: #3d3d3d;
+}
+
+.help-menu__item:focus-visible {
+  outline: 2px solid #007acc;
+  outline-offset: -2px;
+}
+
+.help-menu__icon {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.help-menu__item:hover .help-menu__icon {
+  opacity: 1;
+}
+
+/* ============================================================================
+   Divider
+   ============================================================================ */
+
+.help-menu__divider {
+  height: 1px;
+  background-color: #404040;
+  margin: 4px 6px;
+}
+
+/* ============================================================================
+   Reduced Motion
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .help-menu__dropdown {
+    animation: none;
+  }
+}

@@ -1,0 +1,302 @@
+/**
+ * Quick Reference Panel Styles
+ *
+ * VS Code theme consistent sidebar panel for browsing ST documentation.
+ */
+
+.quick-reference {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  height: 100%;
+  background: #252526;
+  border-left: 1px solid #404040;
+  overflow: hidden;
+}
+
+/* ============================================================================
+   Header
+   ============================================================================ */
+
+.quick-reference__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #1e1e1e;
+  border-bottom: 1px solid #404040;
+  flex-shrink: 0;
+}
+
+.quick-reference__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #d4d4d4;
+}
+
+.quick-reference__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #808080;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 150ms, color 150ms;
+}
+
+.quick-reference__close:hover {
+  background-color: #3d3d3d;
+  color: #d4d4d4;
+}
+
+/* ============================================================================
+   Content
+   ============================================================================ */
+
+.quick-reference__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0; /* Important for flex children to shrink */
+}
+
+/* ============================================================================
+   Categories
+   ============================================================================ */
+
+.quick-reference__categories {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0; /* Allow shrinking */
+}
+
+/* When detail panel is shown, limit categories height */
+.quick-reference__content:has(.quick-reference__detail) .quick-reference__categories {
+  flex: 0 0 auto;
+  max-height: 45%;
+  border-bottom: 1px solid #404040;
+}
+
+.quick-reference__category {
+  border-bottom: 1px solid #333;
+}
+
+.quick-reference__category:last-child {
+  border-bottom: none;
+}
+
+.quick-reference__category-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: #d4d4d4;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms;
+}
+
+.quick-reference__category-header:hover {
+  background-color: #2d2d2d;
+}
+
+.quick-reference__chevron {
+  flex-shrink: 0;
+  transition: transform 200ms;
+}
+
+.quick-reference__category-header--expanded .quick-reference__chevron {
+  transform: rotate(0deg);
+}
+
+.quick-reference__category-header:not(.quick-reference__category-header--expanded) .quick-reference__chevron {
+  transform: rotate(-90deg);
+}
+
+/* ============================================================================
+   Items List
+   ============================================================================ */
+
+.quick-reference__items {
+  margin: 0;
+  padding: 0 0 8px 0;
+  list-style: none;
+}
+
+.quick-reference__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 12px 6px 32px;
+  border: none;
+  background: transparent;
+  color: #808080;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms;
+}
+
+.quick-reference__item:hover {
+  background-color: #2d2d2d;
+  color: #d4d4d4;
+}
+
+.quick-reference__item--selected {
+  background-color: rgba(0, 122, 204, 0.15);
+  color: #d4d4d4;
+}
+
+.quick-reference__item code {
+  color: #4ec9b0;
+  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+}
+
+.quick-reference__item-sig {
+  color: #606060;
+  font-size: 10px;
+  margin-left: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================================================
+   Detail Panel
+   ============================================================================ */
+
+.quick-reference__detail {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  background: #1e1e1e;
+  min-height: 0;
+}
+
+.quick-reference__detail-header {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #404040;
+}
+
+.quick-reference__detail-name {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: #4ec9b0;
+  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+  margin-bottom: 6px;
+}
+
+.quick-reference__detail-sig {
+  display: block;
+  font-size: 11px;
+  color: #808080;
+  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+}
+
+.quick-reference__detail-desc {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #d4d4d4;
+}
+
+.quick-reference__detail-section {
+  margin-top: 12px;
+}
+
+.quick-reference__detail-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #808080;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.quick-reference__detail-section ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quick-reference__detail-section li {
+  padding: 4px 0;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.quick-reference__detail-section li code {
+  color: #9cdcfe;
+  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+}
+
+.quick-reference__detail-section .param-type {
+  color: #4ec9b0;
+}
+
+.quick-reference__detail-section .param-desc {
+  color: #808080;
+}
+
+.quick-reference__example {
+  margin: 8px 0 0 0;
+  padding: 10px;
+  background: #252526;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+  color: #d4d4d4;
+  overflow-x: auto;
+  white-space: pre;
+  line-height: 1.4;
+}
+
+.quick-reference__see-also {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #404040;
+  font-size: 11px;
+  color: #606060;
+}
+
+/* ============================================================================
+   Scrollbar
+   ============================================================================ */
+
+.quick-reference__categories::-webkit-scrollbar,
+.quick-reference__detail::-webkit-scrollbar {
+  width: 8px;
+}
+
+.quick-reference__categories::-webkit-scrollbar-track,
+.quick-reference__detail::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.quick-reference__categories::-webkit-scrollbar-thumb,
+.quick-reference__detail::-webkit-scrollbar-thumb {
+  background: #424242;
+  border-radius: 4px;
+}
+
+.quick-reference__categories::-webkit-scrollbar-thumb:hover,
+.quick-reference__detail::-webkit-scrollbar-thumb:hover {
+  background: #4f4f4f;
+}

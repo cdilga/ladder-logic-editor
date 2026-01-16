@@ -12,11 +12,11 @@ import { STEditor } from '../st-editor/STEditor';
 import { VariableWatch } from '../variable-watch/VariableWatch';
 import { ProgramSelector } from '../program-selector';
 import { ErrorPanel } from '../error-panel';
-import { PropertiesPanel } from '../properties-panel';
+import { TutorialLightbulb } from '../onboarding';
+import { HelpMenu } from '../help-menu';
 import { useProjectStore, useSimulationStore } from '../../store';
 import {
   saveToLocalStorage,
-  loadFromLocalStorage,
   downloadSTFile,
   openSTFile,
   scheduleAutoSave,
@@ -154,27 +154,18 @@ export function MainLayout() {
   const project = useProjectStore((state) => state.project);
   const isDirty = useProjectStore((state) => state.isDirty);
   const newProject = useProjectStore((state) => state.newProject);
-  const loadProject = useProjectStore((state) => state.loadProject);
   const loadFromSTCode = useProjectStore((state) => state.loadFromSTCode);
   const saveProject = useProjectStore((state) => state.saveProject);
 
-  // Load saved project from localStorage on mount
-  useEffect(() => {
-    const saved = loadFromLocalStorage();
-    if (saved) {
-      loadProject(saved);
-    } else {
-      // Create a new project if none exists
-      newProject('New Project');
-    }
-  }, [loadProject, newProject]);
+  // Get currentProgramId for auto-save
+  const currentProgramId = useProjectStore((state) => state.currentProgramId);
 
-  // Auto-save when project changes
+  // Auto-save when project changes (includes currentProgramId)
   useEffect(() => {
     if (project && isDirty) {
-      scheduleAutoSave(project);
+      scheduleAutoSave(project, currentProgramId ?? undefined);
     }
-  }, [project, isDirty]);
+  }, [project, isDirty, currentProgramId]);
 
   // File operation handlers
   const handleNew = useCallback(() => {
@@ -394,13 +385,11 @@ export function MainLayout() {
           </PanelGroup>
         </div>
 
-        {/* Properties Panel */}
-        <PropertiesPanel selectedNode={selectedNode} />
-
-        {/* Variable Watch Panel */}
+        {/* Variable Watch Panel (includes Properties tab) */}
         <VariableWatch
           collapsed={watchPanelCollapsed}
           onToggleCollapse={() => setWatchPanelCollapsed(!watchPanelCollapsed)}
+          selectedNode={selectedNode}
         />
       </div>
 
@@ -419,6 +408,10 @@ export function MainLayout() {
         <span className="status-bar-item">
           Source: Structured Text
         </span>
+        <div className="status-bar-actions">
+          <TutorialLightbulb />
+          <HelpMenu />
+        </div>
       </div>
     </div>
   );

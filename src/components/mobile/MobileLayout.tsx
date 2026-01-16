@@ -20,7 +20,6 @@ import { useProjectStore, useSimulationStore } from '../../store';
 import { useKeyboardDetect } from '../../hooks/useKeyboardDetect';
 import {
   saveToLocalStorage,
-  loadFromLocalStorage,
   downloadSTFile,
   openSTFile,
   scheduleAutoSave,
@@ -153,26 +152,16 @@ export function MobileLayout() {
   const project = useProjectStore((state) => state.project);
   const isDirty = useProjectStore((state) => state.isDirty);
   const newProject = useProjectStore((state) => state.newProject);
-  const loadProject = useProjectStore((state) => state.loadProject);
   const loadFromSTCode = useProjectStore((state) => state.loadFromSTCode);
   const saveProject = useProjectStore((state) => state.saveProject);
+  const currentProgramId = useProjectStore((state) => state.currentProgramId);
 
-  // Load saved project on mount
-  useEffect(() => {
-    const saved = loadFromLocalStorage();
-    if (saved) {
-      loadProject(saved);
-    } else {
-      newProject('New Project');
-    }
-  }, [loadProject, newProject]);
-
-  // Auto-save
+  // Auto-save when project changes (includes currentProgramId)
   useEffect(() => {
     if (project && isDirty) {
-      scheduleAutoSave(project);
+      scheduleAutoSave(project, currentProgramId ?? undefined);
     }
-  }, [project, isDirty]);
+  }, [project, isDirty, currentProgramId]);
 
   // File operation handlers
   const handleNew = useCallback(() => {

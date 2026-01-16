@@ -1,0 +1,144 @@
+/**
+ * TutorialLightbulb Styles
+ *
+ * Persistent icon in status bar with receive animation and tooltip.
+ */
+
+.tutorial-lightbulb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  border-radius: 4px;
+  position: relative;
+  transition: color 150ms, background-color 150ms;
+}
+
+.tutorial-lightbulb:hover {
+  color: rgba(250, 204, 21, 0.9);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.tutorial-lightbulb:focus {
+  outline: none;
+  color: rgba(250, 204, 21, 0.9);
+}
+
+.tutorial-lightbulb:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.6);
+  outline-offset: 2px;
+}
+
+/* Completed state - slightly dimmer by default */
+.tutorial-lightbulb--completed {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.tutorial-lightbulb--completed:hover {
+  color: rgba(250, 204, 21, 0.9);
+}
+
+/* ============================================================================
+   Animation - Receive from toast
+   ============================================================================ */
+
+.tutorial-lightbulb--animating {
+  animation: lightbulb-receive 600ms ease-out;
+}
+
+.tutorial-lightbulb--animating .lightbulb-icon {
+  animation: lightbulb-glow 600ms ease-out;
+}
+
+@keyframes lightbulb-receive {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes lightbulb-glow {
+  0% {
+    filter: brightness(1);
+    color: inherit;
+  }
+  30% {
+    filter: brightness(1.5) drop-shadow(0 0 8px rgba(250, 204, 21, 0.8));
+    color: rgba(250, 204, 21, 1);
+  }
+  100% {
+    filter: brightness(1);
+    color: inherit;
+  }
+}
+
+/* ============================================================================
+   Tooltip
+   ============================================================================ */
+
+.tutorial-lightbulb__tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  background-color: rgba(30, 30, 46, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10001;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+
+  /* Animation */
+  animation: tooltip-fade-in 150ms ease-out;
+}
+
+.tutorial-lightbulb__tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(30, 30, 46, 0.98);
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ============================================================================
+   Reduced Motion
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-lightbulb--animating,
+  .tutorial-lightbulb--animating .lightbulb-icon {
+    animation: none;
+  }
+
+  .tutorial-lightbulb__tooltip {
+    animation: none;
+  }
+}

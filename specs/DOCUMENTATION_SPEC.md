@@ -1413,37 +1413,44 @@ Have an idea for improvement?
 
 ## Implementation Phases
 
-### Phase 1: Onboarding (MVP)
-- [ ] OnboardingToast component
-- [ ] OnboardingManager with localStorage
-- [ ] 5-step basic tour
-- [ ] Auto-dismiss behavior
-- [ ] Help menu "Replay Tutorial"
+### Phase 1: Onboarding (MVP) ✅
+- [x] OnboardingToast component
+- [x] OnboardingManager with localStorage
+- [x] 5-step basic tour (6 steps: welcome, editor, ladder-view, simulation, variables, complete)
+- [x] Auto-dismiss behavior (8s timeout with progress bar)
+- [x] Help menu "Replay Tutorial"
+- [x] TutorialLightbulb with animation on dismiss
+- [x] ElementHighlight for non-blocking target element highlighting
+- [x] Keyboard navigation (Escape, Arrow keys, Enter)
+- [x] Load Example button in final step
 
-### Phase 2: In-Context Help
-- [ ] Autocomplete documentation
-- [ ] Hover tooltips for functions
-- [ ] Quick Reference panel (toggleable)
-- [ ] Error messages with suggestions
+### Phase 2: In-Context Help ✅
+- [x] Autocomplete documentation (FUNCTION_BLOCK_DOCS, DATA_TYPE_DOCS, KEYWORD_DOCS)
+- [x] Hover tooltips for functions
+- [x] Quick Reference panel (toggleable, categorized)
+- [x] Error messages with suggestions (ErrorMetadata system)
 
-### Phase 3: Documentation Site
-- [ ] `/docs` route with layout
-- [ ] Markdown rendering
-- [ ] Sidebar navigation
-- [ ] Getting Started guide
-- [ ] Language reference pages
+### Phase 3: Documentation Site ✅
+- [x] `/docs` route with layout
+- [x] Markdown rendering (react-markdown with remark-gfm)
+- [x] Sidebar navigation (DocsSidebar component)
+- [x] Getting Started guide
+- [x] Language reference pages (variables, data-types, operators, statements)
+- [x] Function blocks documentation (timers, counters, edge-detection, bistables)
+- [x] Examples (traffic-light, pump-control)
+- [x] Reference pages (supported-features, known-limitations)
 
-### Phase 4: Interactive Features
-- [ ] "Try in Editor" buttons
-- [ ] Search functionality
-- [ ] Timing diagrams (SVG)
-- [ ] Example gallery
+### Phase 4: Interactive Features ✅
+- [x] "Try in Editor" buttons (CodeExample component)
+- [x] Search functionality (DocsSearch component)
+- [x] Timing diagrams (SVG - TON, TOF, TP diagrams)
+- [x] Example gallery
 
-### Phase 5: Bug Reporting
-- [ ] Bug report modal
-- [ ] GitHub issue template
-- [ ] Console error capture
-- [ ] "Report Bug" in Help menu
+### Phase 5: Bug Reporting ✅
+- [x] Bug report modal (BugReportModal component)
+- [x] GitHub issue template (.github/ISSUE_TEMPLATE/bug_report.md)
+- [x] Console error capture (useConsoleCapture hook)
+- [x] "Report Bug" in Help menu (HelpMenu component)
 
 ---
 

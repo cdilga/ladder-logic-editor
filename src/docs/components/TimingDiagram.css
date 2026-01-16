@@ -1,0 +1,78 @@
+/**
+ * Timing Diagram Styles
+ *
+ * VS Code theme consistent styling
+ */
+
+.timing-diagram {
+  margin: 18px 0;
+  background: #252526;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.timing-diagram__title {
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #d4d4d4;
+  background: #2d2d2d;
+  border-bottom: 1px solid #404040;
+}
+
+.timing-diagram__svg {
+  display: block;
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+  padding: 14px;
+}
+
+.timing-diagram__label {
+  fill: #d4d4d4;
+  font-size: 11px;
+  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+}
+
+.timing-diagram__signal {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.timing-diagram__baseline {
+  stroke: #404040;
+  stroke-width: 1;
+  stroke-dasharray: 2, 4;
+}
+
+.timing-diagram__gridline {
+  stroke: #404040;
+  stroke-width: 1;
+  opacity: 0.5;
+}
+
+.timing-diagram__highlight-rect {
+  fill: rgba(0, 122, 204, 0.1);
+  stroke: rgba(0, 122, 204, 0.3);
+  stroke-width: 1;
+  stroke-dasharray: 4, 2;
+}
+
+.timing-diagram__highlight-label {
+  fill: #007acc;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.timing-diagram__time-label {
+  fill: #606060;
+  font-size: 9px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .timing-diagram__svg {
+    padding: 12px 8px;
+  }
+}
