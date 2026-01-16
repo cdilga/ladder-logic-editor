@@ -177,55 +177,15 @@
 .workspace-sidebar {
   display: flex;
   flex-direction: column;
-  width: 260px;
+  width: 200px;
   flex-shrink: 0;
   overflow: hidden;
-  border-left: 1px solid var(--border, #2a3441);
-  background: var(--bg-surface, #222633);
-}
-
-.workspace-sidebar > * {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
+  border-left: 1px solid var(--border, #333);
+  background: var(--bg-surface, #252526);
 }
 
 .workspace-sidebar > *:not(:last-child) {
-  border-bottom: 1px solid var(--border, #2a3441);
-}
-
-/* ============================================================================
-   Panel Indicators (Edge buttons for hidden panels)
-   ============================================================================ */
-
-.panel-indicators {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px 4px;
-  background: var(--bg-base, #1a1d29);
-}
-
-.panel-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 4px;
-  background: var(--bg-surface, #222633);
-  border: 1px solid var(--border-accent, #3a4555);
-  border-radius: 4px;
-  color: var(--text-secondary, #9ba3af);
-  font-size: 10px;
-  cursor: pointer;
-  transition: all 0.15s;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-}
-
-.panel-indicator:hover {
-  background: var(--bg-elevated, #2a2f3d);
-  color: var(--text-primary, #e4e7eb);
-  border-color: var(--accent-primary, #00d4ff);
+  border-bottom: 1px solid var(--border, #333);
 }
 
 /* ============================================================================

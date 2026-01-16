@@ -8,9 +8,9 @@ import { PropertiesPanel } from './PropertiesPanel';
 import type { LadderNode } from '../../models/ladder-elements';
 
 describe('PropertiesPanel', () => {
-  it('shows "No selection" when no node is selected', () => {
+  it('shows empty state when no node is selected', () => {
     render(<PropertiesPanel selectedNode={null} />);
-    expect(screen.getByText('No selection')).toBeInTheDocument();
+    expect(screen.getByText('Select an element')).toBeInTheDocument();
   });
 
   it('displays contact node properties', () => {

@@ -14,16 +14,14 @@ import type { LadderNode, LadderNodeData } from '../../models/ladder-elements';
 import './VariableWatch.css';
 
 interface VariableWatchProps {
-  collapsed?: boolean;
-  onToggleCollapse?: () => void;
-  onClose?: () => void;
+  expanded?: boolean;
+  onToggle?: () => void;
   selectedNode?: LadderNode | null;
 }
 
 export const VariableWatch = memo(function VariableWatch({
-  collapsed = false,
-  onToggleCollapse,
-  onClose,
+  expanded = true,
+  onToggle,
   selectedNode = null,
 }: VariableWatchProps) {
   // Only show properties tab when selectedNode prop is explicitly provided (mobile layout)
@@ -53,37 +51,25 @@ export const VariableWatch = memo(function VariableWatch({
   const counterCount = Object.keys(counters).length;
   const totalCount = boolCount + numCount + timerCount + counterCount;
 
-  if (collapsed) {
-    return (
-      <div className="variable-watch collapsed" onClick={onToggleCollapse}>
-        <div className="watch-header">
-          <span className="watch-title">Variables</span>
-          <span className="watch-badge">{totalCount}</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="variable-watch">
-      <div className="watch-header" onClick={onToggleCollapse}>
+    <div className={`variable-watch ${expanded ? 'expanded' : 'collapsed'}`}>
+      <div
+        className="watch-header"
+        onClick={onToggle}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && onToggle?.()}
+      >
+        <span className="watch-chevron">{expanded ? '▼' : '▶'}</span>
         <span className="watch-title">Variables</span>
+        <span className="watch-badge">{totalCount}</span>
         <span className={`watch-status ${simulationStatus}`}>
-          {simulationStatus === 'running' ? '● Live' : simulationStatus === 'paused' ? '◐ Paused' : '○ Stopped'}
+          {simulationStatus === 'running' ? '●' : simulationStatus === 'paused' ? '◐' : '○'}
         </span>
-        {onClose && (
-          <button
-            className="watch-close"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose();
-            }}
-            title="Close"
-          >
-            ×
-          </button>
-        )}
       </div>
+
+      {!expanded ? null : (
+        <>
 
       <div className="watch-tabs">
         <button
@@ -160,6 +146,8 @@ export const VariableWatch = memo(function VariableWatch({
           <PropertiesContent selectedNode={selectedNode} />
         )}
       </div>
+      </>
+      )}
     </div>
   );
 });

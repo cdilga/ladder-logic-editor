@@ -58,7 +58,6 @@ export function MainLayout() {
   // UI store state for panel visibility
   const panels = useUIStore((state) => state.panels);
   const togglePanel = useUIStore((state) => state.togglePanel);
-  const showPanel = useUIStore((state) => state.showPanel);
 
   // Simulation state and actions
   const simulationStatus = useSimulationStore((state) => state.status);
@@ -257,8 +256,7 @@ export function MainLayout() {
     }
   };
 
-  // Determine if sidebar should be shown
-  const showSidebar = panels.properties || panels.variables;
+  // Sidebar is always visible - panels are collapsible accordions
 
   return (
     <div className="main-layout">
@@ -362,49 +360,21 @@ export function MainLayout() {
           </PanelGroup>
         </div>
 
-        {/* Right Sidebar with Panels */}
-        {showSidebar && (
-          <div className="workspace-sidebar">
-            {/* Properties Panel */}
-            {panels.properties && (
-              <PropertiesPanel
-                selectedNode={selectedNode}
-                onClose={() => togglePanel('properties')}
-              />
-            )}
+        {/* Right Sidebar - always visible with collapsible panels */}
+        <div className="workspace-sidebar">
+          {/* Properties Panel - collapsible */}
+          <PropertiesPanel
+            selectedNode={selectedNode}
+            expanded={panels.properties}
+            onToggle={() => togglePanel('properties')}
+          />
 
-            {/* Variable Watch Panel */}
-            {panels.variables && (
-              <VariableWatch
-                onClose={() => togglePanel('variables')}
-              />
-            )}
-          </div>
-        )}
-
-        {/* Edge Indicators for hidden panels */}
-        {!showSidebar && (
-          <div className="panel-indicators">
-            {!panels.properties && (
-              <button
-                className="panel-indicator"
-                onClick={() => showPanel('properties')}
-                title="Show Properties"
-              >
-                Props▶
-              </button>
-            )}
-            {!panels.variables && (
-              <button
-                className="panel-indicator"
-                onClick={() => showPanel('variables')}
-                title="Show Variables"
-              >
-                Vars▶
-              </button>
-            )}
-          </div>
-        )}
+          {/* Variable Watch Panel - collapsible */}
+          <VariableWatch
+            expanded={panels.variables}
+            onToggle={() => togglePanel('variables')}
+          />
+        </div>
       </div>
 
       {/* Error Panel */}

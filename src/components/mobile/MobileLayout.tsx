@@ -491,7 +491,7 @@ export function MobileLayout() {
 
             {/* Variable Watch */}
             <div className="mobile-variable-watch">
-              <VariableWatch collapsed={false} onToggleCollapse={() => {}} />
+              <VariableWatch expanded={true} />
             </div>
           </div>
         </div>
