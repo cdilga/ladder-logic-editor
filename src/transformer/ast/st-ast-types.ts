@@ -54,6 +54,8 @@ export interface STVariableDecl extends ASTNode {
   names: string[];
   dataType: STTypeSpec;
   initialValue?: STExpression;
+  /** AT address for direct hardware addressing (e.g., %IX0.0, %MW0, %QX1.2) */
+  atAddress?: string;
 }
 
 export interface STVarBlock extends ASTNode {

@@ -11,7 +11,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | Category | Implemented | Total | Coverage |
 |----------|-------------|-------|----------|
 | Data Types | 21 | 21 | 100% |
-| Variables | 8 | 10 | 80% |
+| Variables | 9 | 10 | 90% |
 | Operators | 16 | 17 | 94% |
 | Control Flow | 7 | 7 | 100% |
 | Standard FBs | 10 | 10+ | 100%* |
@@ -73,7 +73,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | VAR_TEMP | §3.1 | ✅ | 11 | Reset to default/initial values on each FB call |
 | RETAIN | §3.2 | ⚠️ | - | Parsed, no persistence |
 | CONSTANT | §3.2 | ✅ | 20 | Read-only enforcement |
-| AT addressing | §3.2 | ❌ | - | |
+| AT addressing | §3.2 | ✅ | 26 | Full parsing, symbolic storage in simulation |
 | Initial values | §3.3 | ✅ | ✓ | Full support |
 
 ---
@@ -246,7 +246,8 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | Type Conversion | 50 | ✅ 100% |
 | DATE/TIME_OF_DAY/DT | 28 | ✅ 100% |
 | VAR_EXTERNAL | 15 | ✅ 100% |
-| **Total** | **1688** | ✅ 100% |
+| AT Addressing | 26 | ✅ 100% |
+| **Total** | **1714** | ✅ 100% |
 
 ---
 
@@ -254,12 +255,13 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 ### Next Priorities
 
-1. **AT addressing** - Direct hardware addressing
+1. **RETAIN persistence** - Persistent storage across power cycles (currently parsed but no persistence)
 
 ### Future Consideration
 
 - Nested STRUCT support (STRUCT containing STRUCT)
 - Qualified enum syntax (TypeName#Value) - currently not supported in grammar
+- I/O memory simulation for AT addressing (hardware I/O mapping)
 
 ---
 
@@ -267,6 +269,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 | Date | Change |
 |------|--------|
+| 2026-01-17 | Added AT addressing support (%IX, %QX, %MX, %IW, %QW, %MW, etc.) - grammar, parser, AST types. Variables with AT addresses use symbolic storage in simulation (no hardware I/O mapping) - 26 new tests, variables now 90% |
 | 2026-01-17 | Added VAR_EXTERNAL support for referencing VAR_GLOBAL variables - grammar, parser, variable initializer (skip initialization for external refs) - 15 new tests, variables now 80% |
 | 2026-01-16 | Added DATE, TIME_OF_DAY, DATE_AND_TIME data types - D#YYYY-MM-DD, TOD#HH:MM:SS, DT#YYYY-MM-DD-HH:MM:SS syntax with full interpreter support - 28 new tests, data types now 100% complete |
 | 2026-01-16 | Added Enumeration (ENUM) type support with TYPE...END_TYPE syntax, explicit and auto-incrementing values, stored as INT internally, enum value comparison, type registry integration - 16 new tests, data types now 100% |

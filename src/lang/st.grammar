@@ -107,7 +107,11 @@ VarQualifier {
 }
 
 VariableDecl {
-  VariableList ":" TypeSpec (":" "=" Expression)? ";"
+  VariableList AtAddress? ":" TypeSpec (":" "=" Expression)? ";"
+}
+
+AtAddress {
+  kw<"AT"> DirectAddress
 }
 
 VariableList {
@@ -382,6 +386,10 @@ Literal {
     ("DT#" | "DATE_AND_TIME#") $[0-9:\-\.]+
   }
 
+  // Direct address (AT addressing): %IX0.0, %QX1.2.3, %MW0, %MD1, etc.
+  // Format: % + Location(I/Q/M) + Size(X/B/W/D/L)? + Address(0 or 0.1 or 0.1.2)
+  DirectAddress { "%" $[IQM] $[XBWDL]? $[0-9]+ ("." $[0-9]+)* }
+
   LineComment { "//" ![\n]* }
 
   BlockComment { "(*" blockCommentContent* "*)" }
@@ -393,7 +401,7 @@ Literal {
   "(" ")" "[" "]" "{" "}" ";" ":" ":=" "," ".." "."
   "+" "-" "*" "/" "**" "=" "<>" "<" ">" "<=" ">="
 
-  @precedence { DateAndTimeLiteral, TimeOfDayLiteral, DateLiteral, TimeLiteral, HexNumber, BinaryNumber, Boolean, Number, Identifier, LineComment, "/" }
+  @precedence { DateAndTimeLiteral, TimeOfDayLiteral, DateLiteral, TimeLiteral, HexNumber, BinaryNumber, Boolean, DirectAddress, Number, Identifier, LineComment, "/" }
 }
 
 // ============================================================================

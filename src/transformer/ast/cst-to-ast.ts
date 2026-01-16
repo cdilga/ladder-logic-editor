@@ -461,12 +461,16 @@ function parseVariableDecl(node: SyntaxNode, source: string): STVariableDecl {
   const names: string[] = [];
   let dataType: STTypeSpec = { type: 'TypeSpec', typeName: 'BOOL', isArray: false, loc };
   let initialValue: STExpression | undefined;
+  let atAddress: string | undefined;
 
   let child = node.firstChild;
   while (child) {
     switch (child.name) {
       case 'VariableList':
         names.push(...parseVariableList(child, source));
+        break;
+      case 'AtAddress':
+        atAddress = parseAtAddress(child, source);
         break;
       case 'TypeSpec':
         dataType = parseTypeSpec(child, source);
@@ -478,7 +482,26 @@ function parseVariableDecl(node: SyntaxNode, source: string): STVariableDecl {
     child = child.nextSibling;
   }
 
-  return { type: 'VariableDecl', names, dataType, initialValue, loc };
+  const result: STVariableDecl = { type: 'VariableDecl', names, dataType, initialValue, loc };
+  if (atAddress) {
+    result.atAddress = atAddress;
+  }
+  return result;
+}
+
+/**
+ * Parse an AT address from the AtAddress node.
+ * Returns the direct address string (e.g., "%IX0.0", "%MW10", "%QX1.2.3")
+ */
+function parseAtAddress(node: SyntaxNode, source: string): string | undefined {
+  let child = node.firstChild;
+  while (child) {
+    if (child.name === 'DirectAddress') {
+      return source.slice(child.from, child.to);
+    }
+    child = child.nextSibling;
+  }
+  return undefined;
 }
 
 function parseVariableList(node: SyntaxNode, source: string): string[] {
