@@ -3,6 +3,7 @@
 **Status:** 🟢 Complete (71 tests, 100% coverage)
 **Test File:** `src/interpreter/compliance/bounds.test.ts`
 **Last Updated:** 2026-01-16
+**IEC Reference:** IEC 61131-3:2013 Table 10, §6.3.1
 
 ---
 
@@ -10,11 +11,26 @@
 
 Boundary condition tests verify correct behavior at the edges of valid input ranges. These often expose bugs that example-based tests miss.
 
+**Important:** IEC 61131-3 specifies data type ranges but leaves overflow/underflow behavior as **implementation-defined**. Different PLC vendors handle overflow differently (wrap-around, saturation, error flags). Our JavaScript implementation documents its specific behavior for transparency.
+
 ---
 
-## Integer Bounds
+## Integer Bounds (IEC 61131-3 Table 10)
 
-### INT (16-bit signed)
+### All Integer Types per IEC 61131-3
+
+| Type | Size | Min Value | Max Value | Default | IEC Reference |
+|------|------|-----------|-----------|---------|---------------|
+| SINT | 8 bits | -128 | 127 | 0 | Table 10, §6.3.1 |
+| INT | 16 bits | -32,768 | 32,767 | 0 | Table 10, §6.3.1 |
+| DINT | 32 bits | -2,147,483,648 | 2,147,483,647 | 0 | Table 10, §6.3.1 |
+| LINT | 64 bits | -9,223,372,036,854,775,808 | 9,223,372,036,854,775,807 | 0 | Table 10, §6.3.1 |
+| USINT | 8 bits | 0 | 255 | 0 | Table 10, §6.3.1 |
+| UINT | 16 bits | 0 | 65,535 | 0 | Table 10, §6.3.1 |
+| UDINT | 32 bits | 0 | 4,294,967,295 | 0 | Table 10, §6.3.1 |
+| ULINT | 64 bits | 0 | 18,446,744,073,709,551,615 | 0 | Table 10, §6.3.1 |
+
+### INT (16-bit signed) - Primary Test Type
 | Value | Constant | Description |
 |-------|----------|-------------|
 | 32767 | INT_MAX | Maximum value |
@@ -22,6 +38,14 @@ Boundary condition tests verify correct behavior at the edges of valid input ran
 | 0 | - | Zero |
 | 1 | - | Minimum positive |
 | -1 | - | Maximum negative |
+
+### Overflow Behavior (Implementation-Defined per IEC 61131-3)
+
+**IEC 61131-3 does NOT specify overflow behavior.** Vendor implementations vary:
+- **Siemens S7:** Sets overflow/underflow status bits ([source](https://support.industry.siemens.com/cs/document/8790932/iec-61131-3-and-simatic-s7))
+- **Beckhoff TwinCAT:** Uses native register size; may not truncate intermediate results ([source](https://infosys.beckhoff.com/content/1033/tc3_plc_intro/2528853899.html))
+- **CODESYS:** Intermediate results not truncated; assignment truncates to target type ([source](https://content.helpme-codesys.com/))
+- **Our Implementation:** JavaScript number semantics (no overflow for values within Number.MAX_SAFE_INTEGER)
 
 ### Test Cases
 
@@ -47,21 +71,39 @@ Boundary condition tests verify correct behavior at the edges of valid input ran
 
 ---
 
-## Real Bounds
+## Real Bounds (IEC 61131-3 Table 10, IEC 60559/IEEE 754)
 
-### REAL (32-bit IEEE 754)
+### REAL and LREAL Types per IEC 61131-3
+
+| Type | Size | Approximate Range | Precision | Default | IEC Reference |
+|------|------|-------------------|-----------|---------|---------------|
+| REAL | 32 bits | ±3.4028235E+38 | ~7 significant digits | 0.0 | Table 10, §6.3.1 |
+| LREAL | 64 bits | ±1.7976931348623157E+308 | ~15-16 significant digits | 0.0 | Table 10, §6.3.1 |
+
+**Note:** IEC 61131-3 specifies that REAL/LREAL conform to IEC 60559 (equivalent to IEEE 754).
+
+### REAL (32-bit IEEE 754 Single Precision)
 | Value | Description |
 |-------|-------------|
 | ±3.4028235E+38 | Maximum magnitude |
 | ±1.175494E-38 | Minimum positive normal |
-| 0.0 | Zero |
-| Infinity | Positive infinity |
+| ±1.4E-45 | Minimum positive subnormal |
+| 0.0 | Zero (+0 and -0 are distinct) |
+| Infinity | Positive infinity (exponent all 1s, mantissa 0) |
 | -Infinity | Negative infinity |
-| NaN | Not a number |
+| NaN | Not a number (exponent all 1s, mantissa non-zero) |
+
+### IEEE 754 Special Value Behavior (per IEC 60559)
+
+Per IEEE 754 (referenced by IEC 61131-3 for REAL/LREAL):
+- **Division by zero:** `x / 0.0` = ±Infinity (sign matches dividend), `0.0 / 0.0` = NaN
+- **Infinity arithmetic:** Infinity + x = Infinity, Infinity - Infinity = NaN
+- **NaN propagation:** Any operation with NaN produces NaN
+- **NaN comparison:** NaN is unordered; NaN = NaN is FALSE, NaN <> NaN is TRUE
 
 ### Test Cases
 
-#### Special Values
+#### Special Values (IEEE 754 Compliance)
 - [x] Infinity = Infinity (TRUE)
 - [x] -Infinity = -Infinity (TRUE)
 - [x] Infinity <> -Infinity (TRUE)
@@ -78,15 +120,31 @@ Boundary condition tests verify correct behavior at the edges of valid input ran
 
 ---
 
-## Time Bounds
+## Time Bounds (IEC 61131-3 Table 10)
+
+### TIME and LTIME Types per IEC 61131-3
+
+| Type | Size | Resolution | Range | Default | IEC Reference |
+|------|------|------------|-------|---------|---------------|
+| TIME | 32 bits | 1 millisecond | 0 to 4,294,967,295 ms (~49.7 days) | T#0s | Table 10, §6.3.1 |
+| LTIME | 64 bits | 1 nanosecond | 0 to 18,446,744,073,709,551,615 ns (~585 years) | LTIME#0ns | Table 10 (Ed. 3+), §6.3.1 |
+
+**Implementation Note:** TIME is typically stored as UDINT (unsigned 32-bit) with millisecond resolution. Maximum value is T#49d17h2m47s295ms (4,294,967,295 ms). See [CODESYS Duration docs](https://content.helpme-codesys.com/en/LibDevSummary/date_time.html).
 
 ### TIME Values
-| Value | Description |
-|-------|-------------|
-| T#0ms | Zero time |
-| T#1ms | Minimum non-zero |
-| T#49d17h2m47s295ms | ~32-bit ms max |
-| T#24h | Common maximum |
+| Value | Milliseconds | Description |
+|-------|--------------|-------------|
+| T#0ms | 0 | Zero time |
+| T#1ms | 1 | Minimum non-zero |
+| T#49d17h2m47s295ms | 4,294,967,295 | Maximum 32-bit TIME value |
+| T#24h | 86,400,000 | Common practical maximum |
+
+### TIME Overflow Behavior
+
+TIME overflow behavior is **implementation-defined**:
+- Some implementations wrap around (UDINT semantics)
+- Some implementations saturate at maximum
+- Negative TIME values are not standard (TIME is unsigned)
 
 ### Test Cases
 
@@ -106,45 +164,68 @@ Boundary condition tests verify correct behavior at the edges of valid input ran
 
 ---
 
-## Counter Bounds
+## Counter Bounds (IEC 61131-3 §6.6.3.6.4-6.6.3.6.6)
+
+### Counter Parameter Types per IEC 61131-3
+
+| Parameter | Type | Range | IEC Reference |
+|-----------|------|-------|---------------|
+| PV (Preset Value) | INT | -32,768 to 32,767 | §6.6.3.6.4 |
+| CV (Current Value) | INT | -32,768 to 32,767 | §6.6.3.6.4 |
+
+**Note:** The standard uses INT for counter values. Some implementations may use UINT or DINT.
 
 ### PV (Preset Value)
 | Value | Behavior |
 |-------|----------|
-| 0 | QU immediately TRUE |
+| 0 | QU immediately TRUE (CV >= PV satisfied at CV=0) |
 | 1 | First count triggers QU |
-| 32767 | Maximum counts |
+| 32767 | Maximum counts (INT_MAX) |
 
 ### CV (Current Value)
 | Value | Behavior |
 |-------|----------|
 | 0 | Initial/reset value |
-| 32767 | Near overflow |
-| -1 | Below zero (CTD, invalid?) |
+| 32767 | Maximum INT value |
+| -1 | Valid for CTD (Q = TRUE when CV <= 0) |
+
+### Counter Overflow Behavior (Implementation-Defined)
+
+IEC 61131-3 does not specify behavior when CV overflows:
+- CTU: What happens when CV exceeds INT_MAX (32767)?
+- CTD: What happens when CV goes below INT_MIN (-32768)?
+- Our implementation: JavaScript number semantics (no overflow within safe integer range)
 
 ### Test Cases
 
-#### CTU Bounds
-- [x] PV = 0: QU behavior (with pulse → TRUE)
-- [x] PV = 1: First rising edge → QU = TRUE
+#### CTU Bounds (IEC 61131-3 §6.6.3.6.4)
+- [x] PV = 0: QU behavior (with pulse -> TRUE)
+- [x] PV = 1: First rising edge -> QU = TRUE
 - [x] CV increments beyond PV (no overflow cap)
 - [x] CV after reset = 0
 
-#### CTD Bounds
+#### CTD Bounds (IEC 61131-3 §6.6.3.6.5)
 - [x] CV does not go below zero (direct store test)
 - [x] QD becomes TRUE when CV reaches 0 (direct store test)
 - [x] Repeated count down at CV=0 stays at 0 (direct store test)
 
 ---
 
-## Loop Bounds
+## Loop Bounds (IEC 61131-3 Table 72.6-72.8)
 
-### FOR Loop
+### FOR Loop (IEC 61131-3 Table 72.6)
 ```st
 FOR i := start TO end BY step DO
   (* body *)
 END_FOR;
 ```
+
+**IEC 61131-3 Semantics:**
+- Loop variable must be ANY_INT type (§5.3.1)
+- BY clause is optional; default step is 1
+- Bounds are inclusive (end value IS included)
+- Positive step: terminates when variable > end_value
+- Negative step: terminates when variable < end_value
 
 #### Test Cases
 - [x] FOR i := 1 TO 1: Single iteration
@@ -156,16 +237,34 @@ END_FOR;
 - [x] BY -1 with start > end: Counts down
 - [x] BY 2: Counts every other number
 
-### Iteration Limits
+### Iteration Limits (Implementation Safety)
 **Note:** Loop safety limits are enforced at 10000 iterations for WHILE/REPEAT loops. FOR loops have implicit limits based on start/end values.
+
+**IEC 61131-3 does NOT specify iteration limits** - this is an implementation safety feature to prevent runaway loops in simulation.
 - [x] REPEAT loop iteration limit enforced (10000) - control-flow.test.ts
 - [x] WHILE loop iteration limit enforced (10000) - control-flow.test.ts
 
 ---
 
-## Array Bounds (Future Work)
+## Array Bounds (Future Work) (IEC 61131-3 §6.4.4.1)
 
 **Arrays are not yet implemented.** These tests will be added when array support is added to the interpreter.
+
+### IEC 61131-3 Array Specification
+
+Per IEC 61131-3 §6.4.4.1:
+- Arrays are declared with explicit bounds: `ARRAY[1..10] OF INT`
+- Multi-dimensional arrays supported: `ARRAY[1..10, 1..5] OF REAL`
+- Index bounds can be any integer (negative allowed): `ARRAY[-5..5] OF BOOL`
+- Built-in functions: `LOWER_BOUND()`, `UPPER_BOUND()` (Edition 3+)
+
+### Array Bounds Checking (Implementation-Defined)
+
+**IEC 61131-3 does NOT specify behavior for out-of-bounds access.** Implementations vary:
+- Some raise runtime errors
+- Some return default values
+- Some have undefined behavior
+- Static analysis tools (e.g., Beckhoff) can detect at compile time
 
 ### Planned Test Cases
 
@@ -175,20 +274,31 @@ END_FOR;
 - [ ] arr[5] (middle)
 
 #### Invalid Access
-- [ ] arr[0] (below lower bound)
-- [ ] arr[11] (above upper bound)
-- [ ] arr[-1] (negative when not allowed)
+- [ ] arr[0] (below lower bound) - behavior TBD
+- [ ] arr[11] (above upper bound) - behavior TBD
+- [ ] arr[-1] (negative when not allowed) - behavior TBD
 
 ---
 
-## String Bounds (Future Work)
+## String Bounds (Future Work) (IEC 61131-3 Table 10)
 
 **Strings are not yet implemented.** These tests will be added when STRING type is supported.
+
+### IEC 61131-3 String Specification
+
+| Type | Encoding | Max Length | Default Length | IEC Reference |
+|------|----------|------------|----------------|---------------|
+| STRING | 1 byte/char (ISO 10646) | 65,535 | 254 | Table 10, §6.3.1 |
+| WSTRING | 2 bytes/char (UTF-16) | 65,535 | 254 | Table 10, §6.3.1 |
+
+- Declaration with explicit length: `STRING[80]`
+- Default value: empty string `''`
 
 ### Planned Test Cases
 - [ ] Empty string: ''
 - [ ] Single character: 'a'
-- [ ] Maximum length string
+- [ ] Maximum length string (254 chars default)
+- [ ] STRING[n] explicit length enforcement
 
 ---
 
@@ -286,8 +396,55 @@ fc.assert(fc.property(
 
 ---
 
+## Division by Zero Behavior (IEC 61131-3 Implementation-Defined)
+
+### Integer Division by Zero
+
+**IEC 61131-3 does NOT specify integer division by zero behavior.** Per [CODESYS documentation](https://content.helpme-codesys.com/en/CODESYS%20Development%20System/_cds_operator_div.html): "Division by zero may have different results depending on the target system."
+
+Vendor behaviors vary:
+- Some return 0
+- Some return maximum value
+- Some trigger runtime errors
+- Some have undefined behavior
+
+**MOD by zero:** Returns 0 (per some implementations)
+
+### Floating-Point Division by Zero (IEEE 754)
+
+Per IEEE 754/IEC 60559 (referenced by IEC 61131-3):
+- `x / 0.0` = ±Infinity (sign matches dividend)
+- `0.0 / 0.0` = NaN
+- This is well-defined behavior, not an error
+
+### Runtime Monitoring Functions
+
+CODESYS provides implicit monitoring functions for division safety:
+- `CheckDivInt`, `CheckDivLint` - Integer division checks
+- `CheckDivReal`, `CheckDivLReal` - Floating-point division checks
+
+---
+
 ## References
 
-- IEEE 754 floating-point standard
-- IEC 61131-3 data type definitions
-- Two's complement integer representation
+### Official Standards
+- **IEC 61131-3:2013** (Edition 3) - Programmable controllers, Part 3: Programming languages
+- **IEC 61131-3:2025** (Edition 4) - Latest edition
+- **IEC 60559 / IEEE 754** - Floating-point arithmetic standard
+
+### Authoritative Vendor Documentation
+- [Fernhill Software - IEC 61131-3 Elementary Data Types](https://www.fernhillsoftware.com/help/iec-61131/common-elements/datatypes-elementary.html)
+- [Phoenix Contact PLCnext - Elementary Data Types](https://engineer.plcnext.help/latest/elementarydatatypes.htm)
+- [CODESYS - Duration, Date and Time](https://content.helpme-codesys.com/en/LibDevSummary/date_time.html)
+- [CODESYS - DIV Operator](https://content.helpme-codesys.com/en/CODESYS%20Development%20System/_cds_operator_div.html)
+- [Beckhoff TwinCAT - Operators](https://infosys.beckhoff.com/content/1033/tc3_plc_intro/2528853899.html)
+- [Siemens - IEC 61131-3 and SIMATIC S7](https://support.industry.siemens.com/cs/document/8790932/iec-61131-3-and-simatic-s7)
+
+### Open Source Implementations
+- [MATIEC/Beremiz - IEC 61131-3 Compiler](https://github.com/beremiz/matiec)
+- [PLCopen - IEC 61131-3 Information](https://plcopen.org/iec-61131-3)
+
+### Technical References
+- IEEE 754-2019 - IEEE Standard for Floating-Point Arithmetic
+- Two's complement integer representation (standard for signed integers)
+- [Wikipedia - IEC 61131-3](https://en.wikipedia.org/wiki/IEC_61131-3)

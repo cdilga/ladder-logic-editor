@@ -655,24 +655,99 @@ Reference: IEC 61131-3 Table 43.2a/43.2b, §6.6.3.6.10
 
 ---
 
-## 9. Compliance Levels
+## 9. Error Handling
+
+### 9.1 Standard Position
+
+IEC 61131-3 does **NOT prescribe specific runtime error behavior** for most error conditions. The standard provides mechanisms but leaves behavior **implementation-defined**.
+
+### 9.2 EN/ENO Mechanism (§6.6.1.7, Table 19)
+
+All standard functions have implicit EN (Enable) and ENO (Enable Output) parameters:
+
+| Parameter | Direction | Type | Default | Description |
+|-----------|-----------|------|---------|-------------|
+| EN | Input | BOOL | TRUE | Enable execution |
+| ENO | Output | BOOL | - | Execution status |
+
+**Behavior:**
+- `EN = FALSE`: Function body skipped, `ENO = FALSE`
+- `EN = TRUE` and success: `ENO = TRUE`
+- `EN = TRUE` and error: `ENO = FALSE`
+
+**Reference:** IEC 61131-3 §6.6.1.7, Table 19
+
+### 9.3 Floating-Point Behavior (IEEE 754)
+
+REAL and LREAL types must conform to **IEEE 754 / IEC 60559**:
+
+| Operation | Result |
+|-----------|--------|
+| `+x / 0.0` | `+Infinity` |
+| `-x / 0.0` | `-Infinity` |
+| `0.0 / 0.0` | `NaN` |
+| `∞ / ∞` | `NaN` |
+| `∞ - ∞` | `NaN` |
+
+**Reference:** IEC 61131-3 §6.3.1, Table 10
+
+### 9.4 Implementation-Defined Behaviors
+
+The following behaviors are **NOT specified** by IEC 61131-3:
+
+| Error Type | IEC 61131-3 Position |
+|------------|---------------------|
+| Integer division by zero | Implementation-defined |
+| Integer overflow/underflow | Implementation-defined |
+| Modulo by zero | Implementation-defined |
+| Array bounds violation | Implementation-defined |
+| Pointer/reference errors | Implementation-defined |
+
+### 9.5 Type Conversion Errors (§6.6.2.5)
+
+**Implicit conversion:** Only allowed for widening conversions (no precision loss)
+- `INT → DINT` ✓
+- `REAL → LREAL` ✓
+- `DINT → INT` ✗ (requires explicit `DINT_TO_INT()`)
+
+**Explicit conversion functions:** Required for narrowing conversions
+- Type errors should be caught at compile-time
+- Runtime truncation behavior is implementation-defined
+
+### 9.6 Vendor Extensions
+
+The following are **NOT part of IEC 61131-3** but common vendor extensions:
+
+| Feature | Vendors |
+|---------|---------|
+| `__TRY/__CATCH/__FINALLY` | CODESYS, TwinCAT |
+| `CheckBounds()` implicit monitoring | CODESYS, TwinCAT |
+| `CheckDivInt/Real()` functions | CODESYS, TwinCAT |
+| Exception code enums | CODESYS, TwinCAT |
+| System error registers | Various |
+
+**See also:** [ERROR_HANDLING.md](./testing/ERROR_HANDLING.md) for detailed test specifications
+
+---
+
+## 10. Compliance Levels
 
 Based on PLCopen certification levels:
 
-### 9.1 Base Level (Minimum)
+### 10.1 Base Level (Minimum)
 - Basic data types: BOOL, INT, REAL, TIME
 - Basic operators: arithmetic, comparison, boolean
 - Control flow: IF, CASE, FOR, WHILE
 - Standard FBs: TON, TOF, CTU, CTD, R_TRIG, F_TRIG
 
-### 9.2 Conformity Level (Full)
+### 10.2 Conformity Level (Full)
 - All elementary data types
 - All derived types (ARRAY, STRUCT)
 - All standard functions and function blocks
 - User-defined functions and function blocks
 - All variable attributes (RETAIN, CONSTANT, etc.)
 
-### 9.3 Reusability Level
+### 10.3 Reusability Level
 - POUs portable between implementations
 - Standardized interface semantics
 
@@ -682,8 +757,9 @@ Based on PLCopen certification levels:
 
 | Date | Change | Author |
 |------|--------|--------|
-| 2026-01-16 | Enhanced data types section: added default values, 64-bit time types (LTIME, LDATE, LTOD, LDT), CHAR/WCHAR, generic types hierarchy, literal formats (Tables 5-9), subrange types | - |
-| 2026-01-16 | Initial creation from IEC 61131-3 standard | - |
+| 2025-01-16 | Added Section 9: Error Handling - EN/ENO mechanism, IEEE 754 requirements, implementation-defined behaviors, vendor extensions | - |
+| 2025-01-16 | Enhanced data types section: added default values, 64-bit time types (LTIME, LDATE, LTOD, LDT), CHAR/WCHAR, generic types hierarchy, literal formats (Tables 5-9), subrange types | - |
+| 2025-01-16 | Initial creation from IEC 61131-3 standard | - |
 
 ---
 

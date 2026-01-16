@@ -6,6 +6,10 @@ Master specification for PLC interpreter IEC 61131-3 compliance testing.
 **Standard:** IEC 61131-3:2013
 **Test Framework:** Vitest + fast-check
 
+IMPORANT:
+
+Must implement type saftey to a golden standard. NO hacks, no using typescript types as a cheap out to avoid real type safety.
+
 ---
 
 ## Document Hierarchy
