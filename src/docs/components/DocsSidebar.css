@@ -173,6 +173,9 @@
    ============================================================================ */
 
 .docs-sidebar__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 14px 16px;
   border-top: 1px solid #404040;
 }
@@ -188,6 +191,25 @@
 
 .docs-sidebar__back-link:hover {
   text-decoration: underline;
+}
+
+.docs-sidebar__iec-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #808080;
+  text-decoration: none;
+}
+
+.docs-sidebar__iec-link:hover {
+  color: #d4d4d4;
+  text-decoration: underline;
+}
+
+.docs-sidebar__iec-link::before {
+  content: '📘';
+  font-size: 12px;
 }
 
 /* ============================================================================

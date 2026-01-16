@@ -87,6 +87,19 @@ function DocPageContent({ page }: { page: DocPage }) {
       <div className="docs-article__content">
         <MarkdownRenderer content={page.content} pageTitle={page.title} />
       </div>
+      <footer className="docs-article__footer">
+        <div className="docs-article__reference">
+          <a
+            href="https://github.com/cdilga/ladder-logic-editor/blob/main/specs/IEC_61131_3_REFERENCE.md"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            IEC 61131-3 Reference
+          </a>
+          <span className="docs-article__reference-sep">—</span>
+          <span>Full standard specification</span>
+        </div>
+      </footer>
     </article>
   );
 }
