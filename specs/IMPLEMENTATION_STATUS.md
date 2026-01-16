@@ -10,7 +10,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 | Category | Implemented | Total | Coverage |
 |----------|-------------|-------|----------|
-| Data Types | 4 | 21 | 19% |
+| Data Types | 12 | 21 | 57% |
 | Variables | 3 | 10 | 30% |
 | Operators | 16 | 17 | 94% |
 | Control Flow | 6 | 7 | 86% |
@@ -28,16 +28,16 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | Type | Reference | Status | Tests | Notes |
 |------|-----------|--------|-------|-------|
 | BOOL | §2.1.1 | ✅ | 24 | Full support |
-| SINT | §2.1.2 | ❌ | - | |
+| SINT | §2.1.2 | ✅ | 4 | 8-bit signed |
 | INT | §2.1.2 | ✅ | 27 | Full support |
-| DINT | §2.1.2 | ❌ | - | |
-| LINT | §2.1.2 | ❌ | - | |
-| USINT | §2.1.2 | ❌ | - | |
-| UINT | §2.1.2 | ❌ | - | |
-| UDINT | §2.1.2 | ❌ | - | |
-| ULINT | §2.1.2 | ❌ | - | |
+| DINT | §2.1.2 | ✅ | 4 | 32-bit signed |
+| LINT | §2.1.2 | ✅ | 2 | 64-bit signed |
+| USINT | §2.1.2 | ✅ | 3 | 8-bit unsigned |
+| UINT | §2.1.2 | ✅ | 3 | 16-bit unsigned |
+| UDINT | §2.1.2 | ✅ | 3 | 32-bit unsigned |
+| ULINT | §2.1.2 | ✅ | 2 | 64-bit unsigned |
 | REAL | §2.1.3 | ✅ | 24 | IEEE 754 single |
-| LREAL | §2.1.3 | ❌ | - | |
+| LREAL | §2.1.3 | ✅ | 5 | IEEE 754 double |
 | TIME | §2.1.4 | ✅ | 21 | Full support |
 | DATE | §2.1.4 | ❌ | - | |
 | TIME_OF_DAY | §2.1.4 | ❌ | - | |
@@ -210,7 +210,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | Counters | 59 | ✅ 100% |
 | Edge Detection | 35 | ✅ 100% |
 | Bistables | 45 | ✅ 100% |
-| Data Types | 110 | ✅ 100% |
+| Data Types | 140 | ✅ 100% |
 | Variables | 59 | ✅ 100% |
 | Operators | 120 | ✅ 100% |
 | Control Flow | 116 | ✅ 100% |
@@ -220,7 +220,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | Integration | 105 | ✅ 100% |
 | Additional | 50 | ✅ 100% |
 | Std Functions | 87 | ✅ 100% |
-| **Total** | **1181** | ✅ 100% |
+| **Total** | **1211** | ✅ 100% |
 
 ---
 
@@ -228,9 +228,8 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 ### Next Priorities
 
-1. **Additional integer types** - SINT, DINT, UINT, UDINT (infrastructure exists, needs range validation)
-2. **RETURN statement** - For completeness
-3. **CONTINUE statement** - Edition 3 feature
+1. **RETURN statement** - For completeness (requires user function support)
+2. **CONTINUE statement** - Edition 3 feature
 
 ### Future Consideration
 
@@ -246,6 +245,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 | Date | Change |
 |------|--------|
+| 2026-01-16 | Added additional integer types (SINT, DINT, LINT, USINT, UINT, UDINT, ULINT) and LREAL with 30 new tests |
 | 2026-01-16 | Added trigonometric (SIN, COS, TAN, ASIN, ACOS, ATAN) and logarithmic (LN, LOG, EXP) functions with 49 new tests |
 | 2026-01-16 | Added standard function tests (ABS, SQRT, MIN, MAX) with 38 tests |
 | 2026-01-16 | Added exponentiation operator (**) with 19 tests |

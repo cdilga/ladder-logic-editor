@@ -1900,3 +1900,487 @@ END_PROGRAM
     // See type-aware-assignment.test.ts for comprehensive cross-type assignment tests.
   });
 });
+
+// ============================================================================
+// Additional Integer Types (IEC 61131-3 Table 10)
+// ============================================================================
+
+describe('SINT Type (8-bit signed, -128 to 127)', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('SINT declaration initializes to 0 by default', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : SINT;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getInt('x')).toBe(0);
+  });
+
+  it('SINT initializes with positive value', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : SINT := 100;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getInt('x')).toBe(100);
+  });
+
+  it('SINT initializes with negative value', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : SINT := -100;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getInt('x')).toBe(-100);
+  });
+
+  it('SINT supports arithmetic operations', () => {
+    const code = `
+PROGRAM Test
+VAR
+  a : SINT := 50;
+  b : SINT := 25;
+  sum : SINT;
+  diff : SINT;
+  prod : SINT;
+END_VAR
+sum := a + b;
+diff := a - b;
+prod := a * 2;
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 1);
+    expect(store.getInt('sum')).toBe(75);
+    expect(store.getInt('diff')).toBe(25);
+    expect(store.getInt('prod')).toBe(100);
+  });
+});
+
+describe('DINT Type (32-bit signed, -2,147,483,648 to 2,147,483,647)', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('DINT declaration initializes to 0 by default', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : DINT;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getInt('x')).toBe(0);
+  });
+
+  it('DINT supports values larger than INT range', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : DINT := 100000;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getInt('x')).toBe(100000);
+  });
+
+  it('DINT supports negative values beyond INT range', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : DINT := -100000;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getInt('x')).toBe(-100000);
+  });
+
+  it('DINT arithmetic with large values', () => {
+    const code = `
+PROGRAM Test
+VAR
+  a : DINT := 50000;
+  b : DINT := 50000;
+  sum : DINT;
+END_VAR
+sum := a + b;
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 1);
+    expect(store.getInt('sum')).toBe(100000);
+  });
+});
+
+describe('UINT Type (16-bit unsigned, 0 to 65,535)', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('UINT declaration initializes to 0 by default', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : UINT;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getInt('x')).toBe(0);
+  });
+
+  it('UINT supports values up to 65535', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : UINT := 65000;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getInt('x')).toBe(65000);
+  });
+
+  it('UINT arithmetic operations', () => {
+    const code = `
+PROGRAM Test
+VAR
+  a : UINT := 40000;
+  b : UINT := 20000;
+  sum : UINT;
+  diff : UINT;
+END_VAR
+sum := a + b;
+diff := a - b;
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 1);
+    expect(store.getInt('sum')).toBe(60000);
+    expect(store.getInt('diff')).toBe(20000);
+  });
+});
+
+describe('UDINT Type (32-bit unsigned, 0 to 4,294,967,295)', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('UDINT declaration initializes to 0 by default', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : UDINT;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getInt('x')).toBe(0);
+  });
+
+  it('UDINT supports large positive values', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : UDINT := 1000000;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getInt('x')).toBe(1000000);
+  });
+
+  it('UDINT arithmetic with large values', () => {
+    const code = `
+PROGRAM Test
+VAR
+  a : UDINT := 500000;
+  b : UDINT := 500000;
+  sum : UDINT;
+END_VAR
+sum := a + b;
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 1);
+    expect(store.getInt('sum')).toBe(1000000);
+  });
+});
+
+describe('USINT Type (8-bit unsigned, 0 to 255)', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('USINT declaration initializes to 0 by default', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : USINT;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getInt('x')).toBe(0);
+  });
+
+  it('USINT supports values from 0 to 255', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : USINT := 200;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getInt('x')).toBe(200);
+  });
+
+  it('USINT arithmetic operations', () => {
+    const code = `
+PROGRAM Test
+VAR
+  a : USINT := 100;
+  b : USINT := 50;
+  sum : USINT;
+  diff : USINT;
+END_VAR
+sum := a + b;
+diff := a - b;
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 1);
+    expect(store.getInt('sum')).toBe(150);
+    expect(store.getInt('diff')).toBe(50);
+  });
+});
+
+describe('LINT Type (64-bit signed)', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('LINT declaration initializes to 0 by default', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : LINT;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getInt('x')).toBe(0);
+  });
+
+  it('LINT supports large positive values', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : LINT := 10000000;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getInt('x')).toBe(10000000);
+  });
+});
+
+describe('ULINT Type (64-bit unsigned)', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('ULINT declaration initializes to 0 by default', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : ULINT;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getInt('x')).toBe(0);
+  });
+
+  it('ULINT supports large values', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : ULINT := 10000000;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getInt('x')).toBe(10000000);
+  });
+});
+
+describe('LREAL Type (64-bit IEEE 754 double)', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('LREAL declaration initializes to 0.0 by default', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : LREAL;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getReal('x')).toBe(0.0);
+  });
+
+  it('LREAL supports high precision values', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : LREAL := 3.141592653589793;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getReal('x')).toBeCloseTo(3.141592653589793, 14);
+  });
+
+  it('LREAL arithmetic maintains precision', () => {
+    const code = `
+PROGRAM Test
+VAR
+  a : LREAL := 1.0;
+  b : LREAL := 3.0;
+  result : LREAL;
+END_VAR
+result := a / b;
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 1);
+    expect(store.getReal('result')).toBeCloseTo(0.333333333333333, 10);
+  });
+
+  it('LREAL supports large values', () => {
+    // Note: Scientific notation parsing not fully supported
+    // Using standard decimal for test reliability
+    const code = `
+PROGRAM Test
+VAR
+  x : LREAL := 123456789.0;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getReal('x')).toBe(123456789.0);
+  });
+
+  it('LREAL supports small decimal values', () => {
+    const code = `
+PROGRAM Test
+VAR
+  x : LREAL := 0.000001;
+END_VAR
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 0);
+    expect(store.getReal('x')).toBeCloseTo(0.000001, 10);
+  });
+});
+
+// ============================================================================
+// Cross-Type Integer Operations
+// ============================================================================
+
+describe('Cross-Type Integer Operations', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  it('INT and DINT can be used together in expressions', () => {
+    const code = `
+PROGRAM Test
+VAR
+  a : INT := 100;
+  b : DINT := 100000;
+  result : DINT;
+END_VAR
+result := a + b;
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 1);
+    expect(store.getInt('result')).toBe(100100);
+  });
+
+  it('SINT and INT can be used together', () => {
+    const code = `
+PROGRAM Test
+VAR
+  a : SINT := 50;
+  b : INT := 1000;
+  result : INT;
+END_VAR
+result := a + b;
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 1);
+    expect(store.getInt('result')).toBe(1050);
+  });
+
+  it('UINT and UDINT can be used together', () => {
+    const code = `
+PROGRAM Test
+VAR
+  a : UINT := 50000;
+  b : UDINT := 100000;
+  result : UDINT;
+END_VAR
+result := a + b;
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 1);
+    expect(store.getInt('result')).toBe(150000);
+  });
+
+  it('Mixed signed and unsigned types work (implementation treats all as numbers)', () => {
+    const code = `
+PROGRAM Test
+VAR
+  a : INT := -10;
+  b : UINT := 100;
+  result : INT;
+END_VAR
+result := a + b;
+END_PROGRAM
+`;
+    initializeAndRun(code, store, 1);
+    expect(store.getInt('result')).toBe(90);
+  });
+});
