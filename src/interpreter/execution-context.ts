@@ -17,10 +17,16 @@ import type { Value } from './expression-evaluator';
 // ============================================================================
 
 /**
- * Array element storage with metadata
+ * Array element storage with metadata.
+ * Supports both single-dimensional and multi-dimensional arrays.
  */
 export interface ArrayStorage {
-  metadata: { startIndex: number; endIndex: number; elementType: string };
+  metadata: {
+    startIndex: number;
+    endIndex: number;
+    elementType: string;
+    dimensions?: { start: number; end: number }[];
+  };
   values: (boolean | number)[];
 }
 
@@ -52,9 +58,12 @@ export interface SimulationStoreInterface extends FunctionBlockStore {
 
   // Array storage
   arrays?: Record<string, ArrayStorage>;
-  initArray?: (name: string, metadata: { startIndex: number; endIndex: number; elementType: string }, values: (boolean | number)[]) => void;
+  initArray?: (name: string, metadata: { startIndex: number; endIndex: number; elementType: string; dimensions?: { start: number; end: number }[] }, values: (boolean | number)[]) => void;
   getArrayElement?: (name: string, index: number) => boolean | number | undefined;
   setArrayElement?: (name: string, index: number, value: boolean | number) => void;
+  // Multi-dimensional array access
+  getMultiDimArrayElement?: (name: string, indices: number[]) => boolean | number | undefined;
+  setMultiDimArrayElement?: (name: string, indices: number[], value: boolean | number) => void;
 
   // Function block storage
   counters: Record<string, { CU: boolean; CD: boolean; R: boolean; LD: boolean; PV: number; QU: boolean; QD: boolean; CV: number }>;
@@ -259,6 +268,20 @@ export function createExecutionContext(
     setArrayElement: store.setArrayElement
       ? (name: string, index: number, value: boolean | number) => {
           store.setArrayElement!(name, index, value);
+        }
+      : undefined,
+
+    // Multi-dimensional array element access
+    getMultiDimArrayElement: store.getMultiDimArrayElement
+      ? (name: string, indices: number[]) => {
+          const value = store.getMultiDimArrayElement!(name, indices);
+          return value ?? 0;
+        }
+      : undefined,
+
+    setMultiDimArrayElement: store.setMultiDimArrayElement
+      ? (name: string, indices: number[], value: boolean | number) => {
+          store.setMultiDimArrayElement!(name, indices, value);
         }
       : undefined,
 

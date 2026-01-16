@@ -341,6 +341,7 @@ function parseTypeSpec(node: SyntaxNode, source: string): STTypeSpec {
   let typeName = 'BOOL';
   let isArray = false;
   let arrayRange: { start: number; end: number } | undefined;
+  let arrayRanges: { start: number; end: number }[] | undefined;
 
   let child = node.firstChild;
   while (child) {
@@ -352,13 +353,20 @@ function parseTypeSpec(node: SyntaxNode, source: string): STTypeSpec {
         isArray = true;
         const result = parseArrayType(child, source);
         typeName = result.typeName;
-        arrayRange = result.range;
+        // Support both single and multi-dimensional arrays
+        if (result.ranges && result.ranges.length > 0) {
+          arrayRanges = result.ranges;
+          // For backwards compatibility, also set arrayRange for single-dimensional
+          if (result.ranges.length === 1) {
+            arrayRange = result.ranges[0];
+          }
+        }
         break;
     }
     child = child.nextSibling;
   }
 
-  return { type: 'TypeSpec', typeName, isArray, arrayRange, loc };
+  return { type: 'TypeSpec', typeName, isArray, arrayRange, arrayRanges, loc };
 }
 
 function parseTypeName(node: SyntaxNode, source: string): string {
@@ -375,15 +383,26 @@ function parseTypeName(node: SyntaxNode, source: string): string {
 function parseArrayType(
   node: SyntaxNode,
   source: string
-): { typeName: string; range?: { start: number; end: number } } {
+): { typeName: string; ranges: { start: number; end: number }[] } {
   let typeName = 'BOOL';
-  let range: { start: number; end: number } | undefined;
+  const ranges: { start: number; end: number }[] = [];
 
   let child = node.firstChild;
   while (child) {
     switch (child.name) {
+      case 'RangeList':
+        // Parse all ranges from the RangeList
+        let rangeChild = child.firstChild;
+        while (rangeChild) {
+          if (rangeChild.name === 'Range') {
+            ranges.push(parseRange(rangeChild, source));
+          }
+          rangeChild = rangeChild.nextSibling;
+        }
+        break;
       case 'Range':
-        range = parseRange(child, source);
+        // Fallback for grammar without RangeList
+        ranges.push(parseRange(child, source));
         break;
       case 'TypeName':
         typeName = parseTypeName(child, source);
@@ -392,7 +411,7 @@ function parseArrayType(
     child = child.nextSibling;
   }
 
-  return { typeName, range };
+  return { typeName, ranges };
 }
 
 function parseRange(node: SyntaxNode, source: string): { start: number; end: number } {
@@ -1059,12 +1078,22 @@ function parseVariable(node: SyntaxNode, source: string): STVariable {
     if (child.name === 'Identifier') {
       accessPath.push(source.slice(child.from, child.to));
     } else if (child.name === 'ArrayIndex') {
-      // ArrayIndex contains an Expression
+      // ArrayIndex contains IndexList which contains comma-separated Expressions
+      // This supports both arr[i] and arr[i, j] syntax
       let indexChild = child.firstChild;
       while (indexChild) {
-        if (indexChild.name === 'Expression') {
+        if (indexChild.name === 'IndexList') {
+          // Parse all expressions in the IndexList
+          let listChild = indexChild.firstChild;
+          while (listChild) {
+            if (listChild.name === 'Expression') {
+              arrayIndices.push(parseExpression(listChild, source));
+            }
+            listChild = listChild.nextSibling;
+          }
+        } else if (indexChild.name === 'Expression') {
+          // Fallback for grammar without IndexList
           arrayIndices.push(parseExpression(indexChild, source));
-          break;
         }
         indexChild = indexChild.nextSibling;
       }

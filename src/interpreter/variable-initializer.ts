@@ -39,12 +39,26 @@ export type ConstantRegistry = Set<string>;
 export type TimerType = 'TON' | 'TOF' | 'TP';
 
 /**
- * Array metadata stored alongside array values
+ * Dimension range for multi-dimensional arrays
+ */
+export interface DimensionRange {
+  start: number;
+  end: number;
+}
+
+/**
+ * Array metadata stored alongside array values.
+ * Supports both single-dimensional and multi-dimensional arrays.
  */
 export interface ArrayMetadata {
+  /** Start index for single-dimensional arrays (legacy, use dimensions for multi-dim) */
   startIndex: number;
+  /** End index for single-dimensional arrays (legacy, use dimensions for multi-dim) */
   endIndex: number;
+  /** Element type name (e.g., 'INT', 'BOOL', 'REAL') */
   elementType: string;
+  /** Dimension ranges for multi-dimensional arrays */
+  dimensions?: DimensionRange[];
 }
 
 /**
@@ -112,14 +126,40 @@ function initializeDeclaration(decl: STVariableDecl, store: InitializableStore):
   const typeName = decl.dataType.typeName.toUpperCase();
   const isArray = decl.dataType.isArray;
   const arrayRange = decl.dataType.arrayRange;
+  const arrayRanges = decl.dataType.arrayRanges;
 
   for (const name of decl.names) {
-    // Handle array types
+    // Handle multi-dimensional array types
+    if (isArray && arrayRanges && arrayRanges.length > 0 && store.initArray) {
+      // Calculate total size: product of all dimension sizes
+      let totalSize = 1;
+      const dimensions: DimensionRange[] = [];
+      for (const range of arrayRanges) {
+        const dimSize = range.end - range.start + 1;
+        totalSize *= dimSize;
+        dimensions.push({ start: range.start, end: range.end });
+      }
+
+      const metadata: ArrayMetadata = {
+        startIndex: arrayRanges[0].start,
+        endIndex: arrayRanges[0].end,
+        elementType: typeName,
+        dimensions,
+      };
+
+      const defaultValue = getDefaultValueForType(typeName);
+      const values = new Array(totalSize).fill(defaultValue);
+      store.initArray(name, metadata, values);
+      continue;
+    }
+
+    // Handle single-dimensional array types (legacy support)
     if (isArray && arrayRange && store.initArray) {
       const metadata: ArrayMetadata = {
         startIndex: arrayRange.start,
         endIndex: arrayRange.end,
         elementType: typeName,
+        dimensions: [{ start: arrayRange.start, end: arrayRange.end }],
       };
       const size = arrayRange.end - arrayRange.start + 1;
       const defaultValue = getDefaultValueForType(typeName);

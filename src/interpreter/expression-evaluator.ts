@@ -45,6 +45,8 @@ export interface EvaluationContext {
   getUserFBField?: (instanceName: string, field: string) => Value | undefined;
   /** Get an array element by name and index - optional for array support */
   getArrayElement?: (name: string, index: number) => Value;
+  /** Get a multi-dimensional array element by name and indices - optional for multi-dim array support */
+  getMultiDimArrayElement?: (name: string, indices: number[]) => Value;
   /** Invoke a user-defined function - optional for user function support */
   invokeUserFunction?: (name: string, args: Value[]) => Value;
 }
@@ -109,11 +111,19 @@ function evaluateLiteral(literal: STLiteral): Value {
 function evaluateVariable(variable: STVariable, context: EvaluationContext): Value {
   const { accessPath, arrayIndices } = variable;
 
-  // Handle array access: arr[i] or arr[5]
-  if (arrayIndices && arrayIndices.length > 0 && context.getArrayElement) {
-    // For now, support single-dimensional arrays
-    const index = toNumber(evaluateExpression(arrayIndices[0], context));
-    return context.getArrayElement(accessPath[0], index);
+  // Handle array access: arr[i], arr[5], arr[i, j], or arr[i][j]
+  if (arrayIndices && arrayIndices.length > 0) {
+    // Multi-dimensional array: arr[i, j] or arr[i][j] (multiple indices)
+    if (arrayIndices.length > 1 && context.getMultiDimArrayElement) {
+      const indices = arrayIndices.map(idx => toNumber(evaluateExpression(idx, context)));
+      return context.getMultiDimArrayElement(accessPath[0], indices);
+    }
+
+    // Single-dimensional array: arr[i]
+    if (context.getArrayElement) {
+      const index = toNumber(evaluateExpression(arrayIndices[0], context));
+      return context.getArrayElement(accessPath[0], index);
+    }
   }
 
   // Simple variable: just the name

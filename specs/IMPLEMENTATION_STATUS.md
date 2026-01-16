@@ -54,7 +54,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 | Type | Reference | Status | Tests | Notes |
 |------|-----------|--------|-------|-------|
-| ARRAY | §2.2.1 | ✅ | 24 | Single-dimensional, all element types |
+| ARRAY | §2.2.1 | ✅ | 42 | Single and multi-dimensional (2D, 3D), all element types |
 | STRUCT | §2.2.2 | ❌ | - | |
 | Enumeration | §2.2.3 | ❌ | - | |
 
@@ -235,12 +235,13 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | Continue Statement | 15 | ✅ 100% |
 | CONSTANT Variables | 20 | ✅ 100% |
 | ARRAY Types | 24 | ✅ 100% |
+| Multi-dim ARRAY | 18 | ✅ 100% |
 | User Functions | 22 | ✅ 100% |
 | User Function Blocks | 18 | ✅ 100% |
 | STRING Types | 35 | ✅ 100% |
 | VAR_IN_OUT | 19 | ✅ 100% |
 | Type Conversion | 50 | ✅ 100% |
-| **Total** | **1584** | ✅ 100% |
+| **Total** | **1602** | ✅ 100% |
 
 ---
 
@@ -248,14 +249,14 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 ### Next Priorities
 
-1. **Multi-dimensional ARRAYs** - Currently single-dimensional only
-2. **STRUCT support** - User-defined structured types
-3. **VAR_EXTERNAL** - External variable references
+1. **STRUCT support** - User-defined structured types
+2. **VAR_EXTERNAL** - External variable references
+3. **DATE/TIME_OF_DAY/DATE_AND_TIME types** - Date/time data types
 
 ### Future Consideration
 
-- Multi-dimensional ARRAY support
 - STRUCT support
+- Enumeration types
 - DATE/TIME_OF_DAY/DATE_AND_TIME types
 
 ---
@@ -264,6 +265,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 | Date | Change |
 |------|--------|
+| 2026-01-16 | Added multi-dimensional ARRAY support (2D, 3D) with ARRAY[m..n, p..q] syntax, arr[i, j] and arr[i][j] access - 18 new tests |
 | 2026-01-16 | Added explicit type conversion functions (*_TO_*) - BOOL_TO_INT, INT_TO_REAL, REAL_TO_INT, STRING_TO_INT, etc., plus TRUNC function - 50 new tests |
 | 2026-01-16 | Added VAR_IN_OUT (pass-by-reference) support in function blocks - 19 new tests, variables now 60% |
 | 2026-01-16 | Fixed TIME literal parsing in statement executor (toNumber wasn't handling TIME literals) |

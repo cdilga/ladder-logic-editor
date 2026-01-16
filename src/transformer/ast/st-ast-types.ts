@@ -42,7 +42,10 @@ export interface STTypeSpec extends ASTNode {
   type: 'TypeSpec';
   typeName: string;
   isArray: boolean;
+  /** Single range for single-dimensional arrays (legacy) */
   arrayRange?: { start: number; end: number };
+  /** Multiple ranges for multi-dimensional arrays: ARRAY[1..3, 1..4] OF INT */
+  arrayRanges?: { start: number; end: number }[];
 }
 
 export interface STVariableDecl extends ASTNode {

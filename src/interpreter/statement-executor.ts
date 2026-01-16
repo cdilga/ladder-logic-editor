@@ -92,6 +92,8 @@ export interface ExecutionContext extends EvaluationContext {
   handleFunctionBlockCall: (call: STFunctionBlockCall, ctx: ExecutionContext) => void;
   /** Set an array element by name and index - optional for array support */
   setArrayElement?: (name: string, index: number, value: boolean | number) => void;
+  /** Set a multi-dimensional array element - optional for multi-dim array support */
+  setMultiDimArrayElement?: (name: string, indices: number[], value: boolean | number) => void;
 }
 
 // ============================================================================
@@ -176,12 +178,24 @@ function executeAssignment(stmt: STAssignment, context: ExecutionContext): void 
 
   const value = evaluateExpression(stmt.expression, context);
 
-  // Handle array element assignment: arr[i] := value
-  if (arrayIndices && arrayIndices.length > 0 && context.setArrayElement) {
-    const index = toNumber(evaluateExpression(arrayIndices[0], context));
+  // Handle array element assignment: arr[i] := value, arr[i, j] := value, or arr[i][j] := value
+  if (arrayIndices && arrayIndices.length > 0) {
     const numericValue = typeof value === 'boolean' ? (value ? 1 : 0) : toNumber(value);
-    context.setArrayElement(targetName, index, typeof value === 'boolean' ? value : numericValue);
-    return;
+    const finalValue = typeof value === 'boolean' ? value : numericValue;
+
+    // Multi-dimensional array: arr[i, j] or arr[i][j] (multiple indices)
+    if (arrayIndices.length > 1 && context.setMultiDimArrayElement) {
+      const indices = arrayIndices.map(idx => toNumber(evaluateExpression(idx, context)));
+      context.setMultiDimArrayElement(targetName, indices, finalValue);
+      return;
+    }
+
+    // Single-dimensional array: arr[i]
+    if (context.setArrayElement) {
+      const index = toNumber(evaluateExpression(arrayIndices[0], context));
+      context.setArrayElement(targetName, index, finalValue);
+      return;
+    }
   }
 
   // Get the declared type of the target variable

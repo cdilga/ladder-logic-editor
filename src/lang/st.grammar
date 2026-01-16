@@ -113,7 +113,11 @@ TypeName {
 }
 
 ArrayType {
-  kw<"ARRAY"> "[" Range "]" kw<"OF"> TypeName
+  kw<"ARRAY"> "[" RangeList "]" kw<"OF"> TypeName
+}
+
+RangeList {
+  Range ("," Range)*
 }
 
 Range {
@@ -271,7 +275,11 @@ Variable {
 }
 
 ArrayIndex {
-  "[" Expression "]"
+  "[" IndexList "]"
+}
+
+IndexList {
+  Expression ("," Expression)*
 }
 
 FunctionCall {
