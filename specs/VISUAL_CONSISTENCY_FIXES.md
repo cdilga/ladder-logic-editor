@@ -274,34 +274,20 @@ Use consistent SVG icons for all tabs, or consistent text-only labels.
 ### VIS-015: Mobile Menu Icon Duplication (New - 2025-01-17)
 
 **Severity:** Low
-**Status:** Confirmed
+**Status:** ✅ RESOLVED - Not a visual issue
 
 **Description:**
-The mobile hamburger menu shows icons duplicated next to text:
+Initial automated testing reported icons appearing duplicated in the mobile menu.
 
-```
-📄 New File
-📄
-📂 Open File
-📂
-💾 Save
-💾
-```
+**Updated Analysis (2025-01-17):**
+Visual inspection of `screenshots/deep-mobile-menu.png` confirms the menu renders correctly:
+- 📄 New File
+- 📂 Open File
+- 💾 Save
 
-**Test Results:**
-```
-Menu items count: 6
-Menu item: "📄New File"
-Menu item: "📄"
-Menu item: "📂Open File"
-Menu item: "📂"
-Menu item: "💾Save"
-Menu item: "💾"
-```
+The automated test was incorrectly counting hidden elements or parsing artifacts.
 
-**Issue:** Icons appear to be rendered both inside and outside the button elements, causing visual duplication.
-
-**Screenshot:** `screenshots/explore-mobile-menu-open.png`
+**Conclusion:** No visual issue exists. Menu displays correctly.
 
 ---
 
@@ -354,11 +340,62 @@ The application uses a range of dark background colors that follow a consistent 
 
 ---
 
+## New Findings (2025-01-17 Deep Exploration)
+
+### VIS-016: Mobile File Selector Dropdown Visual Consistency
+
+**Severity:** Low
+**Status:** Good - Working as designed
+
+**Description:**
+The mobile file selector dropdown provides a clean interface for switching between files and examples.
+
+**Visual Evidence:** See `screenshots/deep-mobile-file-dropdown.png`
+- Clear section headers: "OPEN FILES" and "EXAMPLES"
+- Consistent icon usage (wrench for Dual Pump, traffic light for Traffic Controller)
+- Clean separation between open files and available examples
+
+**Note:** This is a positive finding - the mobile file selector is well-designed.
+
+---
+
+### VIS-017: Onboarding Toast Positioning
+
+**Severity:** Low
+**Status:** Observation
+
+**Description:**
+The onboarding welcome toast appears at the bottom of the screen, which is good for mobile. However, it overlaps with the bottom tab bar on some viewports.
+
+**Visual Evidence:** See `screenshots/deep-mobile-debug-tab.png`, `screenshots/deep-onboarding.png`
+
+**Recommendation:**
+Consider adding bottom margin to the toast when tab bar is visible to prevent overlap.
+
+---
+
+### VIS-018: Counter Variable Watch Card Layout
+
+**Severity:** Low
+**Status:** Good - Informative design
+
+**Description:**
+The counter (CTR) variable watch displays information clearly with:
+- Counter name and current/preset values: `countUp CV: 0 / PV: 10`
+- Toggle buttons for CU (count up) and CD (count down)
+- Clear Q output status indicators
+
+**Visual Evidence:** See `screenshots/deep-counter.png`
+
+**Note:** This is a positive finding - counter display is informative and well-organized.
+
+---
+
 ## Automated Testing Results (2025-01-17)
 
-### Button Styling Variations Found
+### Button Styling Variations Found (Updated)
 
-Playwright automated analysis found **8 distinct button style combinations** across 22 buttons:
+Playwright automated analysis found **10 distinct button style combinations** across 22 buttons:
 
 | Style Pattern (padding-borderRadius-fontSize) | Count |
 |---------------------------------------------|-------|
@@ -370,6 +407,8 @@ Playwright automated analysis found **8 distinct button style combinations** acr
 | `0px` - `3px` - `14px` | 1 button |
 | `0px` - `4px` - `16px` | 1 button |
 | `0px` - `3px` - `12px` | 1 button |
+| `9.6px 19.2px` - `4px` - `16px` | 1 button |
+| `7px 14px` - `4px` - `12px` | 1 button |
 
 **Recommendation:** Consolidate to 2-3 button variants (primary, secondary, ghost).
 

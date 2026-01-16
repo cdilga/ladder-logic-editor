@@ -278,36 +278,41 @@ Content preserved (has testInt): true
 
 ## New Bugs Found (2025-01-17)
 
-### BUG-008: Mobile Missing Simulation Controls
+### BUG-008: Mobile Simulation Controls Not Discoverable on LADDER Tab
 
-**Severity:** High
-**Component:** Mobile Layout / Simulation
-**Status:** Confirmed
+**Severity:** Medium (downgraded from High)
+**Component:** Mobile Layout / UX
+**Status:** ⚠️ UPDATED - Controls exist on DEBUG tab
 
 **Description:**
-On mobile viewport (375x812), there are no visible simulation controls (Run/Pause/Stop). Users cannot start or control simulations on mobile devices.
+On mobile viewport (375x812), simulation controls (Run/Pause/Stop) are NOT visible on the default LADDER tab. Users must navigate to the DEBUG tab to access simulation controls, which is not intuitive.
 
 **Steps to Reproduce:**
 1. Open the editor on a mobile device or resize viewport to 375x812
-2. Look for Run/Pause/Stop buttons
-3. Buttons are not visible anywhere in the mobile UI
+2. Observe the LADDER tab (default view) - no simulation controls visible
+3. Navigate to DEBUG tab using bottom tab bar
+4. Simulation controls ARE visible on DEBUG tab
 
-**Test Results:**
+**Test Results (Updated 2025-01-17):**
 ```
-Run button visible on mobile: false
-Header content: (empty)
-Menu content: New File, Open File, Save (no simulation controls)
+Run button visible on LADDER tab: false
+Run button visible on DEBUG tab: true
+Pause button visible on DEBUG tab: true
+Stop button visible on DEBUG tab: true
 ```
 
-**Expected Behavior:**
-Mobile users should have access to simulation controls, either in the header, hamburger menu, or a floating action button.
+**Current Behavior:**
+- Hamburger menu only shows: New File, Open File, Save (no simulation controls)
+- Simulation controls ARE available but only on the DEBUG tab
+- Status indicator shows "Running", "Paused" states correctly
 
-**Actual Behavior:**
-No simulation controls are accessible on mobile. Users cannot run simulations.
+**UX Issue:**
+Users may not discover that they need to switch to DEBUG tab to run simulations. Consider:
+- Adding a visual hint on the LADDER tab directing users to DEBUG for simulation
+- Adding simulation controls to the mobile header or hamburger menu
+- Or keeping as-is but improving onboarding to explain the workflow
 
-**Impact:** This is a significant usability issue as simulation is a core feature.
-
-**Screenshots:** `screenshots/validate-mobile-sim.png`, `screenshots/explore-mobile-initial.png`
+**Screenshots:** `screenshots/deep-mobile-debug-tab.png`, `screenshots/deep-mobile-sim-running.png`
 
 ---
 
@@ -392,6 +397,41 @@ T+4s: ET = 5000ms, Q = TRUE (timer fired)
 
 ---
 
+### BUG-012: Mobile Landscape Mode Hides Bottom Tab Bar
+
+**Severity:** Low
+**Component:** Mobile Layout / Responsive Design
+**Status:** Confirmed
+
+**Description:**
+When using the application on mobile in landscape orientation (812x375), the bottom tab bar navigation is not visible. Users cannot switch between LADDER, CODE, DEBUG, and HELP tabs.
+
+**Steps to Reproduce:**
+1. Open the editor on a mobile device
+2. Rotate to landscape orientation (or resize viewport to 812x375)
+3. Observe the bottom of the screen - tab bar is hidden
+
+**Test Results:**
+```
+Bottom tabs visible in landscape: false
+Ladder diagram visible in landscape: true
+```
+
+**Expected Behavior:**
+The tab bar should remain accessible in landscape mode, or alternative navigation should be provided.
+
+**Actual Behavior:**
+Tab bar is hidden in landscape mode. The ladder diagram is visible but users cannot navigate to other views.
+
+**Notes:**
+- This may be intentional to maximize viewport space in landscape
+- Consider adding a toggle or gesture to access navigation
+- Or keep header visible with menu access
+
+**Screenshots:** `screenshots/deep-mobile-landscape.png`
+
+---
+
 ## Verification Summary
 
 | Bug ID | Status | Notes |
@@ -399,14 +439,15 @@ T+4s: ET = 5000ms, Q = TRUE (timer fired)
 | BUG-001 | ⚠️ By Design | New creates new tab, original preserved |
 | BUG-002 | ❌ Confirmed | Cmd+S doesn't save |
 | BUG-003 | ❌ Confirmed | Autocomplete not triggering |
-| BUG-004 | ⚠️ Needs Review | "???" labels in specific cases |
+| BUG-004 | ❌ Confirmed | "???" labels in specific cases (see screenshots) |
 | BUG-005 | ⚠️ By Design | Minimap hidden intentionally |
 | BUG-006 | ⚠️ Cosmetic | Timer display lag |
 | BUG-007 | ⚠️ Test Issue | Running indicator works in practice |
-| BUG-008 | ❌ NEW - High | Mobile missing simulation controls |
+| BUG-008 | ⚠️ UX Issue | Mobile sim controls on DEBUG tab only (not missing) |
 | BUG-009 | ⚠️ Feature Request | Step button not available |
 | BUG-010 | ❌ Confirmed | Autocomplete not working |
 | BUG-011 | ⚠️ Cosmetic | Timer ET display lag |
+| BUG-012 | ⚠️ Cosmetic | Mobile landscape hides bottom tab bar |
 | EXISTING-001 | ✅ Fixed | Pause/resume works correctly |
 | EXISTING-002 | ⚠️ UX Issue | Traffic light needs START_BTN guidance |
 | EXISTING-003 | ✅ Fixed | Save works correctly |
