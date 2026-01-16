@@ -23,7 +23,7 @@ test.describe('Mobile Navigation', () => {
     // Should see bottom tab bar
     await expect(page.locator('.bottom-tab-bar')).toBeVisible();
 
-    // Should see 4 tabs
+    // Should see 4 tabs (Ladder, Code, Debug, Help)
     const tabs = page.locator('.tab-button');
     await expect(tabs).toHaveCount(4);
   });
@@ -69,7 +69,7 @@ test.describe('Mobile Navigation', () => {
     const views = [
       { name: 'Code', dataView: 'editor' },
       { name: 'Debug', dataView: 'debug' },
-      { name: 'Props', dataView: 'properties' },
+      { name: 'Help', dataView: 'help' },
       { name: 'Ladder', dataView: 'ladder' },
     ];
 
@@ -92,7 +92,7 @@ test.describe('Mobile Navigation', () => {
 
   test('only one panel is active at a time', async ({ page }) => {
     // Click through tabs and verify only one panel is active
-    const tabs = ['Code', 'Debug', 'Props', 'Ladder'];
+    const tabs = ['Code', 'Debug', 'Help', 'Ladder'];
 
     for (const tabName of tabs) {
       await page.locator('.tab-button').filter({ hasText: tabName }).click();
@@ -199,6 +199,35 @@ test.describe('Mobile Navigation', () => {
 
     // Should have padding (exact values depend on device)
     expect(styles).toBeDefined();
+  });
+
+  test('help view shows help actions', async ({ page }) => {
+    // Navigate to help view
+    await page.locator('.tab-button').filter({ hasText: 'Help' }).click();
+    await page.waitForTimeout(250);
+
+    // Help view should be active
+    const helpPanel = page.locator('.mobile-panel[data-view="help"]');
+    await expect(helpPanel).toHaveClass(/active/);
+
+    // Should see help view content
+    await expect(page.locator('.help-view')).toBeVisible();
+
+    // Should show action cards
+    await expect(page.locator('.help-action-card').filter({ hasText: 'Replay Tutorial' })).toBeVisible();
+    await expect(page.locator('.help-action-card').filter({ hasText: 'Documentation' })).toBeVisible();
+    await expect(page.locator('.help-action-card').filter({ hasText: 'Report a Bug' })).toBeVisible();
+  });
+
+  test('properties sheet appears when node selected on ladder view', async ({ page }) => {
+    // Should be on ladder view by default
+    await expect(page.locator('.mobile-panel[data-view="ladder"]')).toHaveClass(/active/);
+
+    // Properties sheet should not be visible initially
+    await expect(page.locator('.mobile-properties-sheet')).not.toBeVisible();
+
+    // TODO: Add test for selecting a node and verifying sheet appears
+    // This requires clicking on a ladder node which depends on the ladder diagram content
   });
 });
 

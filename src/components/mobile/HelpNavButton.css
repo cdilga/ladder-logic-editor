@@ -1,0 +1,213 @@
+/**
+ * Help Navigation Button Styles
+ *
+ * Compact navbar button with dropdown menu.
+ * Understated industrial design - integrates naturally with toolbar.
+ */
+
+/* ============================================================================
+   Container
+   ========================================================================= */
+
+.help-nav-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* ============================================================================
+   Help Button
+   ========================================================================= */
+
+.help-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 10px;
+  background: transparent;
+  border: 1px solid var(--mobile-border);
+  border-radius: 5px;
+  color: var(--mobile-text-primary);
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--mobile-transition-fast);
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+
+.help-btn:active {
+  transform: scale(0.96);
+}
+
+.help-btn.active {
+  background: var(--mobile-bg-elevated);
+  border-color: var(--mobile-accent-primary);
+  color: var(--mobile-accent-primary);
+}
+
+.help-label {
+  line-height: 1;
+}
+
+/* ============================================================================
+   Backdrop Overlay
+   ========================================================================= */
+
+.help-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 29, 41, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 199;
+  animation: helpBackdropFadeIn 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes helpBackdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ============================================================================
+   Dropdown Menu
+   ========================================================================= */
+
+.help-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  background: var(--mobile-bg-surface);
+  border: 1px solid var(--mobile-border-accent);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(0, 212, 255, 0.08);
+  animation: helpMenuSlideDown 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 200;
+}
+
+@keyframes helpMenuSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================================
+   Menu Items
+   ========================================================================= */
+
+.help-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--mobile-border);
+  color: var(--mobile-text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--mobile-transition-fast);
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.help-menu-item:last-child {
+  border-bottom: none;
+}
+
+.help-menu-item:active {
+  background: var(--mobile-bg-elevated);
+  color: var(--mobile-accent-primary);
+}
+
+.help-menu-item:active .help-menu-icon {
+  color: var(--mobile-accent-primary);
+}
+
+/* Icon styling */
+.help-menu-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--mobile-text-secondary);
+  transition: color var(--mobile-transition-fast);
+}
+
+/* Label styling */
+.help-menu-label {
+  flex: 1;
+  color: var(--mobile-text-primary);
+  transition: color var(--mobile-transition-fast);
+}
+
+/* ============================================================================
+   Focus States
+   ========================================================================= */
+
+.help-btn:focus-visible {
+  outline: 2px solid var(--mobile-accent-primary);
+  outline-offset: 2px;
+}
+
+.help-menu-item:focus-visible {
+  outline: 2px solid var(--mobile-accent-primary);
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+/* ============================================================================
+   Reduced Motion
+   ========================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .help-btn,
+  .help-menu,
+  .help-menu-backdrop,
+  .help-menu-item {
+    transition-duration: 0ms;
+    animation: none;
+  }
+}
+
+/* ============================================================================
+   Landscape Adjustments
+   ========================================================================= */
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .help-btn {
+    height: 32px;
+    padding: 0 8px;
+    font-size: 9px;
+    gap: 3px;
+  }
+
+  .help-menu-item {
+    padding: 10px 12px;
+    font-size: 11px;
+    min-height: 40px;
+  }
+}

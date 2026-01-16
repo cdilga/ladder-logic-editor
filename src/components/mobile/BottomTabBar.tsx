@@ -37,10 +37,10 @@ const TABS: TabConfig[] = [
     ariaLabel: 'Debug and Simulation View',
   },
   {
-    id: 'properties',
-    label: 'Props',
-    icon: '⚙',
-    ariaLabel: 'Properties Panel View',
+    id: 'help',
+    label: 'Help',
+    icon: '?',
+    ariaLabel: 'Help and Settings View',
   },
 ];
 

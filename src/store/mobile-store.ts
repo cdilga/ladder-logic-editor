@@ -14,7 +14,7 @@ import { subscribeWithSelector } from 'zustand/middleware';
 // Types
 // ============================================================================
 
-export type MobileView = 'ladder' | 'editor' | 'debug' | 'properties';
+export type MobileView = 'ladder' | 'editor' | 'debug' | 'help';
 
 // ============================================================================
 // State Interface

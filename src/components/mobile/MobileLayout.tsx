@@ -2,7 +2,7 @@
  * Mobile Layout Component
  *
  * Single-panel mobile layout with bottom tab navigation.
- * Displays one view at a time: ladder, editor, debug, or properties.
+ * Displays one view at a time: ladder, editor, debug, or help.
  *
  * Phase 3: Mobile Layout
  */
@@ -11,11 +11,11 @@ import { useEffect, useCallback, useState, useRef } from 'react';
 import { LadderCanvas } from '../ladder-editor/LadderCanvas';
 import { STEditor } from '../st-editor/STEditor';
 import { VariableWatch } from '../variable-watch/VariableWatch';
-import { PropertiesPanel } from '../properties-panel';
 import { ProgramSelector } from '../program-selector';
 import { ErrorPanel } from '../error-panel';
 import { BottomTabBar } from './BottomTabBar';
-import { MobileNavMenu } from './MobileNavMenu';
+import { MobilePropertiesSheet } from './MobilePropertiesSheet';
+import { HelpView } from './HelpView';
 import { useMobileStore } from '../../store/mobile-store';
 import { useProjectStore, useSimulationStore } from '../../store';
 import { useKeyboardDetect } from '../../hooks/useKeyboardDetect';
@@ -402,14 +402,19 @@ export function MobileLayout() {
           </div>
         </div>
 
-        {/* Properties View */}
+        {/* Help View */}
         <div
-          className={`mobile-panel ${activeView === 'properties' ? 'active' : ''}`}
-          data-view="properties"
+          className={`mobile-panel ${activeView === 'help' ? 'active' : ''}`}
+          data-view="help"
         >
-          <PropertiesPanel selectedNode={selectedNode} />
+          <HelpView />
         </div>
       </div>
+
+      {/* Mobile Properties Sheet - appears on ladder view when node selected */}
+      {activeView === 'ladder' && (
+        <MobilePropertiesSheet selectedNode={selectedNode} />
+      )}
 
       {/* Error Panel (slides up from bottom when there are errors) */}
       {(lastTransformResult?.errors.length ?? 0) > 0 && (
@@ -423,9 +428,6 @@ export function MobileLayout() {
 
       {/* Bottom Tab Bar */}
       <BottomTabBar />
-
-      {/* Mobile Navigation Menu */}
-      <MobileNavMenu />
     </div>
   );
 }

@@ -1,0 +1,226 @@
+/**
+ * Mobile Properties Sheet Styles
+ *
+ * Elegant bottom-sheet with mechanical precision.
+ * Single wiggle animation on appear - no loops.
+ * No backdrop - user can interact with ladder while viewing properties.
+ */
+
+/* ============================================================================
+   Sheet Container
+   ========================================================================= */
+
+.mobile-properties-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--mobile-tabbar-height) + var(--mobile-safe-bottom));
+  background: var(--mobile-bg-surface);
+  border-top: 1px solid var(--mobile-border-accent);
+  border-radius: 16px 16px 0 0;
+  box-shadow:
+    0 -4px 24px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(0, 212, 255, 0.08);
+  transition: all 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 50;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  pointer-events: auto;
+}
+
+/* ============================================================================
+   Sheet States
+   ========================================================================= */
+
+/* Collapsed state - small nudge at bottom */
+.mobile-properties-sheet.collapsed {
+  max-height: 72px;
+  overflow: hidden;
+}
+
+.mobile-properties-sheet.collapsed .properties-sheet-content {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Expanded state - pinned to bottom, decent size */
+.mobile-properties-sheet.expanded {
+  max-height: 60vh;
+  cursor: default;
+}
+
+.mobile-properties-sheet.expanded .properties-sheet-content {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ============================================================================
+   Wiggle Animation (Single, Non-looping)
+   ========================================================================= */
+
+/* Trigger wiggle when hasWiggled class is added */
+.mobile-properties-sheet.collapsed.wiggled {
+  animation: sheetWiggle 600ms cubic-bezier(0.36, 0, 0.66, -0.56) 200ms;
+}
+
+@keyframes sheetWiggle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  10%, 30%, 50% {
+    transform: translateY(-8px);
+  }
+  20%, 40% {
+    transform: translateY(-4px);
+  }
+  60% {
+    transform: translateY(-2px);
+  }
+}
+
+/* ============================================================================
+   Header / Drag Handle
+   ========================================================================= */
+
+.properties-sheet-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px 8px;
+  gap: 4px;
+  cursor: pointer;
+  transition: background var(--mobile-transition-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.properties-sheet-header:active {
+  background: var(--mobile-bg-elevated);
+}
+
+/* Drag handle bar */
+.sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--mobile-border-accent);
+  border-radius: 2px;
+  transition: all var(--mobile-transition-fast);
+}
+
+.mobile-properties-sheet.expanded .sheet-handle {
+  background: var(--mobile-accent-primary);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+}
+
+/* Title hint */
+.sheet-title {
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mobile-text-tertiary);
+  transition: color var(--mobile-transition-fast);
+}
+
+.mobile-properties-sheet.expanded .sheet-title {
+  color: var(--mobile-text-secondary);
+}
+
+/* ============================================================================
+   Content Area
+   ========================================================================= */
+
+.properties-sheet-content {
+  max-height: calc(60vh - 60px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: opacity var(--mobile-transition-base);
+}
+
+/* Smooth scrolling on iOS */
+.properties-sheet-content {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom scrollbar for expanded state */
+.mobile-properties-sheet.expanded .properties-sheet-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mobile-properties-sheet.expanded .properties-sheet-content::-webkit-scrollbar-track {
+  background: var(--mobile-bg-base);
+}
+
+.mobile-properties-sheet.expanded .properties-sheet-content::-webkit-scrollbar-thumb {
+  background: var(--mobile-border-accent);
+  border-radius: 3px;
+}
+
+.mobile-properties-sheet.expanded .properties-sheet-content::-webkit-scrollbar-thumb:hover {
+  background: var(--mobile-accent-primary);
+}
+
+/* ============================================================================
+   Keyboard Adjustments
+   ========================================================================= */
+
+/* When keyboard is visible, adjust bottom position */
+.mobile-layout[data-keyboard="visible"] .mobile-properties-sheet {
+  bottom: calc(
+    var(--mobile-tabbar-height) +
+    var(--mobile-safe-bottom) +
+    var(--keyboard-height, 0px)
+  );
+}
+
+/* ============================================================================
+   Reduced Motion
+   ========================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-properties-sheet,
+  .properties-sheet-backdrop,
+  .sheet-handle,
+  .sheet-title,
+  .properties-sheet-content {
+    transition-duration: 0ms;
+    animation: none;
+  }
+}
+
+/* ============================================================================
+   Landscape Adjustments
+   ========================================================================= */
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .mobile-properties-sheet.collapsed {
+    max-height: 60px;
+  }
+
+  .mobile-properties-sheet.expanded {
+    max-height: 70vh;
+  }
+
+  .properties-sheet-header {
+    padding: 8px 14px 6px;
+  }
+
+  .sheet-title {
+    font-size: 8px;
+  }
+}
+
+/* ============================================================================
+   Tablet Adjustments
+   ========================================================================= */
+
+@media (min-width: 600px) and (max-width: 767px) {
+  .mobile-properties-sheet.collapsed {
+    max-height: 80px;
+  }
+
+  .mobile-properties-sheet.expanded {
+    max-height: 55vh;
+  }
+}

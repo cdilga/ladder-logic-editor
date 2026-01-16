@@ -70,34 +70,45 @@
     width: 100%;
     border-left: none;
     border-top: 1px solid var(--border-color, #404040);
+    overflow-x: hidden;
   }
 
   .properties-header {
-    padding: 12px 14px;
+    padding: 12px 16px;
     font-size: 11px;
     background: var(--mobile-bg-surface, #222633);
   }
 
   .properties-empty {
-    padding: 30px 14px;
+    padding: 30px 16px;
     font-size: 12px;
   }
 
   .properties-content {
     padding: 10px 0;
+    overflow-x: hidden;
   }
 
   .property-row {
-    padding: 8px 14px;
-    gap: 10px;
+    padding: 8px 16px;
+    gap: 12px;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .property-label {
     font-size: 11px;
+    flex-shrink: 0;
+    min-width: 80px;
   }
 
   .property-value {
     font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
   }
 
   .property-value.mono {
