@@ -97,7 +97,8 @@ VarKeyword {
   kw<"VAR_OUTPUT"> |
   kw<"VAR_IN_OUT"> |
   kw<"VAR_TEMP"> |
-  kw<"VAR_GLOBAL">
+  kw<"VAR_GLOBAL"> |
+  kw<"VAR_EXTERNAL">
 }
 
 VarQualifier {

@@ -2,7 +2,7 @@
 
 Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_61131_3_REFERENCE.md).
 
-**Last Updated:** 2026-01-16
+**Last Updated:** 2026-01-17
 
 ---
 
@@ -11,7 +11,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | Category | Implemented | Total | Coverage |
 |----------|-------------|-------|----------|
 | Data Types | 21 | 21 | 100% |
-| Variables | 7 | 10 | 70% |
+| Variables | 8 | 10 | 80% |
 | Operators | 16 | 17 | 94% |
 | Control Flow | 7 | 7 | 100% |
 | Standard FBs | 10 | 10+ | 100%* |
@@ -69,7 +69,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | VAR_OUTPUT | §3.1 | ✅ | 18 | Full support (in FUNCTION_BLOCKs) |
 | VAR_IN_OUT | §3.1 | ✅ | 19 | Pass-by-reference in function blocks |
 | VAR_GLOBAL | §3.1 | ✅ | - | Works across programs |
-| VAR_EXTERNAL | §3.1 | ❌ | - | |
+| VAR_EXTERNAL | §3.1 | ✅ | 15 | References VAR_GLOBAL, no separate storage |
 | VAR_TEMP | §3.1 | ✅ | 11 | Reset to default/initial values on each FB call |
 | RETAIN | §3.2 | ⚠️ | - | Parsed, no persistence |
 | CONSTANT | §3.2 | ✅ | 20 | Read-only enforcement |
@@ -245,7 +245,8 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | Enumeration Types | 16 | ✅ 100% |
 | Type Conversion | 50 | ✅ 100% |
 | DATE/TIME_OF_DAY/DT | 28 | ✅ 100% |
-| **Total** | **1673** | ✅ 100% |
+| VAR_EXTERNAL | 15 | ✅ 100% |
+| **Total** | **1688** | ✅ 100% |
 
 ---
 
@@ -253,8 +254,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 ### Next Priorities
 
-1. **VAR_EXTERNAL** - External variable references
-2. **AT addressing** - Direct hardware addressing
+1. **AT addressing** - Direct hardware addressing
 
 ### Future Consideration
 
@@ -267,6 +267,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 | Date | Change |
 |------|--------|
+| 2026-01-17 | Added VAR_EXTERNAL support for referencing VAR_GLOBAL variables - grammar, parser, variable initializer (skip initialization for external refs) - 15 new tests, variables now 80% |
 | 2026-01-16 | Added DATE, TIME_OF_DAY, DATE_AND_TIME data types - D#YYYY-MM-DD, TOD#HH:MM:SS, DT#YYYY-MM-DD-HH:MM:SS syntax with full interpreter support - 28 new tests, data types now 100% complete |
 | 2026-01-16 | Added Enumeration (ENUM) type support with TYPE...END_TYPE syntax, explicit and auto-incrementing values, stored as INT internally, enum value comparison, type registry integration - 16 new tests, data types now 100% |
 | 2026-01-16 | Added STRUCT (structured data type) support with TYPE...END_TYPE syntax, field access (varname.field), field assignment, all elementary field types (BOOL, INT, REAL, TIME, STRING), type registry integration - 16 new tests, data types now 95% |

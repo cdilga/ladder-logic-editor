@@ -34,7 +34,8 @@ export type VariableScopeKind =
   | 'VAR_OUTPUT'
   | 'VAR_IN_OUT'
   | 'VAR_TEMP'
-  | 'VAR_GLOBAL';
+  | 'VAR_GLOBAL'
+  | 'VAR_EXTERNAL';
 
 export type VariableQualifier = 'CONSTANT' | 'RETAIN';
 

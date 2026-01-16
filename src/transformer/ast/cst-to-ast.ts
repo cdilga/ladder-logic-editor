@@ -451,6 +451,7 @@ function parseVarKeyword(node: SyntaxNode, source: string): VariableScopeKind {
   if (text.includes('VAR_OUTPUT')) return 'VAR_OUTPUT';
   if (text.includes('VAR_IN_OUT')) return 'VAR_IN_OUT';
   if (text.includes('VAR_TEMP')) return 'VAR_TEMP';
+  if (text.includes('VAR_EXTERNAL')) return 'VAR_EXTERNAL';
   if (text.includes('VAR_GLOBAL')) return 'VAR_GLOBAL';
   return 'VAR';
 }

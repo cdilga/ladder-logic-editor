@@ -145,6 +145,12 @@ function initializeVarBlock(
   store: InitializableStore,
   typeDefsMap: Map<string, STTypeDef>
 ): void {
+  // VAR_EXTERNAL references a VAR_GLOBAL declared elsewhere - don't initialize storage
+  // The variable accesses will use the existing global variable in the store
+  if (varBlock.scope === 'VAR_EXTERNAL') {
+    return;
+  }
+
   for (const decl of varBlock.declarations) {
     initializeDeclaration(decl, store, typeDefsMap);
   }
@@ -760,6 +766,11 @@ function buildVarBlockTypes(
   registry: TypeRegistry,
   typeDefsMap: Map<string, STTypeDef>
 ): void {
+  // VAR_EXTERNAL references a VAR_GLOBAL - type already registered from the global declaration
+  if (varBlock.scope === 'VAR_EXTERNAL') {
+    return;
+  }
+
   for (const decl of varBlock.declarations) {
     const typeName = decl.dataType.typeName.toUpperCase();
     const isArray = decl.dataType.isArray;

@@ -172,7 +172,7 @@ function extractVariables(ir: LadderIR): VariableDeclaration[] {
   const variables: VariableDeclaration[] = [];
 
   for (const [_, info] of ir.variables) {
-    // Convert VariableScopeKind to VariableScope (exclude VAR_GLOBAL)
+    // Convert VariableScopeKind to VariableScope (exclude VAR_GLOBAL, VAR_EXTERNAL)
     const validScopes = ['VAR', 'VAR_INPUT', 'VAR_OUTPUT', 'VAR_IN_OUT', 'VAR_TEMP'] as const;
     const scope = validScopes.includes(info.scope as typeof validScopes[number])
       ? (info.scope as 'VAR' | 'VAR_INPUT' | 'VAR_OUTPUT' | 'VAR_IN_OUT' | 'VAR_TEMP')
