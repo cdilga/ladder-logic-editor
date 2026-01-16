@@ -1,5 +1,7 @@
 /**
  * Bug Report Modal Styles
+ *
+ * VS Code theme consistent styling
  */
 
 /* ============================================================================
@@ -28,10 +30,10 @@
   width: 100%;
   max-width: 600px;
   max-height: 90vh;
-  background: #1e1e2e;
-  border: 1px solid #313244;
-  border-radius: 12px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  background: #1e1e1e;
+  border: 1px solid #404040;
+  border-radius: 8px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
   overflow: hidden;
 }
 
@@ -43,36 +45,36 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  background: #181825;
-  border-bottom: 1px solid #313244;
+  padding: 14px 16px;
+  background: #252526;
+  border-bottom: 1px solid #404040;
 }
 
 .bug-report-header h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 600;
-  color: #cdd6f4;
+  color: #d4d4d4;
 }
 
 .bug-report-close {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: none;
   background: transparent;
-  color: #a6adc8;
-  border-radius: 6px;
+  color: #808080;
+  border-radius: 4px;
   cursor: pointer;
   transition: background-color 150ms, color 150ms;
 }
 
 .bug-report-close:hover {
-  background: #313244;
-  color: #cdd6f4;
+  background: #3d3d3d;
+  color: #d4d4d4;
 }
 
 /* ============================================================================
@@ -81,14 +83,14 @@
 
 .bug-report-content {
   flex: 1;
-  padding: 20px;
+  padding: 16px;
   overflow-y: auto;
 }
 
 .bug-report-intro {
-  margin: 0 0 16px;
-  font-size: 14px;
-  color: #a6adc8;
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #808080;
   line-height: 1.5;
 }
 
@@ -99,7 +101,7 @@
 .bug-report-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .bug-report-field {
@@ -109,22 +111,22 @@
 }
 
 .bug-report-field label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
-  color: #cdd6f4;
+  color: #d4d4d4;
 }
 
 .bug-report-field .required {
-  color: #f38ba8;
+  color: #f14c4c;
 }
 
 .bug-report-field textarea {
   padding: 10px 12px;
-  border: 1px solid #313244;
-  border-radius: 6px;
-  background: #181825;
-  color: #cdd6f4;
-  font-size: 14px;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  background: #2d2d2d;
+  color: #d4d4d4;
+  font-size: 13px;
   font-family: inherit;
   resize: vertical;
   min-height: 60px;
@@ -132,18 +134,18 @@
 }
 
 .bug-report-field textarea::placeholder {
-  color: #6c7086;
+  color: #606060;
 }
 
 .bug-report-field textarea:focus {
   outline: none;
-  border-color: #89b4fa;
+  border-color: #007acc;
 }
 
 .bug-report-field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 14px;
 }
 
 @media (max-width: 500px) {
@@ -161,8 +163,8 @@
   flex-direction: column;
   gap: 10px;
   padding: 12px;
-  background: #181825;
-  border-radius: 6px;
+  background: #252526;
+  border-radius: 4px;
 }
 
 .bug-report-checkbox {
@@ -173,14 +175,14 @@
 }
 
 .bug-report-checkbox input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: #89b4fa;
+  width: 14px;
+  height: 14px;
+  accent-color: #007acc;
 }
 
 .bug-report-checkbox span {
-  font-size: 13px;
-  color: #a6adc8;
+  font-size: 12px;
+  color: #808080;
 }
 
 /* ============================================================================
@@ -192,8 +194,8 @@
 }
 
 .bug-report-preview summary {
-  font-size: 13px;
-  color: #89b4fa;
+  font-size: 12px;
+  color: #007acc;
   cursor: pointer;
 }
 
@@ -204,12 +206,12 @@
 .bug-report-preview-content {
   margin-top: 10px;
   padding: 12px;
-  background: #181825;
-  border: 1px solid #313244;
-  border-radius: 6px;
-  font-size: 12px;
-  font-family: 'Fira Code', 'Monaco', 'Menlo', monospace;
-  color: #a6adc8;
+  background: #252526;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+  color: #808080;
   white-space: pre-wrap;
   word-wrap: break-word;
   max-height: 200px;
@@ -223,20 +225,20 @@
 .bug-report-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  padding: 16px 20px;
-  background: #181825;
-  border-top: 1px solid #313244;
+  gap: 10px;
+  padding: 14px 16px;
+  background: #252526;
+  border-top: 1px solid #404040;
 }
 
 .bug-report-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
+  gap: 6px;
+  padding: 8px 14px;
   border: none;
-  border-radius: 6px;
-  font-size: 14px;
+  border-radius: 4px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 150ms, opacity 150ms;
@@ -248,19 +250,19 @@
 }
 
 .bug-report-btn--secondary {
-  background: #313244;
-  color: #cdd6f4;
+  background: #3d3d3d;
+  color: #d4d4d4;
 }
 
 .bug-report-btn--secondary:hover:not(:disabled) {
-  background: #45475a;
+  background: #4a4a4a;
 }
 
 .bug-report-btn--primary {
-  background: #89b4fa;
-  color: #1e1e2e;
+  background: #007acc;
+  color: #ffffff;
 }
 
 .bug-report-btn--primary:hover:not(:disabled) {
-  background: #b4befe;
+  background: #006bb3;
 }

@@ -57,8 +57,8 @@
 }
 
 .st-editor-help-btn--active {
-  background-color: rgba(99, 102, 241, 0.2);
-  color: rgba(99, 102, 241, 1);
+  background-color: rgba(0, 122, 204, 0.2);
+  color: #007acc;
 }
 
 .st-editor-body {

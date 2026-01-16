@@ -12,7 +12,6 @@ import { STEditor } from '../st-editor/STEditor';
 import { VariableWatch } from '../variable-watch/VariableWatch';
 import { ProgramSelector } from '../program-selector';
 import { ErrorPanel } from '../error-panel';
-import { PropertiesPanel } from '../properties-panel';
 import { TutorialLightbulb } from '../onboarding';
 import { HelpMenu } from '../help-menu';
 import { useProjectStore, useSimulationStore } from '../../store';
@@ -396,13 +395,11 @@ export function MainLayout() {
           </PanelGroup>
         </div>
 
-        {/* Properties Panel */}
-        <PropertiesPanel selectedNode={selectedNode} />
-
-        {/* Variable Watch Panel */}
+        {/* Variable Watch Panel (includes Properties tab) */}
         <VariableWatch
           collapsed={watchPanelCollapsed}
           onToggleCollapse={() => setWatchPanelCollapsed(!watchPanelCollapsed)}
+          selectedNode={selectedNode}
         />
       </div>
 

@@ -1,7 +1,7 @@
 /**
  * OnboardingToast Styles
  *
- * Dark theme toast with progress bar, matching the app's VS Code-like aesthetic.
+ * VS Code theme consistent toast with progress bar.
  * Includes animations for enter, exit, and fading states.
  */
 
@@ -14,15 +14,16 @@
   z-index: 10000;
   max-width: 360px;
   min-width: 280px;
-  background-color: rgba(30, 30, 46, 0.98);
-  border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  background-color: #252526;
+  border: 1px solid #404040;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
   padding: 16px;
   padding-bottom: 12px;
   overflow: hidden;
 
   /* Animation */
-  animation: toast-enter 300ms ease-out;
+  animation: toast-enter 200ms ease-out;
 }
 
 .onboarding-toast--centered {
@@ -30,7 +31,7 @@
 }
 
 .onboarding-toast--fading {
-  animation: toast-fade-out 1000ms ease-out forwards;
+  animation: toast-fade-out 800ms ease-out forwards;
 }
 
 /* ============================================================================
@@ -40,22 +41,20 @@
 @keyframes toast-enter {
   from {
     opacity: 0;
-    transform: translateY(-10px) scale(0.95);
+    transform: translateY(-8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
 @keyframes toast-fade-out {
   from {
     opacity: 1;
-    transform: scale(1);
   }
   to {
     opacity: 0;
-    transform: scale(0.95);
   }
 }
 
@@ -65,13 +64,13 @@
 
 .onboarding-toast__close {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 10px;
+  right: 10px;
   width: 24px;
   height: 24px;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.5);
+  color: #808080;
   cursor: pointer;
   border-radius: 4px;
   display: flex;
@@ -81,12 +80,12 @@
 }
 
 .onboarding-toast__close:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+  background-color: #3d3d3d;
+  color: #d4d4d4;
 }
 
 .onboarding-toast__close:focus {
-  outline: 2px solid rgba(99, 102, 241, 0.6);
+  outline: 2px solid #007acc;
   outline-offset: 2px;
 }
 
@@ -101,16 +100,16 @@
 
 .onboarding-toast__title {
   margin: 0 0 8px 0;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
+  color: #d4d4d4;
   line-height: 1.3;
 }
 
 .onboarding-toast__body {
   margin: 0;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+  color: #808080;
   line-height: 1.5;
 }
 
@@ -121,10 +120,11 @@
 .onboarding-toast__tip {
   margin: 12px 0 0 0;
   padding: 10px 12px;
-  background-color: rgba(250, 204, 21, 0.1);
-  border-radius: 6px;
-  font-size: 13px;
-  color: rgba(250, 204, 21, 0.9);
+  background-color: rgba(241, 196, 15, 0.1);
+  border: 1px solid rgba(241, 196, 15, 0.2);
+  border-radius: 4px;
+  font-size: 12px;
+  color: #f1c40f;
   line-height: 1.4;
   display: flex;
   align-items: flex-start;
@@ -133,7 +133,7 @@
 
 .onboarding-toast__tip .tip-icon {
   flex-shrink: 0;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 /* ============================================================================
@@ -161,12 +161,12 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.25);
+  background-color: #404040;
   transition: background-color 200ms, transform 200ms;
 }
 
 .onboarding-toast__dot--active {
-  background-color: rgba(99, 102, 241, 1);
+  background-color: #007acc;
   transform: scale(1.2);
 }
 
@@ -181,9 +181,9 @@
 
 .onboarding-toast__btn-primary,
 .onboarding-toast__btn-secondary {
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 7px 14px;
+  border-radius: 4px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 150ms, transform 100ms;
@@ -191,12 +191,12 @@
 }
 
 .onboarding-toast__btn-primary {
-  background-color: rgba(99, 102, 241, 1);
+  background-color: #007acc;
   color: #ffffff;
 }
 
 .onboarding-toast__btn-primary:hover {
-  background-color: rgba(99, 102, 241, 0.85);
+  background-color: #006bb3;
 }
 
 .onboarding-toast__btn-primary:active {
@@ -204,12 +204,12 @@
 }
 
 .onboarding-toast__btn-secondary {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+  background-color: #3d3d3d;
+  color: #d4d4d4;
 }
 
 .onboarding-toast__btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: #4a4a4a;
 }
 
 .onboarding-toast__btn-secondary:active {
@@ -218,7 +218,7 @@
 
 .onboarding-toast__btn-primary:focus,
 .onboarding-toast__btn-secondary:focus {
-  outline: 2px solid rgba(99, 102, 241, 0.6);
+  outline: 2px solid #007acc;
   outline-offset: 2px;
 }
 
@@ -231,12 +231,8 @@
   bottom: 0;
   left: 0;
   height: 3px;
-  background: linear-gradient(
-    90deg,
-    rgba(99, 102, 241, 0.8),
-    rgba(139, 92, 246, 0.8)
-  );
-  border-radius: 0 0 0 12px;
+  background: #007acc;
+  border-radius: 0 0 0 8px;
   transition: width 100ms linear;
 }
 
@@ -261,11 +257,11 @@
   }
 
   .onboarding-toast__title {
-    font-size: 15px;
+    font-size: 13px;
   }
 
   .onboarding-toast__body {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .onboarding-toast__actions {

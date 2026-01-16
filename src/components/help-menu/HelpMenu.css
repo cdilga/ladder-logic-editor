@@ -1,7 +1,7 @@
 /**
  * HelpMenu Styles
  *
- * Dropdown menu styling for the help menu in the status bar.
+ * VS Code theme consistent dropdown menu styling.
  */
 
 .help-menu {
@@ -23,20 +23,20 @@
   padding: 0;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 3px;
   transition: color 150ms, background-color 150ms;
 }
 
 .help-menu__trigger:hover {
-  color: rgba(255, 255, 255, 0.8);
-  background-color: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .help-menu__trigger--active {
-  color: rgba(255, 255, 255, 0.9);
-  background-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 1);
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 .help-menu__trigger:focus {
@@ -44,8 +44,8 @@
 }
 
 .help-menu__trigger:focus-visible {
-  outline: 2px solid rgba(99, 102, 241, 0.6);
-  outline-offset: 2px;
+  outline: 2px solid rgba(255, 255, 255, 0.4);
+  outline-offset: 1px;
 }
 
 /* ============================================================================
@@ -54,14 +54,14 @@
 
 .help-menu__dropdown {
   position: absolute;
-  bottom: calc(100% + 8px);
+  bottom: calc(100% + 6px);
   right: 0;
   min-width: 180px;
-  background-color: rgba(30, 30, 46, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  padding: 6px;
+  background-color: #252526;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  padding: 4px;
   z-index: 10001;
 
   /* Animation */
@@ -88,28 +88,28 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 13px;
+  color: #d4d4d4;
+  font-size: 12px;
   text-align: left;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: background-color 150ms;
 }
 
 .help-menu__item:hover {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: #3d3d3d;
 }
 
 .help-menu__item:focus {
   outline: none;
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: #3d3d3d;
 }
 
 .help-menu__item:focus-visible {
-  outline: 2px solid rgba(99, 102, 241, 0.6);
+  outline: 2px solid #007acc;
   outline-offset: -2px;
 }
 
@@ -118,14 +118,18 @@
   opacity: 0.7;
 }
 
+.help-menu__item:hover .help-menu__icon {
+  opacity: 1;
+}
+
 /* ============================================================================
    Divider
    ============================================================================ */
 
 .help-menu__divider {
   height: 1px;
-  background-color: rgba(255, 255, 255, 0.1);
-  margin: 6px 8px;
+  background-color: #404040;
+  margin: 4px 6px;
 }
 
 /* ============================================================================

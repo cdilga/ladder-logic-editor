@@ -1,22 +1,24 @@
 /**
  * Code Example Component Styles
+ *
+ * VS Code theme consistent styling
  */
 
 .code-example {
-  margin: 20px 0;
-  border-radius: 8px;
+  margin: 18px 0;
+  border-radius: 4px;
   overflow: hidden;
-  background: #181825;
-  border: 1px solid #313244;
+  background: #252526;
+  border: 1px solid #404040;
 }
 
 .code-example__title {
-  padding: 10px 16px;
-  font-size: 13px;
+  padding: 8px 14px;
+  font-size: 12px;
   font-weight: 500;
-  color: #a6adc8;
-  background: #1e1e2e;
-  border-bottom: 1px solid #313244;
+  color: #808080;
+  background: #2d2d2d;
+  border-bottom: 1px solid #404040;
 }
 
 .code-example__container {
@@ -25,25 +27,25 @@
 
 .code-example__code {
   margin: 0;
-  padding: 16px;
+  padding: 14px;
   overflow-x: auto;
-  font-family: 'Fira Code', 'Monaco', 'Menlo', monospace;
-  font-size: 14px;
+  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
   line-height: 1.5;
 }
 
 .code-example__code code {
   background: none !important;
   padding: 0 !important;
-  color: #cdd6f4;
+  color: #d4d4d4;
 }
 
 .code-example__actions {
   display: flex;
   gap: 8px;
-  padding: 12px 16px;
-  background: rgba(0, 0, 0, 0.2);
-  border-top: 1px solid #313244;
+  padding: 10px 14px;
+  background: #1e1e1e;
+  border-top: 1px solid #404040;
 }
 
 .code-example__btn {
@@ -52,8 +54,8 @@
   gap: 6px;
   padding: 6px 12px;
   border: none;
-  border-radius: 6px;
-  font-size: 13px;
+  border-radius: 4px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 150ms, transform 100ms;
@@ -64,21 +66,21 @@
 }
 
 .code-example__btn--copy {
-  background: #313244;
-  color: #cdd6f4;
+  background: #3d3d3d;
+  color: #d4d4d4;
 }
 
 .code-example__btn--copy:hover {
-  background: #45475a;
+  background: #4a4a4a;
 }
 
 .code-example__btn--try {
-  background: #89b4fa;
-  color: #1e1e2e;
+  background: #007acc;
+  color: #ffffff;
 }
 
 .code-example__btn--try:hover {
-  background: #b4befe;
+  background: #006bb3;
 }
 
 .code-example__btn svg {
