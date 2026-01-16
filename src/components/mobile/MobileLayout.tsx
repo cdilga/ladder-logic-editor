@@ -15,6 +15,7 @@ import { PropertiesPanel } from '../properties-panel';
 import { ProgramSelector } from '../program-selector';
 import { ErrorPanel } from '../error-panel';
 import { BottomTabBar } from './BottomTabBar';
+import { MobileNavMenu } from './MobileNavMenu';
 import { useMobileStore } from '../../store/mobile-store';
 import { useProjectStore, useSimulationStore } from '../../store';
 import { useKeyboardDetect } from '../../hooks/useKeyboardDetect';
@@ -422,6 +423,9 @@ export function MobileLayout() {
 
       {/* Bottom Tab Bar */}
       <BottomTabBar />
+
+      {/* Mobile Navigation Menu */}
+      <MobileNavMenu />
     </div>
   );
 }

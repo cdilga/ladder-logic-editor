@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../../store/onboarding-store';
 import { BugReportModal } from '../bug-report';
 import './HelpMenu.css';
@@ -21,6 +22,7 @@ export function HelpMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [showBugReport, setShowBugReport] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const resetOnboarding = useOnboardingStore((state) => state.resetOnboarding);
 
   // Close menu on outside click
@@ -58,9 +60,8 @@ export function HelpMenu() {
 
   const handleOpenDocs = () => {
     setIsOpen(false);
-    // Navigate to docs page (relative to base URL)
-    const baseUrl = import.meta.env.BASE_URL || '/';
-    window.location.href = `${baseUrl}docs`;
+    // Navigate to docs page using React Router
+    navigate('/docs');
   };
 
   const handleReportBug = () => {
