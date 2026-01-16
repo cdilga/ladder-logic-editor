@@ -11,6 +11,22 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Unified color palette (shared with mobile) */
+  --bg-base: #1a1d29;
+  --bg-surface: #222633;
+  --bg-elevated: #2a2f3d;
+  --border: #2a3441;
+  --border-accent: #3a4555;
+
+  --accent-primary: #00d4ff;
+  --accent-secondary: #ffb627;
+  --accent-success: #00ff88;
+  --accent-error: #ff4757;
+
+  --text-primary: #e4e7eb;
+  --text-secondary: #9ba3af;
+  --text-muted: #6b7280;
 }
 
 a {

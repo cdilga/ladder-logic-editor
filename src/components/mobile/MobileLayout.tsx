@@ -11,19 +11,20 @@ import { useEffect, useCallback, useState, useRef } from 'react';
 import { LadderCanvas } from '../ladder-editor/LadderCanvas';
 import { STEditor } from '../st-editor/STEditor';
 import { VariableWatch } from '../variable-watch/VariableWatch';
-import { ProgramSelector } from '../program-selector';
 import { ErrorPanel } from '../error-panel';
 import { BottomTabBar } from './BottomTabBar';
 import { MobilePropertiesSheet } from './MobilePropertiesSheet';
 import { HelpView } from './HelpView';
 import { useMobileStore } from '../../store/mobile-store';
-import { useProjectStore, useSimulationStore } from '../../store';
+import {
+  useEditorStore,
+  useSimulationStore,
+  scheduleEditorAutoSave,
+} from '../../store';
 import { useKeyboardDetect } from '../../hooks/useKeyboardDetect';
 import {
-  saveToLocalStorage,
   downloadSTFile,
   openSTFile,
-  scheduleAutoSave,
 } from '../../services/file-service';
 import {
   runScanCycle,
@@ -32,8 +33,11 @@ import {
   type RuntimeState,
   type SimulationStoreInterface,
 } from '../../interpreter';
+import { transformSTToLadder, type TransformResult } from '../../transformer';
 import type { STAST } from '../../transformer/ast';
-import type { LadderNode } from '../../models/ladder-elements';
+import type { LadderNode, LadderEdge } from '../../models/ladder-elements';
+import trafficControllerST from '../../examples/traffic-controller.st?raw';
+import dualPumpControllerST from '../../examples/dual-pump-controller.st?raw';
 
 import './MobileLayout.css';
 
@@ -49,6 +53,24 @@ export function MobileLayout() {
   const [errorCount, setErrorCount] = useState(0);
   const [selectedNode, setSelectedNode] = useState<LadderNode | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [fileDropdownOpen, setFileDropdownOpen] = useState(false);
+  const [transformedNodes, setTransformedNodes] = useState<LadderNode[]>([]);
+  const [transformedEdges, setTransformedEdges] = useState<LadderEdge[]>([]);
+  const [lastTransformResult, setLastTransformResult] = useState<TransformResult | null>(null);
+
+  // Editor store state
+  const activeFile = useEditorStore((state) => state.getActiveFile());
+  const activeFileId = useEditorStore((state) => state.activeFileId);
+  const files = useEditorStore((state) => state.files);
+  const newFile = useEditorStore((state) => state.newFile);
+  const openFile = useEditorStore((state) => state.openFile);
+  const setActiveFile = useEditorStore((state) => state.setActiveFile);
+  const markFileClean = useEditorStore((state) => state.markFileClean);
+
+  // Check if any file is dirty
+  const hasDirtyFiles = useEditorStore((state) => {
+    return Array.from(state.files.values()).some((f) => f.isDirty);
+  });
 
   // Simulation state and actions
   const simulationStatus = useSimulationStore((state) => state.status);
@@ -70,6 +92,19 @@ export function MobileLayout() {
   // Interpreter state refs
   const currentASTRef = useRef<STAST | null>(null);
   const runtimeStateRef = useRef<RuntimeState | null>(null);
+  const fileDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close file dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (fileDropdownRef.current && !fileDropdownRef.current.contains(event.target as Node)) {
+        setFileDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Simulation loop (same as desktop)
   useEffect(() => {
@@ -119,12 +154,17 @@ export function MobileLayout() {
 
   // Simulation control handlers
   const handleRun = useCallback(() => {
-    const ast = currentASTRef.current;
-    if (ast) {
-      const store = useSimulationStore.getState() as SimulationStoreInterface;
-      initializeVariables(ast, store);
-      runtimeStateRef.current = createRuntimeState(ast);
+    const currentStatus = useSimulationStore.getState().status;
+
+    if (currentStatus === 'stopped') {
+      const ast = currentASTRef.current;
+      if (ast) {
+        const store = useSimulationStore.getState() as SimulationStoreInterface;
+        initializeVariables(ast, store);
+        runtimeStateRef.current = createRuntimeState(ast);
+      }
     }
+
     startSimulation();
   }, [startSimulation]);
 
@@ -137,113 +177,95 @@ export function MobileLayout() {
     resetSimulation();
   }, [stopSimulation, resetSimulation]);
 
-  const currentProgram = useProjectStore((state) => {
-    const project = state.project;
-    const currentId = state.currentProgramId;
-    if (!project || !currentId) return null;
-    return project.programs.find((p) => p.id === currentId) || null;
-  });
-
-  const transformCurrentProgram = useProjectStore((state) => state.transformCurrentProgram);
-  const transformedNodes = useProjectStore((state) => state.transformedNodes);
-  const transformedEdges = useProjectStore((state) => state.transformedEdges);
-  const lastTransformResult = useProjectStore((state) => state.lastTransformResult);
-
-  // Project store state
-  const project = useProjectStore((state) => state.project);
-  const isDirty = useProjectStore((state) => state.isDirty);
-  const newProject = useProjectStore((state) => state.newProject);
-  const loadFromSTCode = useProjectStore((state) => state.loadFromSTCode);
-  const saveProject = useProjectStore((state) => state.saveProject);
-  const currentProgramId = useProjectStore((state) => state.currentProgramId);
-
-  // Auto-save when project changes (includes currentProgramId)
+  // Auto-save when files change
   useEffect(() => {
-    if (project && isDirty) {
-      scheduleAutoSave(project, currentProgramId ?? undefined);
+    if (hasDirtyFiles) {
+      scheduleEditorAutoSave();
     }
-  }, [project, isDirty, currentProgramId]);
+  }, [hasDirtyFiles, activeFile?.content]);
 
   // File operation handlers
   const handleNew = useCallback(() => {
-    if (isDirty) {
-      const confirmed = window.confirm(
-        'You have unsaved changes. Are you sure you want to create a new project?'
-      );
-      if (!confirmed) return;
-    }
-    newProject('New Project');
+    newFile();
     setMenuOpen(false);
-  }, [isDirty, newProject]);
+  }, [newFile]);
 
-  const handleOpen = useCallback(async () => {
-    if (isDirty) {
-      const confirmed = window.confirm(
-        'You have unsaved changes. Are you sure you want to open a different file?'
-      );
-      if (!confirmed) return;
-    }
-
+  const handleOpenFile = useCallback(async () => {
     try {
-      const { programName, stCode, fileName } = await openSTFile();
-      loadFromSTCode(programName, stCode, fileName);
-      setMenuOpen(false);
+      const { programName, stCode } = await openSTFile();
+      openFile(programName, stCode);
     } catch (error) {
       if ((error as Error).message !== 'File selection cancelled') {
         console.error('Error opening ST file:', error);
         alert(`Failed to open ST file: ${(error as Error).message}`);
       }
     }
-  }, [isDirty, loadFromSTCode]);
+    setMenuOpen(false);
+  }, [openFile]);
 
   const handleSave = useCallback(() => {
-    const projectToSave = saveProject();
-    if (projectToSave) {
-      saveToLocalStorage(projectToSave);
-      const program = projectToSave.programs[0];
-      if (program) {
-        downloadSTFile(program.name, program.structuredText);
-      }
+    if (!activeFile) return;
+
+    const programName = activeFile.name.replace(/\.st$/i, '');
+    downloadSTFile(programName, activeFile.content);
+
+    if (activeFileId) {
+      markFileClean(activeFileId);
     }
     setMenuOpen(false);
-  }, [saveProject]);
+  }, [activeFile, activeFileId, markFileClean]);
+
+  const handleLoadExample = useCallback((example: 'traffic' | 'dual-pump') => {
+    if (example === 'traffic') {
+      openFile('TrafficController.st', trafficControllerST);
+    } else if (example === 'dual-pump') {
+      openFile('DualPumpController.st', dualPumpControllerST);
+    }
+    setFileDropdownOpen(false);
+  }, [openFile]);
 
   // Transform when ST code changes
   useEffect(() => {
-    if (!currentProgram) return;
+    if (!activeFile) return;
 
     setSyncStatus('syncing');
 
     const timer = setTimeout(() => {
-      const result = transformCurrentProgram();
-      if (result) {
-        if (result.success) {
-          setSyncStatus('synced');
-          setErrorCount(0);
-          if (result.intermediates?.ast) {
-            const newAST = result.intermediates.ast;
-            currentASTRef.current = newAST;
+      const result = transformSTToLadder(activeFile.content, {
+        warnOnUnsupported: true,
+        includeIntermediates: true,
+      });
 
-            const store = useSimulationStore.getState() as SimulationStoreInterface;
-            initializeVariables(newAST, store);
-            runtimeStateRef.current = createRuntimeState(newAST);
-          }
-        } else {
-          setSyncStatus('error');
-          setErrorCount(result.errors.length);
+      setLastTransformResult(result);
+      setTransformedNodes(result.nodes);
+      setTransformedEdges(result.edges);
+
+      if (result.success) {
+        setSyncStatus('synced');
+        setErrorCount(0);
+        if (result.intermediates?.ast) {
+          const newAST = result.intermediates.ast;
+          currentASTRef.current = newAST;
+
+          const store = useSimulationStore.getState() as SimulationStoreInterface;
+          initializeVariables(newAST, store);
+          runtimeStateRef.current = createRuntimeState(newAST);
         }
+      } else {
+        setSyncStatus('error');
+        setErrorCount(result.errors.length);
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [currentProgram?.structuredText, transformCurrentProgram]);
+  }, [activeFile?.content, activeFileId]);
 
   // Handle node selection
-  const handleNodesChange = useCallback((nodes: typeof transformedNodes) => {
+  const handleNodesChange = useCallback((nodes: LadderNode[]) => {
     console.log('Nodes changed:', nodes.length);
   }, []);
 
-  const handleEdgesChange = useCallback((edges: typeof transformedEdges) => {
+  const handleEdgesChange = useCallback((edges: LadderEdge[]) => {
     console.log('Edges changed:', edges.length);
   }, []);
 
@@ -269,6 +291,9 @@ export function MobileLayout() {
     }
   };
 
+  const filesArray = Array.from(files.values());
+  const activeFileName = activeFile?.name.replace(/\.st$/i, '') || 'Untitled';
+
   return (
     <div
       className="mobile-layout"
@@ -287,8 +312,77 @@ export function MobileLayout() {
           <span className="menu-icon"></span>
         </button>
 
-        <div className="mobile-toolbar-center">
-          <ProgramSelector />
+        {/* File Dropdown in Center */}
+        <div className="mobile-toolbar-center" ref={fileDropdownRef}>
+          <button
+            className="mobile-file-selector"
+            onClick={() => setFileDropdownOpen(!fileDropdownOpen)}
+          >
+            <span className="file-selector-name">
+              {activeFileName}
+              {activeFile?.isDirty && <span className="dirty-dot">*</span>}
+            </span>
+            <span className="file-selector-caret">{fileDropdownOpen ? '▲' : '▼'}</span>
+          </button>
+
+          {fileDropdownOpen && (
+            <div className="mobile-file-dropdown">
+              {/* Open Files Section */}
+              {filesArray.length > 0 && (
+                <div className="file-dropdown-section">
+                  <div className="file-dropdown-header">Open Files</div>
+                  {filesArray.map((file) => (
+                    <button
+                      key={file.id}
+                      className={`file-dropdown-item ${file.id === activeFileId ? 'active' : ''}`}
+                      onClick={() => {
+                        setActiveFile(file.id);
+                        setFileDropdownOpen(false);
+                      }}
+                    >
+                      <span className="file-item-name">
+                        {file.name.replace(/\.st$/i, '')}
+                        {file.isDirty && <span className="dirty-indicator">*</span>}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Examples Section */}
+              <div className="file-dropdown-section">
+                <div className="file-dropdown-header">Examples</div>
+                <button
+                  className="file-dropdown-item"
+                  onClick={() => handleLoadExample('dual-pump')}
+                >
+                  <span className="file-item-icon">🔧</span>
+                  <span className="file-item-name">Dual Pump Controller</span>
+                </button>
+                <button
+                  className="file-dropdown-item"
+                  onClick={() => handleLoadExample('traffic')}
+                >
+                  <span className="file-item-icon">🚦</span>
+                  <span className="file-item-name">Traffic Controller</span>
+                </button>
+              </div>
+
+              {/* Actions Section */}
+              <div className="file-dropdown-section">
+                <button
+                  className="file-dropdown-item"
+                  onClick={() => {
+                    handleOpenFile();
+                    setFileDropdownOpen(false);
+                  }}
+                >
+                  <span className="file-item-icon">📁</span>
+                  <span className="file-item-name">Open Local File...</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mobile-toolbar-status">
@@ -303,15 +397,15 @@ export function MobileLayout() {
           <div className="mobile-menu" onClick={(e) => e.stopPropagation()}>
             <button className="mobile-menu-item" onClick={handleNew}>
               <span className="menu-item-icon">📄</span>
-              <span>New Project</span>
+              <span>New File</span>
             </button>
-            <button className="mobile-menu-item" onClick={handleOpen}>
+            <button className="mobile-menu-item" onClick={handleOpenFile}>
               <span className="menu-item-icon">📂</span>
               <span>Open File</span>
             </button>
             <button className="mobile-menu-item" onClick={handleSave}>
               <span className="menu-item-icon">💾</span>
-              <span>Save{isDirty ? ' *' : ''}</span>
+              <span>Save{activeFile?.isDirty ? ' *' : ''}</span>
             </button>
           </div>
         </div>

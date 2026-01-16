@@ -292,10 +292,132 @@
 .mobile-toolbar-center {
   flex: 1;
   min-width: 0;
+  position: relative;
   font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: -0.01em;
+}
+
+/* ============================================================================
+   File Selector Dropdown
+   ========================================================================= */
+
+.mobile-file-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  background: var(--mobile-bg-elevated);
+  border: 1px solid var(--mobile-border);
+  border-radius: 6px;
+  color: var(--mobile-text-primary);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--mobile-transition-fast);
+}
+
+.mobile-file-selector:active {
+  background: var(--mobile-bg-surface);
+  border-color: var(--mobile-accent-primary);
+}
+
+.file-selector-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-selector-caret {
+  font-size: 8px;
+  color: var(--mobile-text-tertiary);
+}
+
+.dirty-dot {
+  color: var(--mobile-accent-secondary);
+  margin-left: 2px;
+}
+
+.mobile-file-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--mobile-bg-surface);
+  border: 1px solid var(--mobile-border-accent);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(0, 212, 255, 0.1);
+  animation: slideDown var(--mobile-transition-base);
+  z-index: 300;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.file-dropdown-section {
+  border-bottom: 1px solid var(--mobile-border);
+}
+
+.file-dropdown-section:last-child {
+  border-bottom: none;
+}
+
+.file-dropdown-header {
+  padding: 8px 12px 4px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--mobile-text-tertiary);
+}
+
+.file-dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: var(--mobile-text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--mobile-transition-fast);
+  min-height: 40px;
+}
+
+.file-dropdown-item:active {
+  background: var(--mobile-bg-elevated);
+}
+
+.file-dropdown-item.active {
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--mobile-accent-primary);
+}
+
+.file-item-icon {
+  font-size: 14px;
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+
+.file-item-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dirty-indicator {
+  color: var(--mobile-accent-secondary);
+  margin-left: 4px;
 }
 
 .mobile-toolbar-status {
