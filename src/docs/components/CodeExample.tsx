@@ -7,11 +7,8 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { v4 as uuidv4 } from 'uuid';
-import { useProjectStore } from '../../store';
+import { useEditorStore, scheduleEditorAutoSave } from '../../store/editor-store';
 import { useMobileStore } from '../../store/mobile-store';
-import { saveToLocalStorage } from '../../services/file-service';
-import type { ProgramUnit } from '../../models/project';
 import './CodeExample.css';
 
 interface CodeExampleProps {
@@ -34,39 +31,27 @@ export function CodeExample({ code, title }: CodeExampleProps) {
   };
 
   const handleTryInEditor = () => {
-    const state = useProjectStore.getState();
+    const editorState = useEditorStore.getState();
     const mobileState = useMobileStore.getState();
 
-    // Generate a unique name for the new program
+    // Generate a unique name for the new file
     const baseName = title || 'Example';
-    const existingNames = state.project?.programs.map((p) => p.name) ?? [];
-    let programName = baseName;
+    const existingNames = Array.from(editorState.files.values()).map((f) =>
+      f.name.replace(/\.st$/i, '')
+    );
+    let fileName = baseName;
     let counter = 1;
-    while (existingNames.includes(programName)) {
-      programName = `${baseName} ${counter}`;
+    while (existingNames.includes(fileName)) {
+      fileName = `${baseName} ${counter}`;
       counter++;
     }
 
-    // Create a new program with the example code
-    const newProgram: ProgramUnit = {
-      id: uuidv4(),
-      name: programName,
-      type: 'PROGRAM',
-      structuredText: code,
-      syncValid: true,
-      lastSyncSource: 'st',
-      variables: [],
-    };
-
-    // Add the new program and switch to it
-    state.addProgram(newProgram);
-    state.setCurrentProgram(newProgram.id);
+    // Open a new file with the example code
+    // This creates the file, sets it as active, and returns its ID
+    editorState.openFile(fileName, code);
 
     // Save immediately so it persists before navigation
-    const updatedProject = useProjectStore.getState().project;
-    if (updatedProject) {
-      saveToLocalStorage(updatedProject, newProgram.id);
-    }
+    scheduleEditorAutoSave();
 
     // On mobile, switch to editor view so user can see the code
     if (mobileState.isMobile) {

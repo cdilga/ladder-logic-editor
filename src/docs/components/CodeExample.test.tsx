@@ -2,7 +2,7 @@
  * CodeExample Component Tests
  *
  * Tests for the "Try in Editor" functionality that:
- * 1. Creates a new file/program with the correct content
+ * 1. Creates a new file with the correct content using EditorStore
  * 2. Switches to editor view on mobile
  */
 
@@ -12,13 +12,16 @@ import { MemoryRouter } from 'react-router-dom';
 import { CodeExample } from './CodeExample';
 
 // Track mock calls
-const mockAddProgram = vi.fn();
-const mockSetCurrentProgram = vi.fn();
+const mockOpenFile = vi.fn().mockReturnValue('new-file-id');
 const mockNavigate = vi.fn();
 const mockSetActiveView = vi.fn();
+const mockScheduleEditorAutoSave = vi.fn();
 
 // Track isMobile state for tests
 let mockIsMobile = false;
+
+// Mock existing files in the editor store
+let mockFiles = new Map();
 
 // Mock react-router-dom
 vi.mock('react-router-dom', async () => {
@@ -29,27 +32,15 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Mock uuid
-vi.mock('uuid', () => ({
-  v4: () => 'test-uuid-123',
-}));
-
-// Mock project store
-vi.mock('../../store', () => ({
-  useProjectStore: {
+// Mock editor store
+vi.mock('../../store/editor-store', () => ({
+  useEditorStore: {
     getState: () => ({
-      project: {
-        programs: [{ id: 'existing-1', name: 'Existing Program' }],
-      },
-      addProgram: mockAddProgram,
-      setCurrentProgram: mockSetCurrentProgram,
+      files: mockFiles,
+      openFile: mockOpenFile,
     }),
   },
-}));
-
-// Mock file service
-vi.mock('../../services/file-service', () => ({
-  saveToLocalStorage: vi.fn(),
+  scheduleEditorAutoSave: () => mockScheduleEditorAutoSave(),
 }));
 
 // Mock mobile store
@@ -66,6 +57,7 @@ describe('CodeExample', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsMobile = false;
+    mockFiles = new Map();
   });
 
   const renderCodeExample = (props = {}) => {
@@ -82,52 +74,45 @@ describe('CodeExample', () => {
       expect(screen.getByText('Try in Editor')).toBeInTheDocument();
     });
 
-    it('creates a new program with the example code when clicked', () => {
+    it('creates a new file with the example code when clicked', () => {
       const testCode = 'Motor := Start AND NOT Stop;';
       renderCodeExample({ code: testCode });
 
       fireEvent.click(screen.getByText('Try in Editor'));
 
-      // Verify addProgram was called with correct structure
-      expect(mockAddProgram).toHaveBeenCalledTimes(1);
-      const addedProgram = mockAddProgram.mock.calls[0][0];
-
-      expect(addedProgram).toMatchObject({
-        id: 'test-uuid-123',
-        name: 'Example',
-        type: 'PROGRAM',
-        structuredText: testCode,
-        syncValid: true,
-        lastSyncSource: 'st',
-        variables: [],
-      });
+      // Verify openFile was called with correct arguments
+      expect(mockOpenFile).toHaveBeenCalledTimes(1);
+      expect(mockOpenFile).toHaveBeenCalledWith('Example', testCode);
     });
 
-    it('uses provided title as program name', () => {
+    it('uses provided title as file name', () => {
       renderCodeExample({ code: 'x := 1;', title: 'Counter Demo' });
 
       fireEvent.click(screen.getByText('Try in Editor'));
 
-      const addedProgram = mockAddProgram.mock.calls[0][0];
-      expect(addedProgram.name).toBe('Counter Demo');
+      expect(mockOpenFile).toHaveBeenCalledWith('Counter Demo', 'x := 1;');
     });
 
-    it('generates unique name if title conflicts with existing program', () => {
-      // Mock store has 'Existing Program' already
+    it('generates unique name if title conflicts with existing file', () => {
+      // Add an existing file with the same name
+      mockFiles = new Map([
+        ['file-1', { id: 'file-1', name: 'Existing Program.st', content: '' }],
+      ]);
+
       renderCodeExample({ code: 'x := 1;', title: 'Existing Program' });
 
       fireEvent.click(screen.getByText('Try in Editor'));
 
-      const addedProgram = mockAddProgram.mock.calls[0][0];
-      expect(addedProgram.name).toBe('Existing Program 1');
+      // Should append a number to make it unique
+      expect(mockOpenFile).toHaveBeenCalledWith('Existing Program 1', 'x := 1;');
     });
 
-    it('sets the new program as current', () => {
+    it('schedules auto-save after opening file', () => {
       renderCodeExample();
 
       fireEvent.click(screen.getByText('Try in Editor'));
 
-      expect(mockSetCurrentProgram).toHaveBeenCalledWith('test-uuid-123');
+      expect(mockScheduleEditorAutoSave).toHaveBeenCalled();
     });
 
     it('navigates to the editor root', () => {
@@ -173,6 +158,7 @@ describe('CodeExample', () => {
 describe('CodeExample copy functionality', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFiles = new Map();
   });
 
   it('displays the code content', () => {

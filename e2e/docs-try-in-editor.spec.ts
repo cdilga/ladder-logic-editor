@@ -18,6 +18,7 @@ test.describe('Try in Editor - Desktop', () => {
     await page.addInitScript(() => {
       localStorage.removeItem('lle-onboarding-state');
       localStorage.removeItem('ladder-logic-editor-project');
+      localStorage.removeItem('ladder-logic-editor-files');
     });
 
     // Navigate to docs (using hash router format)
@@ -78,6 +79,7 @@ test.describe('Try in Editor - Mobile', () => {
     await page.addInitScript(() => {
       localStorage.removeItem('lle-onboarding-state');
       localStorage.removeItem('ladder-logic-editor-project');
+      localStorage.removeItem('ladder-logic-editor-files');
     });
 
     // Navigate to docs
@@ -141,6 +143,7 @@ test.describe('Try in Editor - Mobile', () => {
     await page.addInitScript(() => {
       localStorage.removeItem('lle-onboarding-state');
       localStorage.removeItem('ladder-logic-editor-project');
+      localStorage.removeItem('ladder-logic-editor-files');
     });
 
     // Navigate to docs
@@ -167,5 +170,67 @@ test.describe('Try in Editor - Mobile', () => {
     // The ladder tab should NOT be active
     const ladderTab = page.locator('.tab-button').filter({ hasText: 'Ladder' });
     await expect(ladderTab).not.toHaveClass(/active/);
+  });
+
+  test('creates a new file that appears in mobile file selector', async ({ page }) => {
+    // Clear localStorage to start fresh
+    await page.addInitScript(() => {
+      localStorage.removeItem('lle-onboarding-state');
+      localStorage.removeItem('ladder-logic-editor-project');
+      localStorage.removeItem('ladder-logic-editor-files');
+    });
+
+    // Navigate to docs
+    await page.goto('#/docs', { waitUntil: 'networkidle' });
+
+    // Wait for docs to load
+    await page.waitForSelector('.docs-layout', { timeout: 10000 });
+
+    // Dismiss onboarding if it appears
+    const toast = page.locator('.onboarding-toast');
+    if (await toast.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await page.keyboard.press('Escape');
+      await expect(toast).not.toBeVisible({ timeout: 2000 });
+    }
+
+    // Find a code example
+    const codeExample = page.locator('.code-example').first();
+    await expect(codeExample).toBeVisible({ timeout: 5000 });
+
+    // Click "Try in Editor" button
+    await codeExample.locator('.code-example__btn--try').click();
+
+    // Should navigate to main editor
+    await expect(page).toHaveURL(/\/ladder-logic-editor\/#\/$/, { timeout: 5000 });
+
+    // Wait for mobile layout
+    await page.waitForSelector('.mobile-layout', { timeout: 5000 });
+
+    // The file selector in the toolbar should show a file name
+    const fileSelector = page.locator('.mobile-file-selector');
+    await expect(fileSelector).toBeVisible({ timeout: 5000 });
+
+    // The file selector should show a file (not empty)
+    const fileName = page.locator('.file-selector-name');
+    await expect(fileName).toBeVisible();
+    const fileNameText = await fileName.textContent();
+    expect(fileNameText).toBeTruthy();
+    // Should not still be showing just "Untitled" - should have a real file name
+    // (the example code creates a file named "Example" or based on the doc page title)
+
+    // Verify file is in the dropdown by clicking the file selector
+    await fileSelector.click();
+
+    // Wait a moment for dropdown animation
+    await page.waitForTimeout(200);
+
+    // The dropdown should be visible
+    const dropdown = page.locator('.mobile-file-dropdown');
+    await expect(dropdown).toBeVisible({ timeout: 3000 });
+
+    // Should have at least one file listed (the newly created one)
+    const fileItems = dropdown.locator('.file-dropdown-item');
+    const fileCount = await fileItems.count();
+    expect(fileCount).toBeGreaterThanOrEqual(1);
   });
 });
