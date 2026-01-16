@@ -1,14 +1,21 @@
 # Control Flow Compliance Tests
 
-**IEC 61131-3 Section:** 3.4
+**IEC 61131-3 Edition 3 (2013) Section:** Table 72 (ST Language Statements)
 **Status:** 🟢 Complete (116 tests, 100%)
 **Test Files:**
 - `src/interpreter/compliance/control-flow.test.ts` (96 tests)
 - `src/interpreter/property/control-flow-properties.test.ts` (20 tests)
 
+**Authoritative References:**
+- [Fernhill Software IEC 61131-3 ST Reference](https://www.fernhillsoftware.com/help/iec-61131/structured-text/index.html)
+- [Codesys ST Documentation](https://content.helpme-codesys.com/en/CODESYS%20Development%20System/)
+- [Beckhoff TwinCAT IEC 61131-3](https://infosys.beckhoff.com/)
+
 ---
 
 ## IF Statement
+
+**IEC 61131-3 Reference:** Table 72.4 (Edition 3) / Table 56.4 (Edition 2)
 
 ### Basic IF/THEN
 ```st
@@ -75,6 +82,12 @@ END_IF;
 
 ## CASE Statement
 
+**IEC 61131-3 Reference:** Table 72.5 (Edition 3) / Table 56.5 (Edition 2)
+
+**Selector:** Any expression returning an integer or enumeration value.
+**Labels:** Constant integer values, comma-separated lists, or ranges (e.g., `1..10`).
+**No Fall-through:** Unlike C switch, only the first matching case executes.
+
 ### Basic CASE
 ```st
 CASE selector OF
@@ -131,6 +144,18 @@ END_CASE;
 
 ## FOR Loop
 
+**IEC 61131-3 Reference:** Table 72.6 (Edition 3) / Table 56.6 (Edition 2)
+
+**Syntax:** `FOR variable := start TO end [BY step] DO statements; END_FOR;`
+
+**Semantics:**
+- **Loop Variable:** Must be ANY_INTEGRAL type (SINT, INT, DINT, LINT, USINT, UINT, UDINT, ULINT)
+- **Bounds:** Inclusive - the end value IS included in iteration
+- **Default Step:** 1 if BY clause is omitted
+- **Termination (positive step):** Loop ends when variable > end_value
+- **Termination (negative step):** Loop ends when variable < end_value
+- **Post-loop Variable:** Implementation-defined; variable may be end_value+step after normal completion
+
 ### Basic FOR
 ```st
 FOR i := 1 TO 10 DO
@@ -180,6 +205,15 @@ END_FOR;
 
 ## WHILE Loop
 
+**IEC 61131-3 Reference:** Table 72.7 (Edition 3) / Table 56.7 (Edition 2)
+
+**Syntax:** `WHILE condition DO statements; END_WHILE;`
+
+**Semantics:**
+- Condition is evaluated BEFORE each iteration (pre-test loop)
+- If condition is FALSE initially, body never executes
+- Loop continues while condition is TRUE
+
 ### Basic WHILE
 ```st
 WHILE condition DO
@@ -211,6 +245,15 @@ END_WHILE;
 
 ## REPEAT Loop
 
+**IEC 61131-3 Reference:** Table 72.8 (Edition 3) / Table 56.8 (Edition 2)
+
+**Syntax:** `REPEAT statements; UNTIL condition END_REPEAT;`
+
+**Semantics:**
+- Condition is evaluated AFTER each iteration (post-test loop)
+- Body always executes at least once
+- Loop exits when condition becomes TRUE (opposite of WHILE)
+
 ### Basic REPEAT
 ```st
 REPEAT
@@ -232,6 +275,16 @@ END_REPEAT;
 ---
 
 ## EXIT Statement
+
+**IEC 61131-3 Reference:** Table 72.10 (Edition 3) / Table 56.9 (Edition 2)
+
+**Syntax:** `EXIT;`
+
+**Semantics:**
+- Exits the innermost enclosing loop (FOR, WHILE, or REPEAT)
+- Can be used in any of the three loop types
+- Only exits one level of nesting (innermost loop only)
+- Execution continues with the statement following the loop
 
 ### EXIT in FOR
 ```st
@@ -274,8 +327,20 @@ END_FOR;
 
 ## CONTINUE Statement
 
-**Note:** CONTINUE is not part of IEC 61131-3 but may be implemented.
+**IEC 61131-3 Status:** VENDOR EXTENSION (not part of official IEC 61131-3 standard)
 
+**Note:** The CONTINUE statement is NOT part of the official IEC 61131-3 standard (Editions 1-3).
+It is implemented as a vendor-specific extension by Codesys, Beckhoff TwinCAT, Schneider Electric,
+and other vendors. Use with caution for portability.
+
+**Syntax (if implemented):** `CONTINUE;`
+
+**Semantics (vendor extension):**
+- Skips remaining statements in current loop iteration
+- Proceeds directly to next iteration of the loop
+- Works within FOR, WHILE, and REPEAT loops
+
+### Test Cases (Optional - Vendor Extension)
 - [ ] Skips to next iteration
 - [ ] Works in FOR, WHILE, REPEAT
 
@@ -283,12 +348,23 @@ END_FOR;
 
 ## RETURN Statement
 
+**IEC 61131-3 Reference:** Table 72.3 (Edition 3) / Table 56.3 (Edition 2)
+
+**Syntax:** `RETURN;`
+
+**Semantics:**
+- Exits the current Program Organization Unit (POU) early
+- Can be used in FUNCTION, FUNCTION_BLOCK, or PROGRAM
+- In a FUNCTION, the function's return value should be assigned before RETURN
+- Execution returns to the caller immediately
+
 ```st
 FUNCTION MyFunc : INT
   IF error THEN
-    RETURN;  (* or RETURN value; *)
+    MyFunc := -1;  (* Set return value *)
+    RETURN;        (* Exit early *)
   END_IF;
-  (* more code *)
+  MyFunc := result;
 END_FUNCTION
 ```
 
@@ -296,6 +372,8 @@ END_FUNCTION
 - [ ] RETURN exits function early
 - [ ] RETURN with value sets function result
 - [ ] RETURN in nested control flow
+- [ ] RETURN in FUNCTION_BLOCK
+- [ ] RETURN in PROGRAM
 
 ---
 
@@ -351,7 +429,7 @@ fc.assert(fc.property(
 
 **Note:** EXIT statement is fully implemented and tested (16 tests).
 CASE descending ranges and first-match-wins behavior are tested (5 tests).
-CONTINUE statement is not part of IEC 61131-3 and is not implemented.
+CONTINUE statement is a vendor extension (not in IEC 61131-3 standard) and is not implemented.
 RETURN is not applicable as user-defined functions are not supported yet.
 
 ---
@@ -372,6 +450,36 @@ RETURN is not applicable as user-defined functions are not supported yet.
 
 ## References
 
-- IEC 61131-3:2013 Section 3.4 - Statements
-- IEC 61131-3:2013 Section 3.4.1 - Selection statements (IF, CASE)
-- IEC 61131-3:2013 Section 3.4.2 - Iteration statements (FOR, WHILE, REPEAT)
+### IEC 61131-3 Standard References
+
+**Edition 3 (2013) - Table 72: ST Language Statements**
+| Statement | Table Reference |
+|-----------|-----------------|
+| RETURN | Table 72.3 |
+| IF | Table 72.4 |
+| CASE | Table 72.5 |
+| FOR | Table 72.6 |
+| WHILE | Table 72.7 |
+| REPEAT | Table 72.8 |
+| EXIT | Table 72.10 |
+
+**Edition 2 (2003) - Table 56: ST Language Statements**
+| Statement | Table Reference |
+|-----------|-----------------|
+| RETURN | Table 56.3 |
+| IF | Table 56.4 |
+| CASE | Table 56.5 |
+| FOR | Table 56.6 |
+| WHILE | Table 56.7 |
+| REPEAT | Table 56.8 |
+| EXIT | Table 56.9 |
+
+### External Documentation
+- [Fernhill Software - IEC 61131-3 Structured Text](https://www.fernhillsoftware.com/help/iec-61131/structured-text/index.html)
+- [Codesys ST Documentation](https://content.helpme-codesys.com/en/CODESYS%20Development%20System/)
+- [Beckhoff TwinCAT IEC 61131-3](https://infosys.beckhoff.com/)
+- [Schneider Electric ST Reference](https://product-help.schneider-electric.com/Machine%20Expert/V1.1/en/SoMProg/SoMProg/ST_Editor/)
+
+### Notes
+- CONTINUE statement is a vendor extension, NOT part of official IEC 61131-3 (Editions 1-3)
+- Table numbering changed between Edition 2 (Table 56) and Edition 3 (Table 72)

@@ -302,11 +302,13 @@ END_VAR
 
 ## 5. Statements
 
+**Note:** ST language statements are defined in Table 72 (Edition 3) / Table 56 (Edition 2).
+
 ### 5.1 Assignment
 ```
 variable := expression;
 ```
-- Reference: IEC 61131-3 §7.3.2
+- Reference: IEC 61131-3 Table 72.1
 
 ### 5.2 Selection Statements
 
@@ -321,7 +323,8 @@ ELSE
 END_IF;
 ```
 - ELSIF and ELSE are optional
-- Reference: IEC 61131-3 §7.3.3.1
+- Condition must be BOOL expression
+- Reference: IEC 61131-3 Table 72.4 (Ed. 3) / Table 56.4 (Ed. 2)
 
 #### 5.2.2 CASE Statement
 ```
@@ -334,9 +337,10 @@ ELSE
 END_CASE;
 ```
 - Selector must be ordinal type (integer, enumeration)
-- No fall-through (unlike C switch)
+- Labels can be single values, comma-separated lists, or ranges (e.g., `4..10`)
+- No fall-through (unlike C switch) - only first matching case executes
 - ELSE is optional
-- Reference: IEC 61131-3 §7.3.3.2
+- Reference: IEC 61131-3 Table 72.5 (Ed. 3) / Table 56.5 (Ed. 2)
 
 ### 5.3 Iteration Statements
 
@@ -346,8 +350,12 @@ FOR i := 1 TO 10 BY 1 DO
   statements;
 END_FOR;
 ```
-- BY clause is optional (default 1)
-- Reference: IEC 61131-3 §7.3.3.3
+- Loop variable must be ANY_INTEGRAL type
+- BY clause is optional (default step is 1)
+- Bounds are inclusive (end value IS included in iteration)
+- Positive step: terminates when variable > end_value
+- Negative step: terminates when variable < end_value
+- Reference: IEC 61131-3 Table 72.6 (Ed. 3) / Table 56.6 (Ed. 2)
 
 #### 5.3.2 WHILE Loop
 ```
@@ -355,7 +363,9 @@ WHILE condition DO
   statements;
 END_WHILE;
 ```
-- Reference: IEC 61131-3 §7.3.3.4
+- Pre-test loop: condition evaluated BEFORE each iteration
+- May never execute if condition is initially FALSE
+- Reference: IEC 61131-3 Table 72.7 (Ed. 3) / Table 56.7 (Ed. 2)
 
 #### 5.3.3 REPEAT Loop
 ```
@@ -364,30 +374,35 @@ REPEAT
 UNTIL condition
 END_REPEAT;
 ```
-- Executes at least once
-- Reference: IEC 61131-3 §7.3.3.5
+- Post-test loop: condition evaluated AFTER each iteration
+- Always executes at least once
+- Exits when condition becomes TRUE (opposite of WHILE)
+- Reference: IEC 61131-3 Table 72.8 (Ed. 3) / Table 56.8 (Ed. 2)
 
 #### 5.3.4 EXIT Statement
 ```
 EXIT;
 ```
-- Exits innermost loop
-- Reference: IEC 61131-3 §7.3.3.6
+- Exits innermost enclosing loop (FOR, WHILE, or REPEAT)
+- Only exits one level of nesting
+- Reference: IEC 61131-3 Table 72.10 (Ed. 3) / Table 56.9 (Ed. 2)
 
 #### 5.3.5 CONTINUE Statement
 ```
 CONTINUE;
 ```
-- Skips to next iteration
-- **Note:** Added in Edition 3 (2013), not universally supported
-- Reference: IEC 61131-3 §7.3.3.7
+- Skips to next iteration of innermost loop
+- **IMPORTANT:** This is a VENDOR EXTENSION, NOT part of official IEC 61131-3 (Editions 1-3)
+- Implemented by Codesys, Beckhoff, Schneider, and others as proprietary extension
+- Use with caution for code portability
 
 #### 5.3.6 RETURN Statement
 ```
 RETURN;
 ```
-- Exits current function/function block
-- Reference: IEC 61131-3 §7.3.3.8
+- Exits current function/function block/program early
+- In FUNCTION, return value should be assigned before RETURN
+- Reference: IEC 61131-3 Table 72.3 (Ed. 3) / Table 56.3 (Ed. 2)
 
 ---
 
