@@ -50,12 +50,12 @@ FunctionBlockDecl {
 }
 
 // ============================================================================
-// Type Declarations (STRUCT, etc.)
+// Type Declarations (STRUCT, ENUM, etc.)
 // ============================================================================
 
 TypeDecl {
   kw<"TYPE">
-  StructDef*
+  (StructDef | EnumDef)*
   kw<"END_TYPE">
 }
 
@@ -67,6 +67,18 @@ StructDef {
 
 StructField {
   Identifier ":" TypeSpec (":" "=" Expression)? ";"
+}
+
+EnumDef {
+  Identifier ":" "(" EnumValueList ")" ";"?
+}
+
+EnumValueList {
+  EnumValue ("," EnumValue)*
+}
+
+EnumValue {
+  Identifier (":=" Number)?
 }
 
 // ============================================================================

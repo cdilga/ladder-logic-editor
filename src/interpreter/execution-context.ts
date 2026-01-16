@@ -285,6 +285,30 @@ export function createExecutionContext(
         }
       : undefined,
 
+    // Enum value lookup - returns the integer value for an enum constant name
+    getEnumValue: (name: string): number | undefined => {
+      // Handle qualified name: TrafficLight#Green
+      let valueName = name;
+      if (name.includes('#')) {
+        const parts = name.split('#');
+        valueName = parts[1]; // Get the value part
+      }
+
+      // Search all enum type definitions for this value name
+      for (const typeDef of runtimeState.ast.typeDefinitions) {
+        if (typeDef.defType === 'ENUM' && typeDef.enumValues) {
+          const foundValue = typeDef.enumValues.find(
+            v => v.name.toUpperCase() === valueName.toUpperCase()
+          );
+          if (foundValue) {
+            return foundValue.value;
+          }
+        }
+      }
+
+      return undefined;
+    },
+
     // Function block handling
     handleFunctionBlockCall: (call, _ctx) => {
       // Check if this is a user-defined function block call

@@ -49,6 +49,12 @@ export interface EvaluationContext {
   getMultiDimArrayElement?: (name: string, indices: number[]) => Value;
   /** Invoke a user-defined function - optional for user function support */
   invokeUserFunction?: (name: string, args: Value[]) => Value;
+  /**
+   * Get an enum value by name - optional for enum support
+   * Returns undefined if the name is not an enum value
+   * Name can be simple (Green) or qualified (TrafficLight#Green)
+   */
+  getEnumValue?: (name: string) => number | undefined;
 }
 
 // ============================================================================
@@ -128,7 +134,18 @@ function evaluateVariable(variable: STVariable, context: EvaluationContext): Val
 
   // Simple variable: just the name
   if (accessPath.length === 1) {
-    return context.getVariable(accessPath[0]);
+    const varName = accessPath[0];
+
+    // First, check if it's an enum value (identifier might be an enum constant like Green, Red, etc.)
+    if (context.getEnumValue) {
+      const enumValue = context.getEnumValue(varName);
+      if (enumValue !== undefined) {
+        return enumValue;
+      }
+    }
+
+    // Otherwise, treat as regular variable
+    return context.getVariable(varName);
   }
 
   // Member access: e.g., Timer1.Q or Counter1.CV or UserFB1.Output

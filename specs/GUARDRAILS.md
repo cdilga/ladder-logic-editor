@@ -606,3 +606,39 @@ The `executeAssignment()` function now checks the target variable's declared typ
 **Tests:** TIME arithmetic tests in `src/interpreter/compliance/type-aware-assignment.test.ts`
 
 ---
+
+## Enumeration Types - Known Limitations (2026-01-16)
+
+### ⚠️ Qualified Enum Syntax Not Supported
+
+**What doesn't work:**
+```st
+TYPE
+  TrafficLight : (Red, Yellow, Green);
+END_TYPE
+VAR
+  light : TrafficLight := TrafficLight#Yellow;  (* ❌ Parse error *)
+END_VAR
+```
+
+**Why:** The grammar currently doesn't support the `TypeName#ValueName` qualified identifier syntax. The `#` character causes parse errors in identifier contexts.
+
+**What works instead:**
+```st
+TYPE
+  TrafficLight : (Red, Yellow, Green);
+END_TYPE
+VAR
+  light : TrafficLight := Yellow;  (* ✅ Simple identifier works *)
+END_VAR
+```
+
+**Design Decision:**
+- Qualified enum syntax is rarely used in practice
+- The simple form (just the value name) is sufficient for most use cases
+- Adding `#` syntax would require grammar changes and may conflict with hex literals (16#FF)
+- Marked as "Future Consideration" in IMPLEMENTATION_STATUS.md
+
+**Test Status:** 1 test skipped in `enum-types.test.ts` for this edge case.
+
+---

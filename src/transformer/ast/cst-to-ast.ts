@@ -32,6 +32,7 @@ import type {
   STFunctionCall,
   STTypeDef,
   STStructField,
+  STEnumValue,
   VariableScopeKind,
   VariableQualifier,
   BinaryOperator,
@@ -265,7 +266,7 @@ function parseFunctionDecl(node: SyntaxNode, source: string): STProgram {
 
 /**
  * Parse a TYPE...END_TYPE block.
- * Returns an array of type definitions (one TYPE block can contain multiple STRUCTs).
+ * Returns an array of type definitions (one TYPE block can contain multiple STRUCTs or ENUMs).
  */
 function parseTypeDecl(node: SyntaxNode, source: string): STTypeDef[] {
   const typeDefs: STTypeDef[] = [];
@@ -274,6 +275,8 @@ function parseTypeDecl(node: SyntaxNode, source: string): STTypeDef[] {
   while (child) {
     if (child.name === 'StructDef') {
       typeDefs.push(parseStructDef(child, source));
+    } else if (child.name === 'EnumDef') {
+      typeDefs.push(parseEnumDef(child, source));
     }
     child = child.nextSibling;
   }
@@ -331,6 +334,79 @@ function parseStructField(node: SyntaxNode, source: string): STStructField {
   }
 
   return { type: 'StructField', name, dataType, initialValue, loc };
+}
+
+/**
+ * Parse an ENUM definition.
+ * Format: TypeName : (Value1, Value2 := 5, Value3);
+ */
+function parseEnumDef(node: SyntaxNode, source: string): STTypeDef {
+  const loc = { start: node.from, end: node.to };
+  let name = 'UnnamedEnum';
+  const enumValues: STEnumValue[] = [];
+
+  let child = node.firstChild;
+  while (child) {
+    switch (child.name) {
+      case 'Identifier':
+        name = source.slice(child.from, child.to);
+        break;
+      case 'EnumValueList':
+        parseEnumValueList(child, source, enumValues);
+        break;
+    }
+    child = child.nextSibling;
+  }
+
+  return { type: 'TypeDef', name, defType: 'ENUM', enumValues, loc };
+}
+
+/**
+ * Parse the list of enum values, handling auto-incrementing values.
+ */
+function parseEnumValueList(node: SyntaxNode, source: string, enumValues: STEnumValue[]): void {
+  let nextValue = 0;
+
+  let child = node.firstChild;
+  while (child) {
+    if (child.name === 'EnumValue') {
+      const enumValue = parseEnumValue(child, source, nextValue);
+      enumValues.push(enumValue);
+      // Next auto-increment value is one more than this value
+      nextValue = enumValue.value + 1;
+    }
+    child = child.nextSibling;
+  }
+}
+
+/**
+ * Parse a single enum value with optional explicit integer value.
+ */
+function parseEnumValue(node: SyntaxNode, source: string, defaultValue: number): STEnumValue {
+  let name = 'UnnamedValue';
+  let value = defaultValue;
+  let hasExplicitValue = false;
+
+  let child = node.firstChild;
+  while (child) {
+    switch (child.name) {
+      case 'Identifier':
+        name = source.slice(child.from, child.to);
+        break;
+      case 'Number':
+        value = parseInt(source.slice(child.from, child.to), 10);
+        hasExplicitValue = true;
+        break;
+    }
+    child = child.nextSibling;
+  }
+
+  // If no explicit value, use the default (auto-incremented)
+  if (!hasExplicitValue) {
+    value = defaultValue;
+  }
+
+  return { name, value };
 }
 
 // ============================================================================

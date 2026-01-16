@@ -268,15 +268,25 @@ export interface STStructField extends ASTNode {
 }
 
 /**
+ * An enumeration value with name and optional explicit integer value.
+ * If value is not specified, it auto-increments from the previous value.
+ */
+export interface STEnumValue {
+  name: string;
+  value: number;
+}
+
+/**
  * A user-defined type definition (STRUCT, ENUM, etc.).
- * Currently only STRUCT is supported.
  */
 export interface STTypeDef extends ASTNode {
   type: 'TypeDef';
   name: string;
-  defType: 'STRUCT';
+  defType: 'STRUCT' | 'ENUM';
   /** Fields of a STRUCT type */
   structFields?: STStructField[];
+  /** Values of an ENUM type */
+  enumValues?: STEnumValue[];
 }
 
 // ============================================================================

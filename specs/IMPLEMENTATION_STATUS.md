@@ -10,7 +10,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 | Category | Implemented | Total | Coverage |
 |----------|-------------|-------|----------|
-| Data Types | 20 | 21 | 95% |
+| Data Types | 21 | 21 | 100% |
 | Variables | 7 | 10 | 70% |
 | Operators | 16 | 17 | 94% |
 | Control Flow | 7 | 7 | 100% |
@@ -56,7 +56,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 |------|-----------|--------|-------|-------|
 | ARRAY | §2.2.1 | ✅ | 42 | Single and multi-dimensional (2D, 3D), all element types |
 | STRUCT | §2.2.2 | ✅ | 16 | User-defined structured types with field access (varname.field) |
-| Enumeration | §2.2.3 | ❌ | - | |
+| Enumeration | §2.2.3 | ✅ | 16 | TYPE name : (val1, val2 := n); END_TYPE syntax, auto-increment, stored as INT |
 
 ---
 
@@ -242,8 +242,9 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | VAR_IN_OUT | 19 | ✅ 100% |
 | VAR_TEMP | 11 | ✅ 100% |
 | STRUCT Types | 16 | ✅ 100% |
+| Enumeration Types | 16 | ✅ 100% |
 | Type Conversion | 50 | ✅ 100% |
-| **Total** | **1629** | ✅ 100% |
+| **Total** | **1645** | ✅ 100% |
 
 ---
 
@@ -251,15 +252,15 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 ### Next Priorities
 
-1. **Enumeration types** - User-defined enumerated types
-2. **DATE/TIME_OF_DAY/DATE_AND_TIME types** - Date/time data types
-3. **VAR_EXTERNAL** - External variable references
+1. **DATE/TIME_OF_DAY/DATE_AND_TIME types** - Date/time data types
+2. **VAR_EXTERNAL** - External variable references
+3. **AT addressing** - Direct hardware addressing
 
 ### Future Consideration
 
-- Enumeration types
 - DATE/TIME_OF_DAY/DATE_AND_TIME types
 - Nested STRUCT support (STRUCT containing STRUCT)
+- Qualified enum syntax (TypeName#Value) - currently not supported in grammar
 
 ---
 
@@ -267,6 +268,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 | Date | Change |
 |------|--------|
+| 2026-01-16 | Added Enumeration (ENUM) type support with TYPE...END_TYPE syntax, explicit and auto-incrementing values, stored as INT internally, enum value comparison, type registry integration - 16 new tests, data types now 100% |
 | 2026-01-16 | Added STRUCT (structured data type) support with TYPE...END_TYPE syntax, field access (varname.field), field assignment, all elementary field types (BOOL, INT, REAL, TIME, STRING), type registry integration - 16 new tests, data types now 95% |
 | 2026-01-16 | Added VAR_TEMP support in function blocks - temporary variables that reset to initial/default values on each FB call, per IEC 61131-3 Section 2.4 - 11 new tests, variables now 70% |
 | 2026-01-16 | Added multi-dimensional ARRAY support (2D, 3D) with ARRAY[m..n, p..q] syntax, arr[i, j] and arr[i][j] access - 18 new tests |

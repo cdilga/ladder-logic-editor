@@ -6,7 +6,7 @@
  * Also builds a type registry for type-aware assignment.
  */
 
-import type { STAST, STVarBlock, STVariableDecl, STLiteral, STTypeDef, STStructField } from '../transformer/ast/st-ast-types';
+import type { STAST, STVarBlock, STVariableDecl, STLiteral, STTypeDef, STStructField, STEnumValue } from '../transformer/ast/st-ast-types';
 
 // ============================================================================
 // Type Registry
@@ -15,7 +15,22 @@ import type { STAST, STVarBlock, STVariableDecl, STLiteral, STTypeDef, STStructF
 /**
  * Declared data type categories for variable storage.
  */
-export type DeclaredType = 'BOOL' | 'INT' | 'REAL' | 'TIME' | 'STRING' | 'TIMER' | 'COUNTER' | 'R_TRIG' | 'F_TRIG' | 'BISTABLE' | 'ARRAY' | 'UNKNOWN';
+export type DeclaredType = 'BOOL' | 'INT' | 'REAL' | 'TIME' | 'STRING' | 'TIMER' | 'COUNTER' | 'R_TRIG' | 'F_TRIG' | 'BISTABLE' | 'ARRAY' | 'ENUM' | 'UNKNOWN';
+
+/**
+ * Information about a user-defined enum type.
+ */
+export interface EnumTypeInfo {
+  name: string;
+  values: STEnumValue[];
+  /** Map from value name to integer value for quick lookup */
+  valueMap: Map<string, number>;
+}
+
+/**
+ * Registry of all user-defined enum types.
+ */
+export type EnumTypeRegistry = Map<string, EnumTypeInfo>;
 
 /**
  * Registry mapping variable names to their declared types.
@@ -200,6 +215,14 @@ function initializeDeclaration(
     const structDef = typeDefsMap.get(typeName);
     if (structDef && structDef.defType === 'STRUCT' && structDef.structFields) {
       initializeStructFields(name, structDef.structFields, store);
+      continue;
+    }
+
+    // Handle user-defined ENUM types
+    const enumDef = typeDefsMap.get(typeName);
+    if (enumDef && enumDef.defType === 'ENUM' && enumDef.enumValues) {
+      const enumValue = extractEnumValue(decl.initialValue, enumDef.enumValues, typeName);
+      store.setInt(name, enumValue);
       continue;
     }
 
@@ -410,6 +433,67 @@ function extractCounterPreset(_decl: STVariableDecl): number {
   return 0;
 }
 
+/**
+ * Extract the integer value for an enum initialization.
+ *
+ * Supports:
+ * - No initial value: defaults to first enum value (value 0 typically)
+ * - Simple identifier: Green -> looks up Green in enum values
+ * - Qualified name: TrafficLight#Yellow -> looks up Yellow in enum values
+ *
+ * @param expr - The initialization expression
+ * @param enumValues - The enum's defined values
+ * @param enumTypeName - The enum type name (for qualified syntax)
+ */
+function extractEnumValue(
+  expr: STVariableDecl['initialValue'],
+  enumValues: STEnumValue[],
+  _enumTypeName: string
+): number {
+  // Default to first enum value if no initializer
+  if (!expr || enumValues.length === 0) {
+    return enumValues.length > 0 ? enumValues[0].value : 0;
+  }
+
+  // Handle variable reference (enum value name)
+  if (expr.type === 'Variable') {
+    const varName = expr.name;
+
+    // Check for qualified syntax: TypeName#ValueName
+    if (varName.includes('#')) {
+      const parts = varName.split('#');
+      const valueName = parts[1];
+      const foundValue = enumValues.find(v => v.name.toUpperCase() === valueName.toUpperCase());
+      if (foundValue) {
+        return foundValue.value;
+      }
+    }
+
+    // Check for simple value name
+    const foundValue = enumValues.find(v => v.name.toUpperCase() === varName.toUpperCase());
+    if (foundValue) {
+      return foundValue.value;
+    }
+
+    // Check for qualified name using accessPath (TypeName.ValueName parsed as nested access)
+    if (expr.accessPath && expr.accessPath.length >= 2) {
+      const valueName = expr.accessPath[expr.accessPath.length - 1];
+      const foundValue = enumValues.find(v => v.name.toUpperCase() === valueName.toUpperCase());
+      if (foundValue) {
+        return foundValue.value;
+      }
+    }
+  }
+
+  // Handle integer literal (direct value assignment)
+  if (expr.type === 'Literal' && expr.literalType === 'INT') {
+    return expr.value as number;
+  }
+
+  // Default to first value
+  return enumValues.length > 0 ? enumValues[0].value : 0;
+}
+
 function initializeFromValue(name: string, expr: STVariableDecl['initialValue'], store: InitializableStore): void {
   if (!expr || expr.type !== 'Literal') return;
 
@@ -536,15 +620,25 @@ function buildVarBlockTypes(
   for (const decl of varBlock.declarations) {
     const typeName = decl.dataType.typeName.toUpperCase();
     const isArray = decl.dataType.isArray;
-    const declaredType = isArray ? 'ARRAY' : categorizeType(typeName);
+
+    // Check if this is a user-defined type
+    const userTypeDef = typeDefsMap.get(typeName);
+    let declaredType: DeclaredType;
+
+    if (isArray) {
+      declaredType = 'ARRAY';
+    } else if (userTypeDef?.defType === 'ENUM') {
+      declaredType = 'ENUM';
+    } else {
+      declaredType = categorizeType(typeName);
+    }
 
     for (const name of decl.names) {
       registry[name] = declaredType;
 
       // If this is a STRUCT type, also register its fields
-      const structDef = typeDefsMap.get(typeName);
-      if (structDef && structDef.defType === 'STRUCT' && structDef.structFields) {
-        for (const field of structDef.structFields) {
+      if (userTypeDef && userTypeDef.defType === 'STRUCT' && userTypeDef.structFields) {
+        for (const field of userTypeDef.structFields) {
           const fieldName = `${name}.${field.name}`;
           const fieldTypeName = field.dataType.typeName.toUpperCase();
           registry[fieldName] = categorizeType(fieldTypeName);
