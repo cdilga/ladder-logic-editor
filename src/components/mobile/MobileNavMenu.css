@@ -1,0 +1,380 @@
+/**
+ * Mobile Navigation Menu Styles
+ *
+ * Industrial floating action button with radial arc menu.
+ * Electric amber (#FF9500) accent matches logo branding.
+ * Precision-engineered animations and technical aesthetic.
+ */
+
+/* ============================================================================
+   Container & Positioning
+   ========================================================================= */
+
+.mobile-nav-menu {
+  position: fixed;
+  bottom: calc(var(--mobile-tabbar-height) + var(--mobile-safe-bottom) + 16px);
+  right: 16px;
+  z-index: 150;
+
+  /* Ensure menu is above tab bar but below modals */
+  pointer-events: none;
+}
+
+/* Enable pointer events only on interactive elements */
+.mobile-nav-menu > * {
+  pointer-events: auto;
+}
+
+/* ============================================================================
+   Backdrop Overlay
+   ========================================================================= */
+
+.mobile-nav-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 29, 41, 0.7);
+  backdrop-filter: blur(3px);
+  z-index: -1;
+  animation: backdropFadeIn 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ============================================================================
+   Main FAB Button
+   ========================================================================= */
+
+.mobile-nav-fab {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #FF9500 0%, #FF7A00 100%);
+  color: #1a1d29;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+
+  /* Industrial shadow with amber glow */
+  box-shadow:
+    0 4px 12px rgba(255, 149, 0, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+
+  /* Smooth transitions */
+  transition: all 280ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Prevent tap highlight */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-nav-fab:active {
+  transform: scale(0.92);
+}
+
+.mobile-nav-fab.open {
+  background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+  box-shadow:
+    0 4px 12px rgba(0, 212, 255, 0.5),
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  transform: rotate(180deg);
+}
+
+/* Icon container */
+.mobile-nav-fab-icon {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Help icon (default state) */
+.icon-help {
+  position: absolute;
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+  transition: all 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-nav-fab.open .icon-help {
+  opacity: 0;
+  transform: rotate(-180deg) scale(0.5);
+}
+
+/* Close icon (open state) */
+.icon-close {
+  position: absolute;
+  opacity: 0;
+  transform: rotate(180deg) scale(0.5);
+  transition: all 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-nav-fab.open .icon-close {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+
+/* ============================================================================
+   Technical Ring Animation
+   ========================================================================= */
+
+.mobile-nav-fab-ring {
+  position: absolute;
+  inset: -4px;
+  width: calc(100% + 8px);
+  height: calc(100% + 8px);
+  color: #FF9500;
+  opacity: 0;
+  transform: rotate(0deg);
+  transition: all 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.mobile-nav-fab.open .mobile-nav-fab-ring {
+  opacity: 1;
+  animation: ringRotate 20s linear infinite;
+}
+
+@keyframes ringRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================================
+   Pulsing Glow Effect
+   ========================================================================= */
+
+.mobile-nav-fab-glow {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 149, 0, 0.4) 0%, transparent 70%);
+  opacity: 0;
+  animation: glowPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.mobile-nav-fab.open .mobile-nav-fab-glow {
+  animation: none;
+  opacity: 0;
+}
+
+/* ============================================================================
+   Radial Action Buttons
+   ========================================================================= */
+
+.mobile-nav-action {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--mobile-border-accent);
+  background: var(--mobile-bg-surface);
+  color: var(--mobile-text-primary);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+
+  /* Initial state: collapsed at FAB center */
+  bottom: 4px;
+  right: 4px;
+  opacity: 0;
+  transform: scale(0.3);
+  pointer-events: none;
+
+  /* Smooth transitions */
+  transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Shadow */
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  /* Prevent tap highlight */
+  -webkit-tap-highlight-color: transparent;
+
+  /* Ensure minimum touch target */
+  min-width: 44px;
+  min-height: 44px;
+
+  z-index: 5;
+}
+
+/* Open state: radial arc positioning */
+.mobile-nav-action.open {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+/* Position actions in a radial arc (120° arc, 60° spacing) */
+.mobile-nav-action.open {
+  --angle: calc(225deg - (var(--action-index) * 60deg));
+  --radius: 84px;
+  --x: calc(cos(var(--angle)) * var(--radius));
+  --y: calc(sin(var(--angle)) * var(--radius));
+
+  /* Use transform for positioning (smoother than bottom/right) */
+  transform:
+    translate(var(--x), var(--y))
+    scale(1);
+}
+
+/* Stagger animation delays */
+.mobile-nav-action:nth-child(1).open {
+  transition-delay: 40ms;
+}
+
+.mobile-nav-action:nth-child(2).open {
+  transition-delay: 80ms;
+}
+
+.mobile-nav-action:nth-child(3).open {
+  transition-delay: 120ms;
+}
+
+/* Hover/Active states */
+.mobile-nav-action:active {
+  transform:
+    translate(var(--x), var(--y))
+    scale(0.9);
+  background: var(--mobile-bg-elevated);
+  border-color: var(--mobile-accent-primary);
+  color: var(--mobile-accent-primary);
+}
+
+.mobile-nav-action:active .mobile-nav-action-icon {
+  filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.6));
+}
+
+/* Icon styling */
+.mobile-nav-action-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: filter 200ms;
+}
+
+/* Label styling */
+.mobile-nav-action-label {
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--mobile-text-secondary);
+  transition: color 200ms;
+}
+
+.mobile-nav-action:active .mobile-nav-action-label {
+  color: var(--mobile-accent-primary);
+}
+
+/* ============================================================================
+   Focus States
+   ========================================================================= */
+
+.mobile-nav-fab:focus-visible {
+  outline: 3px solid rgba(255, 149, 0, 0.6);
+  outline-offset: 3px;
+}
+
+.mobile-nav-action:focus-visible {
+  outline: 2px solid var(--mobile-accent-primary);
+  outline-offset: 2px;
+  z-index: 6;
+}
+
+/* ============================================================================
+   Reduced Motion
+   ========================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-nav-fab,
+  .mobile-nav-fab-icon > *,
+  .mobile-nav-fab-ring,
+  .mobile-nav-action,
+  .mobile-nav-backdrop {
+    transition-duration: 0ms;
+    animation: none;
+  }
+
+  .mobile-nav-fab-glow {
+    display: none;
+  }
+}
+
+/* ============================================================================
+   Landscape Adjustments
+   ========================================================================= */
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .mobile-nav-menu {
+    bottom: calc(40px + var(--mobile-safe-bottom) + 12px);
+    right: 12px;
+  }
+
+  .mobile-nav-fab {
+    width: 48px;
+    height: 48px;
+  }
+
+  .mobile-nav-action {
+    width: 42px;
+    height: 42px;
+  }
+
+  .mobile-nav-action.open {
+    --radius: 72px;
+  }
+}
+
+/* ============================================================================
+   Small Screen Adjustments
+   ========================================================================= */
+
+@media (max-width: 360px) {
+  .mobile-nav-menu {
+    bottom: calc(var(--mobile-tabbar-height) + var(--mobile-safe-bottom) + 12px);
+    right: 12px;
+  }
+
+  .mobile-nav-action.open {
+    --radius: 76px;
+  }
+}
