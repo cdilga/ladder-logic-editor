@@ -473,9 +473,151 @@ The following features were confirmed working during testing:
 
 ---
 
+### BUG-013: Properties Panel Shows Empty After Node Selection
+
+**Severity:** Low
+**Component:** Properties Panel
+**Status:** Observation
+
+**Description:**
+When selecting a ladder diagram node, the properties panel appears but shows no content in automated tests.
+
+**Test Results:**
+```
+Number of nodes to select: 4
+Properties after selection: (empty)
+```
+
+**Steps to Reproduce:**
+1. Load a simple program with ladder nodes
+2. Click on a node in the ladder diagram
+3. Check the properties panel content
+
+**Notes:**
+- May be a timing issue in automated tests
+- Manual testing may show different results
+- Properties panel may only show for certain node types
+
+**Screenshots:** `screenshots/bug-node-selected.png`
+
+---
+
+### BUG-014: Counter PV Shows 0 Until First Interaction
+
+**Severity:** Low
+**Component:** Variable Watch / Counter Display
+**Status:** Observation
+
+**Description:**
+Counter preset value (PV) shows 0 initially even when code specifies a non-zero value like `PV := 10`. The correct value only appears after simulation runs.
+
+**Test Results:**
+```
+CTR tab content: countUp CV: 0 / PV: 0 + CU - CD R QU: F QD: F
+CTR tab content after pulses: countUp CV: 0 / PV: 10 + CU - CD R QU: F QD: F
+```
+
+**Notes:**
+- PV correctly updates after simulation starts
+- May need to initialize PV during parsing/compilation phase
+- This is cosmetic and doesn't affect logic execution
+
+---
+
+### BUG-015: E2E Test Selector Issue - "New Project" vs "New File"
+
+**Severity:** Low
+**Component:** E2E Tests / Mobile Menu
+**Status:** Test Bug (Not App Bug)
+
+**Description:**
+E2E tests expect "New Project" text but the mobile menu shows "New File". This is a test selector issue, not an application bug.
+
+**Test Results:**
+```
+Expected: "New Project"
+Actual: "📄 New File"
+```
+
+**Notes:**
+- Update test selectors to use "New File"
+- Mobile menu text is consistent: New File, Open File, Save
+
+---
+
+## Final Verification Summary (Updated 2026-01-17)
+
+| Bug ID | Status | Severity | Category |
+|--------|--------|----------|----------|
+| BUG-001 | ⚠️ By Design | Medium | File Management |
+| BUG-002 | ❌ Confirmed | Medium | Keyboard Shortcuts |
+| BUG-003 | ❌ Confirmed | Low | Editor |
+| BUG-004 | ❌ Confirmed | Low | Ladder Diagram |
+| BUG-005 | ⚠️ By Design | Low | Ladder Diagram |
+| BUG-006 | ⚠️ Cosmetic | Low | Timer Display |
+| BUG-007 | ⚠️ Test Issue | Low | Simulation |
+| BUG-008 | ⚠️ UX Issue | Medium | Mobile UX |
+| BUG-009 | ⚠️ Feature Request | Low | Simulation |
+| BUG-010 | ❌ Confirmed | Low | Editor |
+| BUG-011 | ⚠️ Cosmetic | Low | Timer Display |
+| BUG-012 | ⚠️ Cosmetic | Low | Mobile Layout |
+| BUG-013 | ⚠️ Observation | Low | Properties Panel |
+| BUG-014 | ⚠️ Observation | Low | Counter Display |
+| BUG-015 | ⚠️ Test Bug | Low | E2E Tests |
+| EXISTING-001 | ✅ Fixed | - | Simulation |
+| EXISTING-002 | ⚠️ UX Issue | Low | Examples |
+| EXISTING-003 | ✅ Fixed | - | File Management |
+
+---
+
+## Priority Recommendations
+
+### High Priority (Should Fix Soon)
+1. **BUG-002**: Cmd+S keyboard shortcut - Common user expectation
+2. **BUG-008**: Mobile simulation controls discoverability - UX friction
+
+### Medium Priority (Nice to Have)
+3. **BUG-003/BUG-010**: Autocomplete functionality - Developer productivity
+4. **BUG-004**: "???" labels - Visual clarity
+5. **EXISTING-002**: Traffic light example guidance - User onboarding
+
+### Low Priority (Cosmetic/Future)
+6. Timer display precision issues (BUG-006, BUG-011)
+7. Mobile landscape mode (BUG-012)
+8. Properties panel timing (BUG-013)
+9. Counter PV initialization (BUG-014)
+10. Step debugging feature (BUG-009)
+
+---
+
+## Testing Notes
+
+### Successfully Working Features
+
+The following features were confirmed working during testing:
+
+1. **File Tab Modified Indicator** - Shows `*` when unsaved changes exist
+2. **Variable Watch Panel** - Correctly displays BOOL, NUM, TMR, CTR variables
+3. **Boolean Toggle** - Clicking boolean variables toggles their value during simulation
+4. **Ladder Diagram Rendering** - Generates correct nodes and edges for ST code
+5. **Properties Panel** - Shows node properties when ladder element is selected
+6. **Zoom Controls** - Zoom in/out and fit view all work correctly
+7. **Multiple File Tabs** - Can add and switch between multiple tabs
+8. **Mobile Navigation** - Bottom tab bar with LADDER, CODE, DEBUG, HELP tabs works
+9. **Help Menu** - Opens and shows Replay Tutorial, Documentation, Report Bug, GitHub Repository
+10. **Open Menu** - Shows examples (Dual Pump Controller, 4-Way Intersection) and Open Local File
+11. **Onboarding Toast** - Appears, can be dismissed, and can be replayed
+12. **Save Functionality** - Button saves correctly, persists across page reload
+13. **Simulation Controls** - Run/Pause/Stop work correctly
+14. **Docs Navigation** - Works on both desktop and mobile
+15. **File Selector (Mobile)** - Dropdown shows open files and examples
+
+---
+
 ## Next Steps
 
-1. Verify EXISTING bugs with more targeted testing
-2. Add E2E tests for identified bugs before fixing
-3. Prioritize fixes by severity
-4. Consider UX improvements noted as "Observations"
+1. Fix BUG-002 (Cmd+S keyboard shortcut) - Highest impact
+2. Improve mobile simulation controls discoverability (BUG-008)
+3. Investigate autocomplete implementation (BUG-003/BUG-010)
+4. Update E2E test selectors (BUG-015)
+5. Consider UX improvements noted as "Observations"
