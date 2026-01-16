@@ -11,6 +11,7 @@ import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { DocsSidebar } from './DocsSidebar';
 import { CodeExample } from './CodeExample';
+import { Logo } from '../../components/Logo';
 import { DOCS_CONTENT, type DocPage } from '../content';
 import './DocsLayout.css';
 
@@ -121,7 +122,8 @@ export function DocsLayout() {
           </svg>
         </button>
         <Link to="/docs" className="docs-header__title">
-          Ladder Logic Editor Docs
+          <Logo size={20} />
+          <span>Ladder Logic Editor</span>
         </Link>
         <Link to="/" className="docs-header__back">
           Back to Editor

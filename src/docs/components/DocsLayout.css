@@ -55,10 +55,15 @@
 
 .docs-header__title {
   flex: 1;
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
   font-weight: 600;
-  color: #d4d4d4;
+  font-family: 'IBM Plex Mono', 'SF Mono', 'Consolas', monospace;
+  color: #FF9500;
   text-decoration: none;
+  letter-spacing: -0.01em;
 }
 
 .docs-header__back {

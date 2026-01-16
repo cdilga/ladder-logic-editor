@@ -7,6 +7,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { DocsSearch } from './DocsSearch';
+import { Logo } from '../../components/Logo';
 import './DocsSidebar.css';
 
 // ============================================================================
@@ -115,12 +116,8 @@ export function DocsSidebar({ isOpen, onClose }: DocsSidebarProps) {
     <aside className={`docs-sidebar ${isOpen ? 'docs-sidebar--open' : ''}`}>
       <div className="docs-sidebar__header">
         <Link to="/docs" className="docs-sidebar__logo">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 2L2 7l10 5 10-5-10-5z" />
-            <path d="M2 17l10 5 10-5" />
-            <path d="M2 12l10 5 10-5" />
-          </svg>
-          <span>LLE Docs</span>
+          <Logo size={24} />
+          <span>Ladder Logic Editor</span>
         </Link>
         <button
           className="docs-sidebar__close"
