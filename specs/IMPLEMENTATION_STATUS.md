@@ -10,7 +10,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 | Category | Implemented | Total | Coverage |
 |----------|-------------|-------|----------|
-| Data Types | 12 | 21 | 57% |
+| Data Types | 16 | 21 | 76% |
 | Variables | 3 | 10 | 30% |
 | Operators | 16 | 17 | 94% |
 | Control Flow | 6 | 7 | 86% |
@@ -44,10 +44,10 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | DATE_AND_TIME | §2.1.4 | ❌ | - | |
 | STRING | §2.1.5 | ❌ | - | |
 | WSTRING | §2.1.5 | ❌ | - | |
-| BYTE | §2.1.6 | ❌ | - | |
-| WORD | §2.1.6 | ❌ | - | |
-| DWORD | §2.1.6 | ❌ | - | |
-| LWORD | §2.1.6 | ❌ | - | |
+| BYTE | §2.1.6 | ✅ | 6 | 8-bit, 16#/2# literals |
+| WORD | §2.1.6 | ✅ | 5 | 16-bit, 16#/2# literals |
+| DWORD | §2.1.6 | ✅ | 4 | 32-bit, 16#/2# literals |
+| LWORD | §2.1.6 | ✅ | 2 | 64-bit |
 
 ### Derived Types
 
@@ -222,7 +222,8 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | Integration | 105 | ✅ 100% |
 | Additional | 50 | ✅ 100% |
 | Std Functions | 106 | ✅ 100% |
-| **Total** | **1230** | ✅ 100% |
+| Bit String Types | 37 | ✅ 100% |
+| **Total** | **1357** | ✅ 100% |
 
 ---
 
@@ -247,6 +248,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 | Date | Change |
 |------|--------|
+| 2026-01-16 | Added bit string types (BYTE, WORD, DWORD, LWORD) with hex (16#FF) and binary (2#1010) literal support - 37 new tests |
 | 2026-01-16 | Added selection functions (SEL, MUX, LIMIT) with 19 new tests |
 | 2026-01-16 | Added additional integer types (SINT, DINT, LINT, USINT, UINT, UDINT, ULINT) and LREAL with 30 new tests |
 | 2026-01-16 | Added trigonometric (SIN, COS, TAN, ASIN, ACOS, ATAN) and logarithmic (LN, LOG, EXP) functions with 49 new tests |

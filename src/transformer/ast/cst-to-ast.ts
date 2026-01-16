@@ -980,7 +980,33 @@ function parseLiteral(node: SyntaxNode, source: string): STLiteral {
   let child = node.firstChild;
   while (child) {
     switch (child.name) {
-      case 'Number':
+      case 'HexNumber': {
+        const hexText = source.slice(child.from, child.to);
+        // Parse 16#FF format - extract digits after 16#
+        const hexDigits = hexText.slice(3); // Remove "16#"
+        const hexValue = parseInt(hexDigits, 16);
+        return {
+          type: 'Literal',
+          value: hexValue,
+          literalType: 'INT',
+          rawValue: hexText,
+          loc,
+        };
+      }
+      case 'BinaryNumber': {
+        const binText = source.slice(child.from, child.to);
+        // Parse 2#1010 format - extract digits after 2# and remove underscores
+        const binDigits = binText.slice(2).replace(/_/g, ''); // Remove "2#" and underscores
+        const binValue = parseInt(binDigits, 2);
+        return {
+          type: 'Literal',
+          value: binValue,
+          literalType: 'INT',
+          rawValue: binText,
+          loc,
+        };
+      }
+      case 'Number': {
         const numText = source.slice(child.from, child.to);
         const numValue = numText.includes('.') ? parseFloat(numText) : parseInt(numText, 10);
         return {
@@ -990,7 +1016,8 @@ function parseLiteral(node: SyntaxNode, source: string): STLiteral {
           rawValue: numText,
           loc,
         };
-      case 'Boolean':
+      }
+      case 'Boolean': {
         const boolText = source.slice(child.from, child.to).toUpperCase();
         return {
           type: 'Literal',
@@ -999,7 +1026,8 @@ function parseLiteral(node: SyntaxNode, source: string): STLiteral {
           rawValue: boolText,
           loc,
         };
-      case 'String':
+      }
+      case 'String': {
         const strText = source.slice(child.from, child.to);
         // Remove quotes
         const strValue = strText.slice(1, -1);
@@ -1010,7 +1038,8 @@ function parseLiteral(node: SyntaxNode, source: string): STLiteral {
           rawValue: strText,
           loc,
         };
-      case 'TimeLiteral':
+      }
+      case 'TimeLiteral': {
         const timeText = source.slice(child.from, child.to);
         return {
           type: 'Literal',
@@ -1019,6 +1048,7 @@ function parseLiteral(node: SyntaxNode, source: string): STLiteral {
           rawValue: timeText,
           loc,
         };
+      }
     }
     child = child.nextSibling;
   }
