@@ -92,6 +92,7 @@ function createMinimalAST(): STAST {
     programs: [],
     topLevelStatements: [],
     topLevelVarBlocks: [],
+    typeDefinitions: [],
     errors: [],
   };
 }

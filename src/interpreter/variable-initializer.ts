@@ -6,7 +6,7 @@
  * Also builds a type registry for type-aware assignment.
  */
 
-import type { STAST, STVarBlock, STVariableDecl, STLiteral } from '../transformer/ast/st-ast-types';
+import type { STAST, STVarBlock, STVariableDecl, STLiteral, STTypeDef, STStructField } from '../transformer/ast/st-ast-types';
 
 // ============================================================================
 // Type Registry
@@ -99,16 +99,22 @@ export function initializeVariables(ast: STAST, store: InitializableStore, clear
     store.clearAll();
   }
 
+  // Build a map of user-defined types for quick lookup
+  const typeDefsMap = new Map<string, STTypeDef>();
+  for (const typeDef of ast.typeDefinitions) {
+    typeDefsMap.set(typeDef.name.toUpperCase(), typeDef);
+  }
+
   // Initialize from programs
   for (const program of ast.programs) {
     for (const varBlock of program.varBlocks) {
-      initializeVarBlock(varBlock, store);
+      initializeVarBlock(varBlock, store, typeDefsMap);
     }
   }
 
   // Initialize from top-level var blocks
   for (const varBlock of ast.topLevelVarBlocks) {
-    initializeVarBlock(varBlock, store);
+    initializeVarBlock(varBlock, store, typeDefsMap);
   }
 }
 
@@ -116,13 +122,21 @@ export function initializeVariables(ast: STAST, store: InitializableStore, clear
 // Variable Block Initialization
 // ============================================================================
 
-function initializeVarBlock(varBlock: STVarBlock, store: InitializableStore): void {
+function initializeVarBlock(
+  varBlock: STVarBlock,
+  store: InitializableStore,
+  typeDefsMap: Map<string, STTypeDef>
+): void {
   for (const decl of varBlock.declarations) {
-    initializeDeclaration(decl, store);
+    initializeDeclaration(decl, store, typeDefsMap);
   }
 }
 
-function initializeDeclaration(decl: STVariableDecl, store: InitializableStore): void {
+function initializeDeclaration(
+  decl: STVariableDecl,
+  store: InitializableStore,
+  typeDefsMap: Map<string, STTypeDef>
+): void {
   const typeName = decl.dataType.typeName.toUpperCase();
   const isArray = decl.dataType.isArray;
   const arrayRange = decl.dataType.arrayRange;
@@ -182,6 +196,13 @@ function initializeDeclaration(decl: STVariableDecl, store: InitializableStore):
       continue;
     }
 
+    // Handle user-defined STRUCT types
+    const structDef = typeDefsMap.get(typeName);
+    if (structDef && structDef.defType === 'STRUCT' && structDef.structFields) {
+      initializeStructFields(name, structDef.structFields, store);
+      continue;
+    }
+
     // Handle primitive types
     const initialValue = decl.initialValue;
 
@@ -219,6 +240,59 @@ function initializeDeclaration(decl: STVariableDecl, store: InitializableStore):
         // Unknown type - try to initialize based on initial value type
         if (initialValue) {
           initializeFromValue(name, initialValue, store);
+        }
+    }
+  }
+}
+
+/**
+ * Initialize struct fields for a variable of STRUCT type.
+ * Each field is stored as varname.fieldname
+ */
+function initializeStructFields(
+  varName: string,
+  fields: STStructField[],
+  store: InitializableStore
+): void {
+  for (const field of fields) {
+    const fieldName = `${varName}.${field.name}`;
+    const fieldTypeName = field.dataType.typeName.toUpperCase();
+    const initialValue = field.initialValue;
+
+    switch (fieldTypeName) {
+      case 'BOOL':
+        store.setBool(fieldName, initialValue ? extractBoolValue(initialValue) : false);
+        break;
+
+      case 'INT':
+      case 'DINT':
+      case 'SINT':
+      case 'LINT':
+      case 'UINT':
+      case 'UDINT':
+      case 'USINT':
+      case 'ULINT':
+        store.setInt(fieldName, initialValue ? extractIntValue(initialValue) : 0);
+        break;
+
+      case 'REAL':
+      case 'LREAL':
+        store.setReal(fieldName, initialValue ? extractRealValue(initialValue) : 0.0);
+        break;
+
+      case 'TIME':
+        store.setTime(fieldName, initialValue ? extractTimeValue(initialValue) : 0);
+        break;
+
+      case 'STRING':
+      case 'WSTRING':
+        store.setString(fieldName, initialValue ? extractStringValue(initialValue) : '');
+        break;
+
+      default:
+        // Unknown field type - try to initialize based on initial value
+        if (initialValue) {
+          initializeFromValue(fieldName, initialValue, store);
         }
     }
   }
@@ -433,22 +507,32 @@ function parseTimeString(timeStr: string): number {
 export function buildTypeRegistry(ast: STAST): TypeRegistry {
   const registry: TypeRegistry = {};
 
+  // Build a map of user-defined types for quick lookup
+  const typeDefsMap = new Map<string, STTypeDef>();
+  for (const typeDef of ast.typeDefinitions) {
+    typeDefsMap.set(typeDef.name.toUpperCase(), typeDef);
+  }
+
   // Process programs
   for (const program of ast.programs) {
     for (const varBlock of program.varBlocks) {
-      buildVarBlockTypes(varBlock, registry);
+      buildVarBlockTypes(varBlock, registry, typeDefsMap);
     }
   }
 
   // Process top-level var blocks
   for (const varBlock of ast.topLevelVarBlocks) {
-    buildVarBlockTypes(varBlock, registry);
+    buildVarBlockTypes(varBlock, registry, typeDefsMap);
   }
 
   return registry;
 }
 
-function buildVarBlockTypes(varBlock: STVarBlock, registry: TypeRegistry): void {
+function buildVarBlockTypes(
+  varBlock: STVarBlock,
+  registry: TypeRegistry,
+  typeDefsMap: Map<string, STTypeDef>
+): void {
   for (const decl of varBlock.declarations) {
     const typeName = decl.dataType.typeName.toUpperCase();
     const isArray = decl.dataType.isArray;
@@ -456,6 +540,16 @@ function buildVarBlockTypes(varBlock: STVarBlock, registry: TypeRegistry): void 
 
     for (const name of decl.names) {
       registry[name] = declaredType;
+
+      // If this is a STRUCT type, also register its fields
+      const structDef = typeDefsMap.get(typeName);
+      if (structDef && structDef.defType === 'STRUCT' && structDef.structFields) {
+        for (const field of structDef.structFields) {
+          const fieldName = `${name}.${field.name}`;
+          const fieldTypeName = field.dataType.typeName.toUpperCase();
+          registry[fieldName] = categorizeType(fieldTypeName);
+        }
+      }
     }
   }
 }

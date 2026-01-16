@@ -13,6 +13,7 @@ statement {
   ProgramDecl |
   FunctionDecl |
   FunctionBlockDecl |
+  TypeDecl |
   VarBlock |
   Assignment |
   IfStatement |
@@ -46,6 +47,26 @@ FunctionBlockDecl {
   kw<"FUNCTION_BLOCK"> Identifier
   statement*
   kw<"END_FUNCTION_BLOCK">
+}
+
+// ============================================================================
+// Type Declarations (STRUCT, etc.)
+// ============================================================================
+
+TypeDecl {
+  kw<"TYPE">
+  StructDef*
+  kw<"END_TYPE">
+}
+
+StructDef {
+  Identifier ":" kw<"STRUCT">
+  StructField*
+  kw<"END_STRUCT"> ";"?
+}
+
+StructField {
+  Identifier ":" TypeSpec (":" "=" Expression)? ";"
 }
 
 // ============================================================================

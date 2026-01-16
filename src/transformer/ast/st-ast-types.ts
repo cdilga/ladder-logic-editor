@@ -254,6 +254,32 @@ export interface STProgram extends ASTNode {
 }
 
 // ============================================================================
+// Type Definitions (STRUCT, etc.)
+// ============================================================================
+
+/**
+ * A field within a STRUCT definition.
+ */
+export interface STStructField extends ASTNode {
+  type: 'StructField';
+  name: string;
+  dataType: STTypeSpec;
+  initialValue?: STExpression;
+}
+
+/**
+ * A user-defined type definition (STRUCT, ENUM, etc.).
+ * Currently only STRUCT is supported.
+ */
+export interface STTypeDef extends ASTNode {
+  type: 'TypeDef';
+  name: string;
+  defType: 'STRUCT';
+  /** Fields of a STRUCT type */
+  structFields?: STStructField[];
+}
+
+// ============================================================================
 // Root AST
 // ============================================================================
 
@@ -269,6 +295,8 @@ export interface STAST {
   topLevelStatements: STStatement[];
   /** Top-level variable blocks outside any program block */
   topLevelVarBlocks: STVarBlock[];
+  /** User-defined type definitions (STRUCT, ENUM, etc.) */
+  typeDefinitions: STTypeDef[];
   errors: ParseError[];
 }
 

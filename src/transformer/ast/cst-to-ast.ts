@@ -30,6 +30,8 @@ import type {
   STVariable,
   STLiteral,
   STFunctionCall,
+  STTypeDef,
+  STStructField,
   VariableScopeKind,
   VariableQualifier,
   BinaryOperator,
@@ -47,6 +49,7 @@ export function parseSTToAST(source: string): STAST {
   const programs: STProgram[] = [];
   const topLevelStatements: STStatement[] = [];
   const topLevelVarBlocks: STVarBlock[] = [];
+  const typeDefinitions: STTypeDef[] = [];
   const errors: ParseError[] = [];
 
   // Collect any syntax errors from the tree
@@ -68,6 +71,9 @@ export function parseSTToAST(source: string): STAST {
           break;
         case 'FunctionBlockDecl':
           programs.push(parseProgramDecl(cursor.node, source, 'FUNCTION_BLOCK'));
+          break;
+        case 'TypeDecl':
+          typeDefinitions.push(...parseTypeDecl(cursor.node, source));
           break;
         case 'VarBlock':
           topLevelVarBlocks.push(parseVarBlock(cursor.node, source));
@@ -111,7 +117,7 @@ export function parseSTToAST(source: string): STAST {
     } while (cursor.nextSibling());
   }
 
-  return { programs, topLevelStatements, topLevelVarBlocks, errors };
+  return { programs, topLevelStatements, topLevelVarBlocks, typeDefinitions, errors };
 }
 
 // ============================================================================
@@ -251,6 +257,80 @@ function parseFunctionDecl(node: SyntaxNode, source: string): STProgram {
   }
 
   return { type: 'Program', name, programType: 'FUNCTION', returnType, varBlocks, statements, loc };
+}
+
+// ============================================================================
+// Type Declaration Parsing (STRUCT, etc.)
+// ============================================================================
+
+/**
+ * Parse a TYPE...END_TYPE block.
+ * Returns an array of type definitions (one TYPE block can contain multiple STRUCTs).
+ */
+function parseTypeDecl(node: SyntaxNode, source: string): STTypeDef[] {
+  const typeDefs: STTypeDef[] = [];
+
+  let child = node.firstChild;
+  while (child) {
+    if (child.name === 'StructDef') {
+      typeDefs.push(parseStructDef(child, source));
+    }
+    child = child.nextSibling;
+  }
+
+  return typeDefs;
+}
+
+/**
+ * Parse a STRUCT definition.
+ */
+function parseStructDef(node: SyntaxNode, source: string): STTypeDef {
+  const loc = { start: node.from, end: node.to };
+  let name = 'UnnamedStruct';
+  const structFields: STStructField[] = [];
+
+  let child = node.firstChild;
+  while (child) {
+    switch (child.name) {
+      case 'Identifier':
+        name = source.slice(child.from, child.to);
+        break;
+      case 'StructField':
+        structFields.push(parseStructField(child, source));
+        break;
+    }
+    child = child.nextSibling;
+  }
+
+  return { type: 'TypeDef', name, defType: 'STRUCT', structFields, loc };
+}
+
+/**
+ * Parse a field within a STRUCT definition.
+ */
+function parseStructField(node: SyntaxNode, source: string): STStructField {
+  const loc = { start: node.from, end: node.to };
+  let name = 'unnamed';
+  let dataType: STTypeSpec = { type: 'TypeSpec', typeName: 'INT', isArray: false, loc };
+  let initialValue: STExpression | undefined;
+
+  let child = node.firstChild;
+  while (child) {
+    switch (child.name) {
+      case 'Identifier':
+        name = source.slice(child.from, child.to);
+        break;
+      case 'TypeSpec':
+        dataType = parseTypeSpec(child, source);
+        break;
+      case 'Expression':
+        initialValue = parseExpression(child, source);
+        break;
+    }
+    child = child.nextSibling;
+  }
+
+  return { type: 'StructField', name, dataType, initialValue, loc };
 }
 
 // ============================================================================
