@@ -234,10 +234,8 @@ describe('Enumeration Types - Variable Declaration', () => {
     expect(store.getInt('light')).toBe(2); // Green = 2
   });
 
-  // Qualified enum syntax (TrafficLight#Yellow) is not currently supported in the grammar
-  // The # character causes parse errors. This is a known limitation.
-  // TODO: Add grammar support for qualified enum identifiers
-  it.skip('should support qualified enum value syntax', () => {
+  // Qualified enum syntax (TrafficLight#Yellow) is now supported
+  it('should support qualified enum value syntax', () => {
     const code = `
       TYPE
         TrafficLight : (Red, Yellow, Green);

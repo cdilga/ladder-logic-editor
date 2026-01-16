@@ -344,7 +344,14 @@ Literal {
   DateAndTimeLiteral |
   TimeOfDayLiteral |
   DateLiteral |
-  TimeLiteral
+  TimeLiteral |
+  QualifiedEnumValue
+}
+
+// Qualified enum value: TypeName#Value (e.g., TrafficLight#Yellow)
+// Must be a grammar rule (not token) to disambiguate from hex/binary/time literals
+QualifiedEnumValue {
+  Identifier "#" Identifier
 }
 
 // ============================================================================

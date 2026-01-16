@@ -247,7 +247,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | DATE/TIME_OF_DAY/DT | 28 | ✅ 100% |
 | VAR_EXTERNAL | 15 | ✅ 100% |
 | AT Addressing | 26 | ✅ 100% |
-| **Total** | **1714** | ✅ 100% |
+| **Total** | **1715** | ✅ 100% |
 
 ---
 
@@ -255,7 +255,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 ### Implementation Complete ✅
 
-The IEC 61131-3 Structured Text interpreter is **feature complete** for industrial simulation. All core language features, data types, operators, control flow statements, standard function blocks, and user-defined POUs are fully implemented with 1714 passing tests.
+The IEC 61131-3 Structured Text interpreter is **feature complete** for industrial simulation. All core language features, data types, operators, control flow statements, standard function blocks, and user-defined POUs are fully implemented with 1715 passing tests.
 
 ### Optional Enhancements
 
@@ -263,10 +263,9 @@ The following features are lower priority and may be added in future iterations:
 
 1. **RETAIN persistence** - Persistent storage across power cycles (currently parsed but no persistence)
 2. **Nested STRUCT support** - STRUCT containing STRUCT fields
-3. **Qualified enum syntax** - `TypeName#Value` notation (currently uses simple value names)
-4. **I/O memory simulation** - Hardware I/O mapping for AT addresses (currently symbolic storage)
-5. **64-bit time types** - LTIME, LDATE, LTOD, LDT (Edition 3+ features)
-6. **Subrange types** - Constrained ranges like `INT(0..100)`
+3. **I/O memory simulation** - Hardware I/O mapping for AT addresses (currently symbolic storage)
+4. **64-bit time types** - LTIME, LDATE, LTOD, LDT (Edition 3+ features)
+5. **Subrange types** - Constrained ranges like `INT(0..100)`
 
 ---
 
@@ -274,6 +273,7 @@ The following features are lower priority and may be added in future iterations:
 
 | Date | Change |
 |------|--------|
+| 2026-01-17 | Added qualified enum syntax (TrafficLight#Yellow) - grammar rule for QualifiedEnumValue, AST ENUM literal type, interpreter support. All 1715 tests now pass with no skipped tests. |
 | 2026-01-17 | **Implementation complete** - Verified all 1714 tests pass (1 skipped for qualified enum edge case). Corrected operators coverage to 100% (16/16). Updated roadmap to reflect feature-complete status. |
 | 2026-01-17 | Added AT addressing support (%IX, %QX, %MX, %IW, %QW, %MW, etc.) - grammar, parser, AST types. Variables with AT addresses use symbolic storage in simulation (no hardware I/O mapping) - 26 new tests, variables now 90% |
 | 2026-01-17 | Added VAR_EXTERNAL support for referencing VAR_GLOBAL variables - grammar, parser, variable initializer (skip initialization for external refs) - 15 new tests, variables now 80% |

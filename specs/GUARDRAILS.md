@@ -607,38 +607,35 @@ The `executeAssignment()` function now checks the target variable's declared typ
 
 ---
 
-## Enumeration Types - Known Limitations (2026-01-16)
+## Enumeration Types (2026-01-17) ✅ RESOLVED
 
-### ⚠️ Qualified Enum Syntax Not Supported
+### ✅ Qualified Enum Syntax - IMPLEMENTED
 
-**What doesn't work:**
+**Previously a limitation**, now fully working. Both simple and qualified enum syntax are supported.
+
+**What now works:**
 ```st
 TYPE
   TrafficLight : (Red, Yellow, Green);
 END_TYPE
 VAR
-  light : TrafficLight := TrafficLight#Yellow;  (* ❌ Parse error *)
+  light1 : TrafficLight := Yellow;             (* ✅ Simple identifier works *)
+  light2 : TrafficLight := TrafficLight#Yellow; (* ✅ Qualified syntax now works *)
 END_VAR
 ```
 
-**Why:** The grammar currently doesn't support the `TypeName#ValueName` qualified identifier syntax. The `#` character causes parse errors in identifier contexts.
+**Implementation:**
+1. Added `QualifiedEnumValue` grammar rule: `Identifier "#" Identifier`
+2. Added `ENUM` literal type to AST types
+3. CST-to-AST converter extracts qualified name as `"TypeName#ValueName"` string
+4. Variable initializer resolves qualified names to enum integer values
 
-**What works instead:**
-```st
-TYPE
-  TrafficLight : (Red, Yellow, Green);
-END_TYPE
-VAR
-  light : TrafficLight := Yellow;  (* ✅ Simple identifier works *)
-END_VAR
-```
+**Key insight:** The `#` character doesn't conflict with hex/binary/time literals because:
+- `16#FF` starts with a digit → HexNumber token
+- `TrafficLight#Yellow` starts with an identifier → QualifiedEnumValue grammar rule
 
-**Design Decision:**
-- Qualified enum syntax is rarely used in practice
-- The simple form (just the value name) is sufficient for most use cases
-- Adding `#` syntax would require grammar changes and may conflict with hex literals (16#FF)
-- Marked as "Future Consideration" in IMPLEMENTATION_STATUS.md
+The Lezer LR parser disambiguates based on the first token.
 
-**Test Status:** 1 test skipped in `enum-types.test.ts` for this edge case.
+**Test Status:** All 17 enum-types.test.ts tests pass (no skipped tests).
 
 ---

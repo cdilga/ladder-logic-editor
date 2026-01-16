@@ -559,6 +559,19 @@ function extractEnumValue(
     return expr.value as number;
   }
 
+  // Handle ENUM literal (qualified enum syntax: TrafficLight#Yellow)
+  if (expr.type === 'Literal' && expr.literalType === 'ENUM') {
+    const qualifiedName = String(expr.value); // e.g., "TrafficLight#Yellow"
+    if (qualifiedName.includes('#')) {
+      const parts = qualifiedName.split('#');
+      const valueName = parts[1];
+      const foundValue = enumValues.find(v => v.name.toUpperCase() === valueName.toUpperCase());
+      if (foundValue) {
+        return foundValue.value;
+      }
+    }
+  }
+
   // Default to first value
   return enumValues.length > 0 ? enumValues[0].value : 0;
 }

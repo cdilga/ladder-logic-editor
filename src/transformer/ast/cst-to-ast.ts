@@ -1396,6 +1396,27 @@ function parseLiteral(node: SyntaxNode, source: string): STLiteral {
           loc,
         };
       }
+      case 'QualifiedEnumValue': {
+        // QualifiedEnumValue contains two Identifiers: TypeName#ValueName
+        // e.g., TrafficLight#Yellow
+        const identifiers: string[] = [];
+        let enumChild = child.firstChild;
+        while (enumChild) {
+          if (enumChild.name === 'Identifier') {
+            identifiers.push(source.slice(enumChild.from, enumChild.to));
+          }
+          enumChild = enumChild.nextSibling;
+        }
+        // Build qualified name: TypeName#ValueName
+        const qualifiedName = identifiers.join('#');
+        return {
+          type: 'Literal',
+          value: qualifiedName,
+          literalType: 'ENUM',
+          rawValue: qualifiedName,
+          loc,
+        };
+      }
     }
     child = child.nextSibling;
   }

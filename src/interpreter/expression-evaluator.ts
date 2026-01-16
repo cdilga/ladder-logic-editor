@@ -142,6 +142,11 @@ function evaluateLiteral(literal: STLiteral): Value {
       // DATE_AND_TIME literals are stored as strings like "DT#2024-01-15-14:30:00", parse to ms since epoch
       return parseDateAndTimeLiteralToMs(String(literal.value));
 
+    case 'ENUM':
+      // ENUM literals store qualified names like "TrafficLight#Yellow"
+      // Return the string value - it will be resolved by the context's getEnumValue
+      return literal.value;
+
     default:
       return literal.value;
   }
