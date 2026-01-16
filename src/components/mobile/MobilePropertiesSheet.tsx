@@ -6,10 +6,11 @@
  * Behavior:
  * - Hidden by default
  * - Shows small "nudge" when node selected (single wiggle animation)
- * - Expands to larger size when tapped
- * - Collapses when tapping header bar
- * - Hides when node deselected
- * - Always starts collapsed when new node selected
+ * - Expands to larger size when tapped anywhere on sheet
+ * - Collapses when tapping header bar in expanded state
+ * - Hides when node deselected (clicking background)
+ * - Stays in current state when switching between nodes
+ * - Only starts collapsed on FIRST node selection
  *
  * Reuses PropertiesPanel component for consistency.
  */
@@ -35,7 +36,12 @@ export function MobilePropertiesSheet({ selectedNode }: MobilePropertiesSheetPro
     if (selectedNode) {
       // New node selected
       if (selectedNode.id !== prevNodeIdRef.current) {
-        setSheetState('collapsed');
+        // Only collapse if we're coming from hidden state (first selection)
+        // Otherwise keep current state (collapsed or expanded)
+        if (sheetState === 'hidden') {
+          setSheetState('collapsed');
+        }
+
         setHasWiggled(false);
         prevNodeIdRef.current = selectedNode.id;
 
@@ -50,7 +56,7 @@ export function MobilePropertiesSheet({ selectedNode }: MobilePropertiesSheetPro
       setHasWiggled(false);
       prevNodeIdRef.current = null;
     }
-  }, [selectedNode]);
+  }, [selectedNode, sheetState]);
 
   const handleSheetClick = () => {
     if (sheetState === 'collapsed') {
@@ -71,6 +77,13 @@ export function MobilePropertiesSheet({ selectedNode }: MobilePropertiesSheetPro
       if ('vibrate' in navigator) {
         navigator.vibrate(10);
       }
+    } else if (sheetState === 'collapsed') {
+      // Also allow header to expand when collapsed
+      setSheetState('expanded');
+      // Haptic feedback
+      if ('vibrate' in navigator) {
+        navigator.vibrate(10);
+      }
     }
   };
 
@@ -80,16 +93,7 @@ export function MobilePropertiesSheet({ selectedNode }: MobilePropertiesSheetPro
 
   return (
     <>
-      {/* Backdrop when expanded */}
-      {sheetState === 'expanded' && (
-        <div
-          className="properties-sheet-backdrop"
-          onClick={() => setSheetState('collapsed')}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Sheet container */}
+      {/* Sheet container - no backdrop, user can interact with ladder */}
       <div
         className={`mobile-properties-sheet ${sheetState} ${hasWiggled ? 'wiggled' : ''}`}
         onClick={handleSheetClick}

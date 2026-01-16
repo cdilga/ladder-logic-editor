@@ -3,29 +3,8 @@
  *
  * Elegant bottom-sheet with mechanical precision.
  * Single wiggle animation on appear - no loops.
+ * No backdrop - user can interact with ladder while viewing properties.
  */
-
-/* ============================================================================
-   Backdrop
-   ========================================================================= */
-
-.properties-sheet-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(26, 29, 41, 0.7);
-  backdrop-filter: blur(3px);
-  z-index: 149;
-  animation: sheetBackdropFadeIn 250ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes sheetBackdropFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
 
 /* ============================================================================
    Sheet Container
@@ -43,9 +22,10 @@
     0 -4px 24px rgba(0, 0, 0, 0.3),
     0 0 0 1px rgba(0, 212, 255, 0.08);
   transition: all 280ms cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 150;
+  z-index: 50;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  pointer-events: auto;
 }
 
 /* ============================================================================
