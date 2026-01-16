@@ -10,18 +10,19 @@ import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'reac
 import { LadderCanvas } from '../ladder-editor/LadderCanvas';
 import { STEditor } from '../st-editor/STEditor';
 import { VariableWatch } from '../variable-watch/VariableWatch';
-import { PropertyDrawer } from '../property-drawer';
-import { ProgramSelector } from '../program-selector';
+import { PropertiesPanel } from '../properties-panel';
+import { FileTabs } from '../file-tabs';
 import { OpenMenu } from '../open-menu';
 import { ErrorPanel } from '../error-panel';
 import { TutorialLightbulb } from '../onboarding';
 import { HelpMenu } from '../help-menu';
-import { useProjectStore, useSimulationStore } from '../../store';
 import {
-  saveToLocalStorage,
-  downloadSTFile,
-  scheduleAutoSave,
-} from '../../services/file-service';
+  useEditorStore,
+  useSimulationStore,
+  useUIStore,
+  scheduleEditorAutoSave,
+} from '../../store';
+import { downloadSTFile } from '../../services/file-service';
 import {
   runScanCycle,
   initializeVariables,
@@ -29,16 +30,35 @@ import {
   type RuntimeState,
   type SimulationStoreInterface,
 } from '../../interpreter';
+import { transformSTToLadder, type TransformResult } from '../../transformer';
 import type { STAST } from '../../transformer/ast';
-import type { LadderNode } from '../../models/ladder-elements';
+import type { LadderNode, LadderEdge } from '../../models/ladder-elements';
 
 import './MainLayout.css';
 
 export function MainLayout() {
   const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error'>('synced');
   const [errorCount, setErrorCount] = useState(0);
-  const [watchPanelCollapsed, setWatchPanelCollapsed] = useState(false);
   const [selectedNode, setSelectedNode] = useState<LadderNode | null>(null);
+  const [transformedNodes, setTransformedNodes] = useState<LadderNode[]>([]);
+  const [transformedEdges, setTransformedEdges] = useState<LadderEdge[]>([]);
+  const [lastTransformResult, setLastTransformResult] = useState<TransformResult | null>(null);
+
+  // Editor store state
+  const activeFile = useEditorStore((state) => state.getActiveFile());
+  const activeFileId = useEditorStore((state) => state.activeFileId);
+  const newFile = useEditorStore((state) => state.newFile);
+  const markFileClean = useEditorStore((state) => state.markFileClean);
+
+  // Check if any file is dirty
+  const hasDirtyFiles = useEditorStore((state) => {
+    return Array.from(state.files.values()).some((f) => f.isDirty);
+  });
+
+  // UI store state for panel visibility
+  const panels = useUIStore((state) => state.panels);
+  const togglePanel = useUIStore((state) => state.togglePanel);
+  const showPanel = useUIStore((state) => state.showPanel);
 
   // Simulation state and actions
   const simulationStatus = useSimulationStore((state) => state.status);
@@ -139,100 +159,78 @@ export function MainLayout() {
     resetSimulation();
   }, [stopSimulation, resetSimulation]);
 
-  const currentProgram = useProjectStore((state) => {
-    const project = state.project;
-    const currentId = state.currentProgramId;
-    if (!project || !currentId) return null;
-    return project.programs.find((p) => p.id === currentId) || null;
-  });
-
-  const transformCurrentProgram = useProjectStore((state) => state.transformCurrentProgram);
-  const transformedNodes = useProjectStore((state) => state.transformedNodes);
-  const transformedEdges = useProjectStore((state) => state.transformedEdges);
-  const lastTransformResult = useProjectStore((state) => state.lastTransformResult);
-
-  // Project store state for file operations
-  const project = useProjectStore((state) => state.project);
-  const isDirty = useProjectStore((state) => state.isDirty);
-  const newProject = useProjectStore((state) => state.newProject);
-  const saveProject = useProjectStore((state) => state.saveProject);
-
-  // Get currentProgramId for auto-save
-  const currentProgramId = useProjectStore((state) => state.currentProgramId);
-
-  // Auto-save when project changes (includes currentProgramId)
+  // Auto-save when files change
   useEffect(() => {
-    if (project && isDirty) {
-      scheduleAutoSave(project, currentProgramId ?? undefined);
+    if (hasDirtyFiles) {
+      scheduleEditorAutoSave();
     }
-  }, [project, isDirty, currentProgramId]);
+  }, [hasDirtyFiles, activeFile?.content]);
 
   // File operation handlers
   const handleNew = useCallback(() => {
-    if (isDirty) {
-      const confirmed = window.confirm(
-        'You have unsaved changes. Are you sure you want to create a new project?'
-      );
-      if (!confirmed) return;
-    }
-    newProject('New Project');
-  }, [isDirty, newProject]);
+    newFile();
+  }, [newFile]);
 
   const handleSave = useCallback(() => {
-    const projectToSave = saveProject();
-    if (projectToSave) {
-      // Save to localStorage for auto-recovery
-      saveToLocalStorage(projectToSave);
-      // Download ST file (source of truth)
-      const program = projectToSave.programs[0];
-      if (program) {
-        downloadSTFile(program.name, program.structuredText);
-      }
+    if (!activeFile) return;
+
+    // Download ST file
+    const programName = activeFile.name.replace(/\.st$/i, '');
+    downloadSTFile(programName, activeFile.content);
+
+    // Mark as clean
+    if (activeFileId) {
+      markFileClean(activeFileId);
     }
-  }, [saveProject]);
+  }, [activeFile, activeFileId, markFileClean]);
 
   // Transform when ST code changes
   useEffect(() => {
-    if (!currentProgram) return;
+    if (!activeFile) return;
 
     setSyncStatus('syncing');
 
     // Debounce transformation
     const timer = setTimeout(() => {
-      const result = transformCurrentProgram();
-      if (result) {
-        if (result.success) {
-          setSyncStatus('synced');
-          setErrorCount(0);
-          // Store AST for interpreter
-          if (result.intermediates?.ast) {
-            const newAST = result.intermediates.ast;
-            currentASTRef.current = newAST;
+      const result = transformSTToLadder(activeFile.content, {
+        warnOnUnsupported: true,
+        includeIntermediates: true,
+      });
 
-            // Reinitialize runtime state when AST changes
-            // This ensures ST code changes take effect immediately
-            const store = useSimulationStore.getState() as SimulationStoreInterface;
-            initializeVariables(newAST, store);
-            runtimeStateRef.current = createRuntimeState(newAST);
-          }
-        } else {
-          setSyncStatus('error');
-          setErrorCount(result.errors.length);
+      setLastTransformResult(result);
+      setTransformedNodes(result.nodes);
+      setTransformedEdges(result.edges);
+
+      if (result.success) {
+        setSyncStatus('synced');
+        setErrorCount(0);
+        // Store AST for interpreter
+        if (result.intermediates?.ast) {
+          const newAST = result.intermediates.ast;
+          currentASTRef.current = newAST;
+
+          // Reinitialize runtime state when AST changes
+          const store = useSimulationStore.getState() as SimulationStoreInterface;
+          initializeVariables(newAST, store);
+          runtimeStateRef.current = createRuntimeState(newAST);
         }
+      } else {
+        setSyncStatus('error');
+        setErrorCount(result.errors.length);
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [currentProgram?.structuredText, transformCurrentProgram]);
+  }, [activeFile?.content, activeFileId]);
 
   // Handle node changes from the ladder editor
-  const handleNodesChange = useCallback((nodes: typeof transformedNodes) => {
+  const handleNodesChange = useCallback((nodes: LadderNode[]) => {
     // Future: implement ladder -> ST conversion
     console.log('Nodes changed:', nodes.length);
   }, []);
 
   // Handle edge changes from the ladder editor
-  const handleEdgesChange = useCallback((edges: typeof transformedEdges) => {
+  const handleEdgesChange = useCallback((edges: LadderEdge[]) => {
     // Future: implement ladder -> ST conversion
     console.log('Edges changed:', edges.length);
   }, []);
@@ -259,30 +257,33 @@ export function MainLayout() {
     }
   };
 
+  // Determine if sidebar should be shown
+  const showSidebar = panels.properties || panels.variables;
+
   return (
     <div className="main-layout">
       {/* Toolbar */}
       <div className="toolbar">
         <div className="toolbar-group">
-          <button className="toolbar-btn" title="New Project" onClick={handleNew}>
+          <button className="toolbar-btn" title="New File" onClick={handleNew}>
             <span className="toolbar-icon">📄</span>
             <span className="toolbar-label">New</span>
           </button>
-          <OpenMenu isDirty={isDirty} />
+          <OpenMenu />
           <button
-            className={`toolbar-btn ${isDirty ? 'dirty' : ''}`}
-            title={isDirty ? 'Save Project (unsaved changes)' : 'Save Project'}
+            className={`toolbar-btn ${activeFile?.isDirty ? 'dirty' : ''}`}
+            title={activeFile?.isDirty ? 'Save File (unsaved changes)' : 'Save File'}
             onClick={handleSave}
           >
             <span className="toolbar-icon">💾</span>
-            <span className="toolbar-label">Save{isDirty ? '*' : ''}</span>
+            <span className="toolbar-label">Save{activeFile?.isDirty ? '*' : ''}</span>
           </button>
         </div>
 
         <div className="toolbar-separator" />
 
         <div className="toolbar-group">
-          <ProgramSelector />
+          <FileTabs />
         </div>
 
         <div className="toolbar-separator" />
@@ -361,18 +362,50 @@ export function MainLayout() {
           </PanelGroup>
         </div>
 
-        {/* Variable Watch Panel */}
-        <VariableWatch
-          collapsed={watchPanelCollapsed}
-          onToggleCollapse={() => setWatchPanelCollapsed(!watchPanelCollapsed)}
-        />
-      </div>
+        {/* Right Sidebar with Panels */}
+        {showSidebar && (
+          <div className="workspace-sidebar">
+            {/* Properties Panel */}
+            {panels.properties && (
+              <PropertiesPanel
+                selectedNode={selectedNode}
+                onClose={() => togglePanel('properties')}
+              />
+            )}
 
-      {/* Property Drawer - slides in when a node is selected */}
-      <PropertyDrawer
-        selectedNode={selectedNode}
-        onClose={() => setSelectedNode(null)}
-      />
+            {/* Variable Watch Panel */}
+            {panels.variables && (
+              <VariableWatch
+                onClose={() => togglePanel('variables')}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Edge Indicators for hidden panels */}
+        {!showSidebar && (
+          <div className="panel-indicators">
+            {!panels.properties && (
+              <button
+                className="panel-indicator"
+                onClick={() => showPanel('properties')}
+                title="Show Properties"
+              >
+                Props▶
+              </button>
+            )}
+            {!panels.variables && (
+              <button
+                className="panel-indicator"
+                onClick={() => showPanel('variables')}
+                title="Show Variables"
+              >
+                Vars▶
+              </button>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Error Panel */}
       <ErrorPanel

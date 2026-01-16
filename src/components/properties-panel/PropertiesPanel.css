@@ -8,6 +8,9 @@
 }
 
 .properties-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 10px 12px;
   font-size: 12px;
   font-weight: 600;
@@ -15,6 +18,33 @@
   letter-spacing: 0.5px;
   color: var(--text-secondary, #888);
   border-bottom: 1px solid var(--border-color, #404040);
+  background: var(--bg-surface, #222633);
+}
+
+.properties-title {
+  flex: 1;
+}
+
+.properties-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: var(--text-muted, #6b7280);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.properties-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #e4e7eb);
 }
 
 .properties-empty {

@@ -16,12 +16,14 @@ import './VariableWatch.css';
 interface VariableWatchProps {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
+  onClose?: () => void;
   selectedNode?: LadderNode | null;
 }
 
 export const VariableWatch = memo(function VariableWatch({
   collapsed = false,
   onToggleCollapse,
+  onClose,
   selectedNode = null,
 }: VariableWatchProps) {
   // Only show properties tab when selectedNode prop is explicitly provided (mobile layout)
@@ -65,10 +67,22 @@ export const VariableWatch = memo(function VariableWatch({
   return (
     <div className="variable-watch">
       <div className="watch-header" onClick={onToggleCollapse}>
-        <span className="watch-title">Variable Watch</span>
+        <span className="watch-title">Variables</span>
         <span className={`watch-status ${simulationStatus}`}>
           {simulationStatus === 'running' ? '● Live' : simulationStatus === 'paused' ? '◐ Paused' : '○ Stopped'}
         </span>
+        {onClose && (
+          <button
+            className="watch-close"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            title="Close"
+          >
+            ×
+          </button>
+        )}
       </div>
 
       <div className="watch-tabs">

@@ -1,25 +1,21 @@
 /**
  * Open Menu Component
  *
- * Dropdown menu for opening projects from examples or local files.
+ * Dropdown menu for opening files from examples or local files.
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { useProjectStore } from '../../store';
+import { useEditorStore } from '../../store';
 import { openSTFile } from '../../services/file-service';
+import trafficControllerST from '../../examples/traffic-controller.st?raw';
+import dualPumpControllerST from '../../examples/dual-pump-controller.st?raw';
 import './OpenMenu.css';
 
-interface OpenMenuProps {
-  isDirty: boolean;
-}
-
-export function OpenMenu({ isDirty }: OpenMenuProps) {
+export function OpenMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const loadFromSTCode = useProjectStore((state) => state.loadFromSTCode);
-  const newTrafficControllerProject = useProjectStore((state) => state.newTrafficControllerProject);
-  const newDualPumpControllerProject = useProjectStore((state) => state.newDualPumpControllerProject);
+  const openFile = useEditorStore((state) => state.openFile);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -47,33 +43,20 @@ export function OpenMenu({ isDirty }: OpenMenuProps) {
     }
   }, [isOpen]);
 
-  const confirmIfDirty = (): boolean => {
-    if (isDirty) {
-      return window.confirm(
-        'You have unsaved changes. Are you sure you want to open a different file?'
-      );
-    }
-    return true;
-  };
-
   const handleLoadExample = (example: 'traffic' | 'dual-pump') => {
-    if (!confirmIfDirty()) return;
-
     if (example === 'traffic') {
-      newTrafficControllerProject('4-Way Intersection');
+      openFile('TrafficController.st', trafficControllerST);
     } else if (example === 'dual-pump') {
-      newDualPumpControllerProject('Dual Pump Controller');
+      openFile('DualPumpController.st', dualPumpControllerST);
     }
 
     setIsOpen(false);
   };
 
   const handleOpenLocalFile = async () => {
-    if (!confirmIfDirty()) return;
-
     try {
-      const { programName, stCode, fileName } = await openSTFile();
-      loadFromSTCode(programName, stCode, fileName);
+      const { programName, stCode } = await openSTFile();
+      openFile(programName, stCode);
     } catch (error) {
       if ((error as Error).message !== 'File selection cancelled') {
         console.error('Error opening ST file:', error);
@@ -88,7 +71,7 @@ export function OpenMenu({ isDirty }: OpenMenuProps) {
     <div className="open-menu" ref={dropdownRef}>
       <button
         className="toolbar-btn"
-        title="Open Project"
+        title="Open File"
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className="toolbar-icon">📂</span>

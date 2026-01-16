@@ -9,13 +9,21 @@ import './PropertiesPanel.css';
 
 interface PropertiesPanelProps {
   selectedNode: LadderNode | null;
+  onClose?: () => void;
 }
 
-export function PropertiesPanel({ selectedNode }: PropertiesPanelProps) {
+export function PropertiesPanel({ selectedNode, onClose }: PropertiesPanelProps) {
   if (!selectedNode) {
     return (
       <div className="properties-panel">
-        <div className="properties-header">Properties</div>
+        <div className="properties-header">
+          <span className="properties-title">Properties</span>
+          {onClose && (
+            <button className="properties-close" onClick={onClose} title="Close">
+              ×
+            </button>
+          )}
+        </div>
         <div className="properties-empty">No selection</div>
       </div>
     );
@@ -25,7 +33,14 @@ export function PropertiesPanel({ selectedNode }: PropertiesPanelProps) {
 
   return (
     <div className="properties-panel">
-      <div className="properties-header">Properties</div>
+      <div className="properties-header">
+        <span className="properties-title">Properties</span>
+        {onClose && (
+          <button className="properties-close" onClick={onClose} title="Close">
+            ×
+          </button>
+        )}
+      </div>
       <div className="properties-content">
         <PropertyRow label="Type" value={nodeTypeLabel} />
         <PropertyRow label="ID" value={selectedNode.id} mono />
