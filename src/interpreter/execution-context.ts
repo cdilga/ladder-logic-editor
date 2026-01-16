@@ -16,6 +16,14 @@ import { buildTypeRegistry, buildConstantRegistry, type TypeRegistry, type Const
 // ============================================================================
 
 /**
+ * Array element storage with metadata
+ */
+export interface ArrayStorage {
+  metadata: { startIndex: number; endIndex: number; elementType: string };
+  values: (boolean | number)[];
+}
+
+/**
  * Full simulation store interface.
  * Combines variable access with timer/counter operations.
  */
@@ -37,6 +45,12 @@ export interface SimulationStoreInterface extends FunctionBlockStore {
   integers: Record<string, number>;
   reals: Record<string, number>;
   times: Record<string, number>;
+
+  // Array storage
+  arrays?: Record<string, ArrayStorage>;
+  initArray?: (name: string, metadata: { startIndex: number; endIndex: number; elementType: string }, values: (boolean | number)[]) => void;
+  getArrayElement?: (name: string, index: number) => boolean | number | undefined;
+  setArrayElement?: (name: string, index: number, value: boolean | number) => void;
 
   // Function block storage
   counters: Record<string, { CU: boolean; CD: boolean; R: boolean; LD: boolean; PV: number; QU: boolean; QD: boolean; CV: number }>;
@@ -187,6 +201,20 @@ export function createExecutionContext(
         default: return false;
       }
     },
+
+    // Array element access
+    getArrayElement: store.getArrayElement
+      ? (name: string, index: number) => {
+          const value = store.getArrayElement!(name, index);
+          return value ?? 0;
+        }
+      : undefined,
+
+    setArrayElement: store.setArrayElement
+      ? (name: string, index: number, value: boolean | number) => {
+          store.setArrayElement!(name, index, value);
+        }
+      : undefined,
 
     // Function block handling
     handleFunctionBlockCall: (call, _ctx) => {

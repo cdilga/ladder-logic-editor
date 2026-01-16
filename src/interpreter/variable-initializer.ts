@@ -15,7 +15,7 @@ import type { STAST, STVarBlock, STVariableDecl, STLiteral } from '../transforme
 /**
  * Declared data type categories for variable storage.
  */
-export type DeclaredType = 'BOOL' | 'INT' | 'REAL' | 'TIME' | 'TIMER' | 'COUNTER' | 'R_TRIG' | 'F_TRIG' | 'BISTABLE' | 'UNKNOWN';
+export type DeclaredType = 'BOOL' | 'INT' | 'REAL' | 'TIME' | 'TIMER' | 'COUNTER' | 'R_TRIG' | 'F_TRIG' | 'BISTABLE' | 'ARRAY' | 'UNKNOWN';
 
 /**
  * Registry mapping variable names to their declared types.
@@ -39,6 +39,15 @@ export type ConstantRegistry = Set<string>;
 export type TimerType = 'TON' | 'TOF' | 'TP';
 
 /**
+ * Array metadata stored alongside array values
+ */
+export interface ArrayMetadata {
+  startIndex: number;
+  endIndex: number;
+  elementType: string;
+}
+
+/**
  * Store interface for variable initialization.
  */
 export interface InitializableStore {
@@ -48,6 +57,7 @@ export interface InitializableStore {
   setTime: (name: string, value: number) => void;
   initTimer: (name: string, pt: number, timerType?: TimerType) => void;
   initCounter: (name: string, pv: number) => void;
+  initArray?: (name: string, metadata: ArrayMetadata, values: (boolean | number)[]) => void;
   clearAll: () => void;
 }
 
@@ -99,8 +109,24 @@ function initializeVarBlock(varBlock: STVarBlock, store: InitializableStore): vo
 
 function initializeDeclaration(decl: STVariableDecl, store: InitializableStore): void {
   const typeName = decl.dataType.typeName.toUpperCase();
+  const isArray = decl.dataType.isArray;
+  const arrayRange = decl.dataType.arrayRange;
 
   for (const name of decl.names) {
+    // Handle array types
+    if (isArray && arrayRange && store.initArray) {
+      const metadata: ArrayMetadata = {
+        startIndex: arrayRange.start,
+        endIndex: arrayRange.end,
+        elementType: typeName,
+      };
+      const size = arrayRange.end - arrayRange.start + 1;
+      const defaultValue = getDefaultValueForType(typeName);
+      const values = new Array(size).fill(defaultValue);
+      store.initArray(name, metadata, values);
+      continue;
+    }
+
     // Handle function block types
     if (TIMER_TYPES.has(typeName)) {
       const ptValue = extractTimerPreset(decl);
@@ -154,6 +180,36 @@ function initializeDeclaration(decl: STVariableDecl, store: InitializableStore):
           initializeFromValue(name, initialValue, store);
         }
     }
+  }
+}
+
+/**
+ * Get the default value for a given type name.
+ */
+function getDefaultValueForType(typeName: string): boolean | number {
+  switch (typeName) {
+    case 'BOOL':
+      return false;
+    case 'INT':
+    case 'DINT':
+    case 'SINT':
+    case 'LINT':
+    case 'UINT':
+    case 'UDINT':
+    case 'USINT':
+    case 'ULINT':
+    case 'BYTE':
+    case 'WORD':
+    case 'DWORD':
+    case 'LWORD':
+      return 0;
+    case 'REAL':
+    case 'LREAL':
+      return 0.0;
+    case 'TIME':
+      return 0;
+    default:
+      return 0;
   }
 }
 
@@ -339,7 +395,8 @@ export function buildTypeRegistry(ast: STAST): TypeRegistry {
 function buildVarBlockTypes(varBlock: STVarBlock, registry: TypeRegistry): void {
   for (const decl of varBlock.declarations) {
     const typeName = decl.dataType.typeName.toUpperCase();
-    const declaredType = categorizeType(typeName);
+    const isArray = decl.dataType.isArray;
+    const declaredType = isArray ? 'ARRAY' : categorizeType(typeName);
 
     for (const name of decl.names) {
       registry[name] = declaredType;

@@ -2384,3 +2384,224 @@ END_PROGRAM
     expect(store.getInt('result')).toBe(90);
   });
 });
+
+// ============================================================================
+// TIME Arithmetic Operations (IEC 61131-3)
+// ============================================================================
+
+describe('TIME Arithmetic Operations', () => {
+  let store: SimulationStoreInterface;
+
+  beforeEach(() => {
+    store = createTestStore(100);
+  });
+
+  describe('TIME + TIME', () => {
+    it('adds two TIME values', () => {
+      const code = `
+PROGRAM Test
+VAR
+  t1 : TIME := T#1s;
+  t2 : TIME := T#500ms;
+  result : TIME;
+END_VAR
+result := t1 + t2;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getTime('result')).toBe(1500); // 1000 + 500 = 1500ms
+    });
+
+    it('adds TIME literals directly', () => {
+      const code = `
+PROGRAM Test
+VAR
+  result : TIME;
+END_VAR
+result := T#2s + T#300ms;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getTime('result')).toBe(2300); // 2000 + 300 = 2300ms
+    });
+
+    it('accumulates TIME values across scans', () => {
+      const code = `
+PROGRAM Test
+VAR
+  totalTime : TIME := T#0ms;
+END_VAR
+totalTime := totalTime + T#100ms;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 5);
+      expect(store.getTime('totalTime')).toBe(500); // 100 * 5 = 500ms
+    });
+  });
+
+  describe('TIME - TIME', () => {
+    it('subtracts two TIME values', () => {
+      const code = `
+PROGRAM Test
+VAR
+  t1 : TIME := T#5s;
+  t2 : TIME := T#2s;
+  result : TIME;
+END_VAR
+result := t1 - t2;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getTime('result')).toBe(3000); // 5000 - 2000 = 3000ms
+    });
+
+    it('produces negative TIME when result is negative', () => {
+      const code = `
+PROGRAM Test
+VAR
+  t1 : TIME := T#1s;
+  t2 : TIME := T#3s;
+  result : TIME;
+END_VAR
+result := t1 - t2;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getTime('result')).toBe(-2000); // 1000 - 3000 = -2000ms
+    });
+  });
+
+  describe('TIME * INT (scaling)', () => {
+    it('multiplies TIME by integer', () => {
+      const code = `
+PROGRAM Test
+VAR
+  t1 : TIME := T#1s;
+  n : INT := 3;
+  result : TIME;
+END_VAR
+result := t1 * n;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getTime('result')).toBe(3000); // 1000 * 3 = 3000ms
+    });
+
+    it('multiplies TIME by integer literal', () => {
+      const code = `
+PROGRAM Test
+VAR
+  result : TIME;
+END_VAR
+result := T#500ms * 4;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getTime('result')).toBe(2000); // 500 * 4 = 2000ms
+    });
+
+    it('handles multiplication by zero', () => {
+      const code = `
+PROGRAM Test
+VAR
+  result : TIME;
+END_VAR
+result := T#10s * 0;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getTime('result')).toBe(0);
+    });
+  });
+
+  describe('TIME / INT (scaling)', () => {
+    it('divides TIME by integer', () => {
+      const code = `
+PROGRAM Test
+VAR
+  t1 : TIME := T#6s;
+  result : TIME;
+END_VAR
+result := t1 / 2;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getTime('result')).toBe(3000); // 6000 / 2 = 3000ms
+    });
+
+    it('truncates fractional milliseconds', () => {
+      const code = `
+PROGRAM Test
+VAR
+  result : TIME;
+END_VAR
+result := T#1s / 3;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getTime('result')).toBe(333); // 1000 / 3 = 333.33... truncated to 333ms
+    });
+
+    it('divides TIME by variable', () => {
+      const code = `
+PROGRAM Test
+VAR
+  t1 : TIME := T#10s;
+  divisor : INT := 4;
+  result : TIME;
+END_VAR
+result := t1 / divisor;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getTime('result')).toBe(2500); // 10000 / 4 = 2500ms
+    });
+  });
+
+  describe('Complex TIME expressions', () => {
+    it('combines multiple TIME operations', () => {
+      const code = `
+PROGRAM Test
+VAR
+  t1 : TIME := T#1s;
+  t2 : TIME := T#2s;
+  result : TIME;
+END_VAR
+result := (t1 + t2) * 2;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getTime('result')).toBe(6000); // (1000 + 2000) * 2 = 6000ms
+    });
+
+    it('uses TIME in conditional expressions', () => {
+      const code = `
+PROGRAM Test
+VAR
+  t1 : TIME := T#2s;
+  t2 : TIME := T#1s;
+  isLonger : BOOL;
+END_VAR
+isLonger := t1 > t2;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getBool('isLonger')).toBe(true);
+    });
+
+    it('TIME comparison with equal values', () => {
+      const code = `
+PROGRAM Test
+VAR
+  t1 : TIME := T#1000ms;
+  t2 : TIME := T#1s;
+  isEqual : BOOL;
+END_VAR
+isEqual := t1 = t2;
+END_PROGRAM
+`;
+      initializeAndRun(code, store, 1);
+      expect(store.getBool('isEqual')).toBe(true); // Both are 1000ms
+    });
+  });
+});

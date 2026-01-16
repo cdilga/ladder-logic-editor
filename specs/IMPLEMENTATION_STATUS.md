@@ -10,8 +10,8 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 | Category | Implemented | Total | Coverage |
 |----------|-------------|-------|----------|
-| Data Types | 16 | 21 | 76% |
-| Variables | 4 | 10 | 40% |
+| Data Types | 17 | 21 | 81% |
+| Variables | 5 | 10 | 50% |
 | Operators | 16 | 17 | 94% |
 | Control Flow | 7 | 7 | 100% |
 | Standard FBs | 10 | 10+ | 100%* |
@@ -51,11 +51,11 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 ### Derived Types
 
-| Type | Reference | Status | Notes |
-|------|-----------|--------|-------|
-| ARRAY | §2.2.1 | ❌ | Parser supports, interpreter doesn't |
-| STRUCT | §2.2.2 | ❌ | |
-| Enumeration | §2.2.3 | ❌ | |
+| Type | Reference | Status | Tests | Notes |
+|------|-----------|--------|-------|-------|
+| ARRAY | §2.2.1 | ✅ | 24 | Single-dimensional, all element types |
+| STRUCT | §2.2.2 | ❌ | - | |
+| Enumeration | §2.2.3 | ❌ | - | |
 
 ---
 
@@ -67,7 +67,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | VAR_INPUT | §3.1 | ⚠️ | - | Parsed, limited execution |
 | VAR_OUTPUT | §3.1 | ⚠️ | - | Parsed, limited execution |
 | VAR_IN_OUT | §3.1 | ❌ | - | |
-| VAR_GLOBAL | §3.1 | ❌ | - | |
+| VAR_GLOBAL | §3.1 | ✅ | - | Works across programs |
 | VAR_EXTERNAL | §3.1 | ❌ | - | |
 | VAR_TEMP | §3.1 | ❌ | - | |
 | RETAIN | §3.2 | ⚠️ | - | Parsed, no persistence |
@@ -212,7 +212,7 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | Counters | 59 | ✅ 100% |
 | Edge Detection | 35 | ✅ 100% |
 | Bistables | 45 | ✅ 100% |
-| Data Types | 140 | ✅ 100% |
+| Data Types | 154 | ✅ 100% |
 | Variables | 59 | ✅ 100% |
 | Operators | 120 | ✅ 100% |
 | Control Flow | 116 | ✅ 100% |
@@ -225,7 +225,8 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 | Bit String Types | 37 | ✅ 100% |
 | Continue Statement | 15 | ✅ 100% |
 | CONSTANT Variables | 20 | ✅ 100% |
-| **Total** | **1402** | ✅ 100% |
+| ARRAY Types | 24 | ✅ 100% |
+| **Total** | **1440** | ✅ 100% |
 
 ---
 
@@ -235,13 +236,13 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 1. **RETURN statement** - Meaningful execution (requires user function support)
 2. **User-defined FUNCTIONs** - Enable reusable computation blocks
-3. **ARRAY support** - Parser supports, interpreter needs implementation
+3. **Multi-dimensional ARRAYs** - Currently single-dimensional only
 
 ### Future Consideration
 
 - User-defined FUNCTION
 - User-defined FUNCTION_BLOCK
-- ARRAY support
+- Multi-dimensional ARRAY support
 - STRING support
 - STRUCT support
 
@@ -251,6 +252,9 @@ Tracks our implementation progress against the [IEC 61131-3 Reference](./IEC_611
 
 | Date | Change |
 |------|--------|
+| 2026-01-16 | Added single-dimensional ARRAY type with indexed access (read/write) - 24 new tests, data types now 81% |
+| 2026-01-16 | Added TIME arithmetic tests (TIME+TIME, TIME*INT, TIME/INT) - 14 new tests |
+| 2026-01-16 | Verified VAR_GLOBAL works correctly - updated status to implemented |
 | 2026-01-16 | Added CONSTANT variable qualifier with read-only enforcement - 20 new tests, variables coverage now 40% |
 | 2026-01-16 | Added CONTINUE statement for loops (FOR, WHILE, REPEAT) - 15 new tests, control flow now 100% |
 | 2026-01-16 | Added bit string types (BYTE, WORD, DWORD, LWORD) with hex (16#FF) and binary (2#1010) literal support - 37 new tests |

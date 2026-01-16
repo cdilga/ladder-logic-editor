@@ -260,7 +260,11 @@ PrimaryExpression {
 }
 
 Variable {
-  Identifier ("." Identifier)*
+  Identifier (("." Identifier) | ArrayIndex)*
+}
+
+ArrayIndex {
+  "[" Expression "]"
 }
 
 FunctionCall {

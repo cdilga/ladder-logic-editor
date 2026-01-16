@@ -103,10 +103,18 @@ export interface STUnaryExpr extends ASTNode {
   operand: STExpression;
 }
 
+/**
+ * Access path element - can be a field name or an array index
+ */
+export type AccessPathElement =
+  | { kind: 'field'; name: string }
+  | { kind: 'index'; expression: STExpression };
+
 export interface STVariable extends ASTNode {
   type: 'Variable';
   name: string;
-  accessPath: string[]; // For nested access like Timer1.Q -> ['Timer1', 'Q']
+  accessPath: string[]; // Legacy: For nested access like Timer1.Q -> ['Timer1', 'Q']
+  arrayIndices?: STExpression[]; // Array index expressions (e.g., arr[5] -> [5], arr[i][j] -> [i, j])
 }
 
 export type LiteralType = 'BOOL' | 'INT' | 'REAL' | 'TIME' | 'STRING';

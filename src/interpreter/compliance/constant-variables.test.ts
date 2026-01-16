@@ -7,7 +7,7 @@
  * Status: Complete
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { parseSTToAST } from '../../transformer/ast/cst-to-ast';
 import {
   initializeVariables,

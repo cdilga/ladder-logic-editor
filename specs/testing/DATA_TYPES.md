@@ -273,7 +273,7 @@ END_TYPE
 | DWORD | P2 | 32 bits | 0 to 4,294,967,295 | 6.3.1 |
 | LWORD | P3 | 64 bits | 0 to 2^64-1 | 6.3.1 |
 | **Derived Types** |
-| ARRAY | P2 | - | Single/multi-dimensional | 6.4.4.1 |
+| ARRAY | ✅ Impl | - | Single-dimensional (24 tests) | 6.4.4.1 |
 | STRUCT | P2 | - | Named fields | 6.4.4.2 |
 | Enumeration | P2 | - | Named constants | 6.4.4.3 |
 | Subrange | P3 | - | Constrained range | 6.4.4.4 |
@@ -389,11 +389,10 @@ direct assignments like `realVar := intVar`.
 - [ ] Negative duration: T#-250ms
 
 ### Arithmetic
-**Implementation Note:** TIME arithmetic assignment is not currently supported in this implementation.
-- [ ] ~~TIME + TIME~~ - Not implemented (results stored as INT, not TIME)
-- [ ] ~~TIME - TIME~~ - Not implemented
-- [ ] ~~TIME * INT (scaling)~~ - Not implemented
-- [ ] ~~TIME / INT (scaling)~~ - Not implemented
+- [x] TIME + TIME (1s + 500ms = 1500ms)
+- [x] TIME - TIME (5s - 2s = 3000ms)
+- [x] TIME * INT (scaling: 1s * 3 = 3000ms)
+- [x] TIME / INT (scaling: 6s / 2 = 3000ms)
 
 ### Comparison
 - [x] TIME = TIME
@@ -404,7 +403,6 @@ direct assignments like `realVar := intVar`.
 - [x] T#0ms (zero time) - parses to 0
 - Note: Negative time (T#-1s) not supported - parses incorrectly as subtraction
 - [x] Very large time (T#24h) - 86400000ms, no overflow
-- Note: TIME arithmetic not implemented in this version
 
 ---
 

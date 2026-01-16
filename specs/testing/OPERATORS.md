@@ -35,7 +35,7 @@ CODESYS/Beckhoff show exponentiation above unary. This table follows CODESYS/Bec
 - [x] INT + INT
 - [x] REAL + REAL
 - [x] INT + REAL (implicit coercion)
-- [ ] TIME + TIME
+- [x] TIME + TIME
 - [ ] Overflow behavior
 
 ### Subtraction (-)
@@ -47,14 +47,14 @@ CODESYS/Beckhoff show exponentiation above unary. This table follows CODESYS/Bec
 ### Multiplication (*)
 - [x] INT * INT
 - [x] REAL * REAL
-- [ ] TIME * INT (scaling)
+- [x] TIME * INT (scaling)
 - [ ] Overflow behavior
 
 ### Division (/)
 - [x] INT / INT (truncation toward zero)
 - [x] REAL / REAL
 - [ ] Division by zero → error flag + Infinity
-- [ ] TIME / INT (scaling)
+- [x] TIME / INT (scaling)
 
 ### Modulo (MOD)
 - [x] Positive MOD positive

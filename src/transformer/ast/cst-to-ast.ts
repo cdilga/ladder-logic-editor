@@ -988,17 +988,34 @@ function parsePrimaryExpression(node: SyntaxNode, source: string): STExpression 
 function parseVariable(node: SyntaxNode, source: string): STVariable {
   const loc = { start: node.from, end: node.to };
   const accessPath: string[] = [];
+  const arrayIndices: STExpression[] = [];
 
   let child = node.firstChild;
   while (child) {
     if (child.name === 'Identifier') {
       accessPath.push(source.slice(child.from, child.to));
+    } else if (child.name === 'ArrayIndex') {
+      // ArrayIndex contains an Expression
+      let indexChild = child.firstChild;
+      while (indexChild) {
+        if (indexChild.name === 'Expression') {
+          arrayIndices.push(parseExpression(indexChild, source));
+          break;
+        }
+        indexChild = indexChild.nextSibling;
+      }
     }
     child = child.nextSibling;
   }
 
   const name = accessPath.join('.');
-  return { type: 'Variable', name, accessPath, loc };
+  const result: STVariable = { type: 'Variable', name, accessPath, loc };
+
+  if (arrayIndices.length > 0) {
+    result.arrayIndices = arrayIndices;
+  }
+
+  return result;
 }
 
 function parseLiteral(node: SyntaxNode, source: string): STLiteral {

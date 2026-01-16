@@ -74,6 +74,8 @@ export interface ExecutionContext extends EvaluationContext {
   isConstant: (name: string) => boolean;
   /** Handle function block calls (timers, counters) */
   handleFunctionBlockCall: (call: STFunctionBlockCall, ctx: ExecutionContext) => void;
+  /** Set an array element by name and index - optional for array support */
+  setArrayElement?: (name: string, index: number, value: boolean | number) => void;
 }
 
 // ============================================================================
@@ -149,6 +151,7 @@ export function executeStatements(stmts: STStatement[], context: ExecutionContex
 
 function executeAssignment(stmt: STAssignment, context: ExecutionContext): void {
   const targetName = stmt.target.name;
+  const arrayIndices = stmt.target.arrayIndices;
 
   // Check if the target variable is CONSTANT
   if (context.isConstant(targetName)) {
@@ -157,6 +160,14 @@ function executeAssignment(stmt: STAssignment, context: ExecutionContext): void 
   }
 
   const value = evaluateExpression(stmt.expression, context);
+
+  // Handle array element assignment: arr[i] := value
+  if (arrayIndices && arrayIndices.length > 0 && context.setArrayElement) {
+    const index = toNumber(evaluateExpression(arrayIndices[0], context));
+    const numericValue = typeof value === 'boolean' ? (value ? 1 : 0) : toNumber(value);
+    context.setArrayElement(targetName, index, typeof value === 'boolean' ? value : numericValue);
+    return;
+  }
 
   // Get the declared type of the target variable
   const declaredType = context.getVariableType(targetName);
@@ -186,6 +197,11 @@ function executeAssignment(stmt: STAssignment, context: ExecutionContext): void 
       case 'TIMER':
       case 'COUNTER':
         // Function blocks are handled differently, skip
+        return;
+
+      case 'ARRAY':
+        // Array without index - not supported for direct assignment
+        console.warn(`Cannot assign directly to array '${targetName}' - use indexed access`);
         return;
 
       case 'UNKNOWN':

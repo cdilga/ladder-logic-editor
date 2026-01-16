@@ -39,6 +39,8 @@ export interface EvaluationContext {
   getEdgeDetectorField?: (name: string, field: string) => Value;
   /** Get a bistable field (Q1) - optional for backwards compatibility */
   getBistableField?: (name: string, field: string) => Value;
+  /** Get an array element by name and index - optional for array support */
+  getArrayElement?: (name: string, index: number) => Value;
 }
 
 // ============================================================================
@@ -99,7 +101,14 @@ function evaluateLiteral(literal: STLiteral): Value {
 // ============================================================================
 
 function evaluateVariable(variable: STVariable, context: EvaluationContext): Value {
-  const { accessPath } = variable;
+  const { accessPath, arrayIndices } = variable;
+
+  // Handle array access: arr[i] or arr[5]
+  if (arrayIndices && arrayIndices.length > 0 && context.getArrayElement) {
+    // For now, support single-dimensional arrays
+    const index = toNumber(evaluateExpression(arrayIndices[0], context));
+    return context.getArrayElement(accessPath[0], index);
+  }
 
   // Simple variable: just the name
   if (accessPath.length === 1) {
