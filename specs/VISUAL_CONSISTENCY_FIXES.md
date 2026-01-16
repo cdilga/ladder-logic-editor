@@ -243,6 +243,68 @@ Define border radius tokens: `--radius-sm: 2px`, `--radius-md: 4px`, `--radius-l
 
 ## Mobile-Specific Issues
 
+### VIS-014: Mobile Bottom Tab Bar Icon Inconsistency (New - 2025-01-17)
+
+**Severity:** Low
+**Status:** Observation
+
+**Description:**
+The mobile bottom tab bar uses a mix of Unicode symbols and text:
+- LADDER: `⎔` (Unicode hexagon)
+- CODE: `</>` (text)
+- DEBUG: `▶` (Unicode play symbol)
+- HELP: `?` (text)
+
+**Visual Evidence:**
+```
+⎔        </>       ▶        ?
+Ladder   Code     Debug    Help
+```
+
+**Issues:**
+1. Visual weight varies significantly between symbols
+2. `▶` symbol is commonly associated with "play/run", may confuse users since DEBUG doesn't run simulation
+3. Cross-platform rendering varies for Unicode symbols
+
+**Recommendation:**
+Use consistent SVG icons for all tabs, or consistent text-only labels.
+
+---
+
+### VIS-015: Mobile Menu Icon Duplication (New - 2025-01-17)
+
+**Severity:** Low
+**Status:** Confirmed
+
+**Description:**
+The mobile hamburger menu shows icons duplicated next to text:
+
+```
+📄 New File
+📄
+📂 Open File
+📂
+💾 Save
+💾
+```
+
+**Test Results:**
+```
+Menu items count: 6
+Menu item: "📄New File"
+Menu item: "📄"
+Menu item: "📂Open File"
+Menu item: "📂"
+Menu item: "💾Save"
+Menu item: "💾"
+```
+
+**Issue:** Icons appear to be rendered both inside and outside the button elements, causing visual duplication.
+
+**Screenshot:** `screenshots/explore-mobile-menu-open.png`
+
+---
+
 ### VIS-011: Mobile Header Different from Desktop
 
 **Severity:** Low
@@ -292,20 +354,86 @@ The application uses a range of dark background colors that follow a consistent 
 
 ---
 
+## Automated Testing Results (2025-01-17)
+
+### Button Styling Variations Found
+
+Playwright automated analysis found **8 distinct button style combinations** across 22 buttons:
+
+| Style Pattern (padding-borderRadius-fontSize) | Count |
+|---------------------------------------------|-------|
+| `6px 10px` - `4px` - `12px` | 6 buttons |
+| `5px` - `8px` - `16px` | 4 buttons |
+| `6px 4px` - `8px` - `10px` | 4 buttons |
+| `0px` - `4px` - `12px` | 2 buttons |
+| `6px 8px` - `4px 4px 0px 0px` - `12px` | 1 button |
+| `0px` - `3px` - `14px` | 1 button |
+| `0px` - `4px` - `16px` | 1 button |
+| `0px` - `3px` - `12px` | 1 button |
+
+**Recommendation:** Consolidate to 2-3 button variants (primary, secondary, ghost).
+
+---
+
+### Font Usage Analysis
+
+| Font Family | Usage Count |
+|-------------|-------------|
+| "Segoe UI" | 44 elements |
+| "Fira Code" | 6 elements |
+
+| Font Size | Usage Count |
+|-----------|-------------|
+| 12px | 19 elements |
+| 14px | 13 elements |
+| 10px | 8 elements |
+| 16px | 5 elements |
+| 11px | 2 elements |
+| 8px | 2 elements |
+| 9px | 1 element |
+
+**Analysis:** Good consistency with Segoe UI as primary. Consider establishing a clear type scale (e.g., 10, 12, 14, 16, 20px) and deprecating odd sizes like 9px, 11px.
+
+---
+
+### Color Usage Analysis
+
+**Top Background Colors:**
+| Color | RGB | Usage |
+|-------|-----|-------|
+| `#1e1e1e` | rgb(30, 30, 30) | 5 elements |
+| `#252526` | rgb(37, 37, 38) | 4 elements |
+| `#4a4a4a` | rgb(74, 74, 74) | 2 elements |
+| `#333` | rgb(51, 51, 51) | 1 element |
+
+**Top Text Colors:**
+| Color | RGB | Usage |
+|-------|-----|-------|
+| `#d4d4d4` | rgb(212, 212, 212) | 57 elements |
+| `#213547` | rgb(33, 53, 71) | 35 elements |
+| `#e4e7eb` | rgb(228, 231, 235) | 2 elements |
+
+**Analysis:** Background colors are well-organized following VS Code-like dark theme. The text color `#213547` appears to be a light-theme remnant and should be investigated.
+
+---
+
 ## Recommendations Summary
 
 ### High Priority
 1. Create CSS custom property definitions for all colors
 2. Standardize font stacks
+3. **NEW:** Investigate the `#213547` text color usage (appears to be light theme color)
 
 ### Medium Priority
 3. Define consistent spacing scale
 4. Create reusable button/panel component styles
 5. Standardize border radius values
+6. **NEW:** Consolidate button styles to 2-3 variants
 
 ### Low Priority
 6. Consider SVG icons for mobile
 7. Document design tokens for future maintainability
+8. **NEW:** Clean up font size scale (remove 9px, 11px outliers)
 
 ---
 
