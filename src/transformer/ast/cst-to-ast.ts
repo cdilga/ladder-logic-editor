@@ -1342,6 +1342,36 @@ function parseLiteral(node: SyntaxNode, source: string): STLiteral {
           loc,
         };
       }
+      case 'DateLiteral': {
+        const dateText = source.slice(child.from, child.to);
+        return {
+          type: 'Literal',
+          value: dateText,
+          literalType: 'DATE',
+          rawValue: dateText,
+          loc,
+        };
+      }
+      case 'TimeOfDayLiteral': {
+        const todText = source.slice(child.from, child.to);
+        return {
+          type: 'Literal',
+          value: todText,
+          literalType: 'TIME_OF_DAY',
+          rawValue: todText,
+          loc,
+        };
+      }
+      case 'DateAndTimeLiteral': {
+        const dtText = source.slice(child.from, child.to);
+        return {
+          type: 'Literal',
+          value: dtText,
+          literalType: 'DATE_AND_TIME',
+          rawValue: dtText,
+          loc,
+        };
+      }
     }
     child = child.nextSibling;
   }

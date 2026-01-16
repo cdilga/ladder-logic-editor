@@ -24,6 +24,9 @@ function createTestStore(): SimulationStoreInterface {
   const integers: Record<string, number> = {};
   const reals: Record<string, number> = {};
   const times: Record<string, number> = {};
+  const dates: Record<string, number> = {};
+  const timesOfDay: Record<string, number> = {};
+  const dateAndTimes: Record<string, number> = {};
   const strings: Record<string, string> = {};
   const timers: Record<string, { IN: boolean; PT: number; Q: boolean; ET: number; running: boolean; timerType?: 'TON' | 'TOF' | 'TP' }> = {};
   const counters: Record<string, { CU: boolean; CD: boolean; R: boolean; LD: boolean; PV: number; QU: boolean; QD: boolean; CV: number }> = {};
@@ -35,6 +38,9 @@ function createTestStore(): SimulationStoreInterface {
     integers,
     reals,
     times,
+    dates,
+    timesOfDay,
+    dateAndTimes,
     strings,
     timers,
     counters,
@@ -46,12 +52,18 @@ function createTestStore(): SimulationStoreInterface {
     setInt: (name, value) => { integers[name] = value; },
     setReal: (name, value) => { reals[name] = value; },
     setTime: (name, value) => { times[name] = value; },
+    setDate: (name, value) => { dates[name] = value; },
+    setTimeOfDay: (name, value) => { timesOfDay[name] = value; },
+    setDateAndTime: (name, value) => { dateAndTimes[name] = value; },
     setString: (name, value) => { strings[name] = value; },
 
     getBool: (name) => booleans[name] ?? false,
     getInt: (name) => integers[name] ?? 0,
     getReal: (name) => reals[name] ?? 0,
     getTime: (name) => times[name] ?? 0,
+    getDate: (name) => dates[name] ?? 0,
+    getTimeOfDay: (name) => timesOfDay[name] ?? 0,
+    getDateAndTime: (name) => dateAndTimes[name] ?? 0,
     getString: (name) => strings[name] ?? '',
 
     initTimer: (name, pt, timerType = 'TON') => {
@@ -90,6 +102,9 @@ function createTestStore(): SimulationStoreInterface {
       Object.keys(integers).forEach(k => delete integers[k]);
       Object.keys(reals).forEach(k => delete reals[k]);
       Object.keys(times).forEach(k => delete times[k]);
+      Object.keys(dates).forEach(k => delete dates[k]);
+      Object.keys(timesOfDay).forEach(k => delete timesOfDay[k]);
+      Object.keys(dateAndTimes).forEach(k => delete dateAndTimes[k]);
       Object.keys(strings).forEach(k => delete strings[k]);
       Object.keys(timers).forEach(k => delete timers[k]);
       Object.keys(counters).forEach(k => delete counters[k]);

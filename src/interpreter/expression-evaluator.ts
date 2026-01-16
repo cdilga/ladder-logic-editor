@@ -107,7 +107,130 @@ export function evaluateExpression(expr: STExpression, context: EvaluationContex
 // ============================================================================
 
 function evaluateLiteral(literal: STLiteral): Value {
-  return literal.value;
+  // For date/time types, parse the literal string to its numeric representation
+  // If value is already numeric, return it directly (for pre-parsed values)
+  switch (literal.literalType) {
+    case 'TIME':
+      // If value is already numeric (milliseconds), return directly
+      if (typeof literal.value === 'number') {
+        return literal.value;
+      }
+      // TIME literals are stored as strings like "T#5s", parse to milliseconds
+      return parseTimeLiteralToMs(String(literal.value));
+
+    case 'DATE':
+      // If value is already numeric (days since epoch), return directly
+      if (typeof literal.value === 'number') {
+        return literal.value;
+      }
+      // DATE literals are stored as strings like "D#2024-01-15", parse to days since epoch
+      return parseDateLiteralToDays(String(literal.value));
+
+    case 'TIME_OF_DAY':
+      // If value is already numeric (ms since midnight), return directly
+      if (typeof literal.value === 'number') {
+        return literal.value;
+      }
+      // TIME_OF_DAY literals are stored as strings like "TOD#14:30:00", parse to ms since midnight
+      return parseTimeOfDayLiteralToMs(String(literal.value));
+
+    case 'DATE_AND_TIME':
+      // If value is already numeric (ms since epoch), return directly
+      if (typeof literal.value === 'number') {
+        return literal.value;
+      }
+      // DATE_AND_TIME literals are stored as strings like "DT#2024-01-15-14:30:00", parse to ms since epoch
+      return parseDateAndTimeLiteralToMs(String(literal.value));
+
+    default:
+      return literal.value;
+  }
+}
+
+/**
+ * Parse TIME literal to milliseconds.
+ */
+function parseTimeLiteralToMs(timeStr: string): number {
+  const time = parseTimeLiteral(timeStr);
+  return timeValueToMs(time);
+}
+
+/**
+ * Parse DATE literal to days since epoch (1970-01-01).
+ * Format: D#YYYY-MM-DD or DATE#YYYY-MM-DD
+ */
+function parseDateLiteralToDays(dateStr: string): number {
+  if (!dateStr) return 0;
+
+  // Remove D# or DATE# prefix if present
+  const str = dateStr.replace(/^(DATE#|D#)/i, '').trim();
+
+  // Parse YYYY-MM-DD format
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    const year = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10) - 1; // JS months are 0-indexed
+    const day = parseInt(match[3], 10);
+
+    // Create UTC date to avoid timezone issues
+    const date = Date.UTC(year, month, day);
+    // Convert to days since epoch (1970-01-01)
+    return Math.floor(date / (24 * 60 * 60 * 1000));
+  }
+
+  return 0;
+}
+
+/**
+ * Parse TIME_OF_DAY literal to milliseconds since midnight.
+ * Format: TOD#HH:MM:SS or TIME_OF_DAY#HH:MM:SS or TOD#HH:MM:SS.mmm
+ */
+function parseTimeOfDayLiteralToMs(todStr: string): number {
+  if (!todStr) return 0;
+
+  // Remove TOD# or TIME_OF_DAY# prefix if present
+  const str = todStr.replace(/^(TIME_OF_DAY#|TOD#)/i, '').trim();
+
+  // Parse HH:MM:SS or HH:MM:SS.mmm format
+  const match = str.match(/^(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?$/);
+  if (match) {
+    const hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const seconds = parseInt(match[3], 10);
+    const milliseconds = match[4] ? parseInt(match[4].padEnd(3, '0'), 10) : 0;
+
+    return (hours * 3600 + minutes * 60 + seconds) * 1000 + milliseconds;
+  }
+
+  return 0;
+}
+
+/**
+ * Parse DATE_AND_TIME literal to milliseconds since epoch.
+ * Format: DT#YYYY-MM-DD-HH:MM:SS or DATE_AND_TIME#YYYY-MM-DD-HH:MM:SS
+ */
+function parseDateAndTimeLiteralToMs(dtStr: string): number {
+  if (!dtStr) return 0;
+
+  // Remove DT# or DATE_AND_TIME# prefix if present
+  const str = dtStr.replace(/^(DATE_AND_TIME#|DT#)/i, '').trim();
+
+  // Parse YYYY-MM-DD-HH:MM:SS or YYYY-MM-DD-HH:MM:SS.mmm format
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})-(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?$/);
+  if (match) {
+    const year = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10) - 1; // JS months are 0-indexed
+    const day = parseInt(match[3], 10);
+    const hours = parseInt(match[4], 10);
+    const minutes = parseInt(match[5], 10);
+    const seconds = parseInt(match[6], 10);
+    const milliseconds = match[7] ? parseInt(match[7].padEnd(3, '0'), 10) : 0;
+
+    // Create UTC date to avoid timezone issues
+    return Date.UTC(year, month, day, hours, minutes, seconds, milliseconds);
+  }
+
+  return 0;
 }
 
 // ============================================================================

@@ -131,6 +131,9 @@ TypeName {
   kw<"REAL"> |
   kw<"LREAL"> |
   kw<"TIME"> |
+  kw<"DATE"> |
+  kw<"TIME_OF_DAY"> |
+  kw<"DATE_AND_TIME"> |
   kw<"STRING"> |
   kw<"BYTE"> |
   kw<"WORD"> |
@@ -333,6 +336,9 @@ Literal {
   Number |
   Boolean |
   String |
+  DateAndTimeLiteral |
+  TimeOfDayLiteral |
+  DateLiteral |
   TimeLiteral
 }
 
@@ -360,6 +366,21 @@ Literal {
     ("T#" | "TIME#") $[0-9a-zA-Z]+
   }
 
+  // Date literal: D#2024-01-15, DATE#2024-06-30
+  DateLiteral {
+    ("D#" | "DATE#") $[0-9\-]+
+  }
+
+  // Time of day literal: TOD#14:30:00, TIME_OF_DAY#08:15:30.500
+  TimeOfDayLiteral {
+    ("TOD#" | "TIME_OF_DAY#") $[0-9:.]+
+  }
+
+  // Date and time literal: DT#2024-01-15-14:30:00, DATE_AND_TIME#2024-06-30-08:15:30
+  DateAndTimeLiteral {
+    ("DT#" | "DATE_AND_TIME#") $[0-9:\-\.]+
+  }
+
   LineComment { "//" ![\n]* }
 
   BlockComment { "(*" blockCommentContent* "*)" }
@@ -371,7 +392,7 @@ Literal {
   "(" ")" "[" "]" "{" "}" ";" ":" ":=" "," ".." "."
   "+" "-" "*" "/" "**" "=" "<>" "<" ">" "<=" ">="
 
-  @precedence { TimeLiteral, HexNumber, BinaryNumber, Boolean, Number, Identifier, LineComment, "/" }
+  @precedence { DateAndTimeLiteral, TimeOfDayLiteral, DateLiteral, TimeLiteral, HexNumber, BinaryNumber, Boolean, Number, Identifier, LineComment, "/" }
 }
 
 // ============================================================================

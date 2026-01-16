@@ -74,6 +74,12 @@ export interface ExecutionContext extends EvaluationContext {
   setReal: (name: string, value: number) => void;
   /** Set a time variable */
   setTime: (name: string, value: number) => void;
+  /** Set a date variable (days since epoch) */
+  setDate: (name: string, value: number) => void;
+  /** Set a time of day variable (ms since midnight) */
+  setTimeOfDay: (name: string, value: number) => void;
+  /** Set a date and time variable (ms since epoch) */
+  setDateAndTime: (name: string, value: number) => void;
   /** Set a string variable */
   setString: (name: string, value: string) => void;
   /** Get a boolean variable */
@@ -82,6 +88,12 @@ export interface ExecutionContext extends EvaluationContext {
   getInt: (name: string) => number;
   /** Get a real variable */
   getReal: (name: string) => number;
+  /** Get a date variable */
+  getDate: (name: string) => number;
+  /** Get a time of day variable */
+  getTimeOfDay: (name: string) => number;
+  /** Get a date and time variable */
+  getDateAndTime: (name: string) => number;
   /** Get a string variable */
   getString: (name: string) => string;
   /** Get the declared type of a variable */
@@ -221,6 +233,21 @@ function executeAssignment(stmt: STAssignment, context: ExecutionContext): void 
       case 'TIME':
         // TIME values are stored as milliseconds (numbers)
         context.setTime(targetName, Math.trunc(toNumber(value)));
+        return;
+
+      case 'DATE':
+        // DATE values are stored as days since epoch (numbers)
+        context.setDate(targetName, Math.trunc(toNumber(value)));
+        return;
+
+      case 'TIME_OF_DAY':
+        // TIME_OF_DAY values are stored as milliseconds since midnight (numbers)
+        context.setTimeOfDay(targetName, Math.trunc(toNumber(value)));
+        return;
+
+      case 'DATE_AND_TIME':
+        // DATE_AND_TIME values are stored as milliseconds since epoch (numbers)
+        context.setDateAndTime(targetName, Math.trunc(toNumber(value)));
         return;
 
       case 'STRING':

@@ -40,6 +40,9 @@ export interface SimulationStoreInterface extends FunctionBlockStore {
   setInt: (name: string, value: number) => void;
   setReal: (name: string, value: number) => void;
   setTime: (name: string, value: number) => void;
+  setDate: (name: string, value: number) => void;
+  setTimeOfDay: (name: string, value: number) => void;
+  setDateAndTime: (name: string, value: number) => void;
   setString: (name: string, value: string) => void;
 
   // Variable getters
@@ -47,6 +50,9 @@ export interface SimulationStoreInterface extends FunctionBlockStore {
   getInt: (name: string) => number;
   getReal: (name: string) => number;
   getTime: (name: string) => number;
+  getDate: (name: string) => number;
+  getTimeOfDay: (name: string) => number;
+  getDateAndTime: (name: string) => number;
   getString: (name: string) => string;
 
   // Variable storage (for existence checks)
@@ -54,6 +60,9 @@ export interface SimulationStoreInterface extends FunctionBlockStore {
   integers: Record<string, number>;
   reals: Record<string, number>;
   times: Record<string, number>;
+  dates: Record<string, number>;
+  timesOfDay: Record<string, number>;
+  dateAndTimes: Record<string, number>;
   strings: Record<string, string>;
 
   // Array storage
@@ -118,6 +127,12 @@ export interface UserFBInstanceState {
   reals: Record<string, number>;
   /** Time variables (VAR, VAR_OUTPUT) */
   times: Record<string, number>;
+  /** Date variables (VAR, VAR_OUTPUT) */
+  dates: Record<string, number>;
+  /** Time of day variables (VAR, VAR_OUTPUT) */
+  timesOfDay: Record<string, number>;
+  /** Date and time variables (VAR, VAR_OUTPUT) */
+  dateAndTimes: Record<string, number>;
   /** String variables (VAR, VAR_OUTPUT) */
   strings: Record<string, string>;
 }
@@ -164,12 +179,18 @@ export function createExecutionContext(
     setInt: store.setInt,
     setReal: store.setReal,
     setTime: store.setTime,
+    setDate: store.setDate,
+    setTimeOfDay: store.setTimeOfDay,
+    setDateAndTime: store.setDateAndTime,
     setString: store.setString,
 
     // Variable getters
     getBool: store.getBool,
     getInt: store.getInt,
     getReal: store.getReal,
+    getDate: store.getDate,
+    getTimeOfDay: store.getTimeOfDay,
+    getDateAndTime: store.getDateAndTime,
     getString: store.getString,
 
     // Type registry lookup
@@ -185,6 +206,9 @@ export function createExecutionContext(
       if (name in store.integers) return store.integers[name];
       if (name in store.reals) return store.reals[name];
       if (name in store.times) return store.times[name];
+      if (name in store.dates) return store.dates[name];
+      if (name in store.timesOfDay) return store.timesOfDay[name];
+      if (name in store.dateAndTimes) return store.dateAndTimes[name];
       if (name in store.strings) return store.strings[name];
 
       // Default to false for unknown variables
@@ -399,6 +423,9 @@ function initializeUserFBInstances(
       integers: {},
       reals: {},
       times: {},
+      dates: {},
+      timesOfDay: {},
+      dateAndTimes: {},
       strings: {},
     };
 
@@ -418,6 +445,15 @@ function initializeUserFBInstances(
                 break;
               case 'TIME':
                 state.times[varName] = 0;
+                break;
+              case 'DATE':
+                state.dates[varName] = 0;
+                break;
+              case 'TIME_OF_DAY':
+                state.timesOfDay[varName] = 0;
+                break;
+              case 'DATE_AND_TIME':
+                state.dateAndTimes[varName] = 0;
                 break;
               case 'STRING':
               case 'WSTRING':
@@ -654,6 +690,15 @@ function invokeUserFunction(
     setTime: (varName: string, value: number) => {
       localTimes[varName] = Math.trunc(value);
     },
+    setDate: (varName: string, value: number) => {
+      store.setDate(varName, Math.trunc(value));
+    },
+    setTimeOfDay: (varName: string, value: number) => {
+      store.setTimeOfDay(varName, Math.trunc(value));
+    },
+    setDateAndTime: (varName: string, value: number) => {
+      store.setDateAndTime(varName, Math.trunc(value));
+    },
     setString: (varName: string, value: string) => {
       localStrings[varName] = value;
     },
@@ -670,6 +715,15 @@ function invokeUserFunction(
     getReal: (varName: string) => {
       if (varName in localReals) return localReals[varName];
       return store.getReal(varName);
+    },
+    getDate: (varName: string) => {
+      return store.getDate(varName);
+    },
+    getTimeOfDay: (varName: string) => {
+      return store.getTimeOfDay(varName);
+    },
+    getDateAndTime: (varName: string) => {
+      return store.getDateAndTime(varName);
     },
     getString: (varName: string) => {
       if (varName in localStrings) return localStrings[varName];
@@ -702,6 +756,9 @@ function invokeUserFunction(
       if (varName in store.integers) return store.integers[varName];
       if (varName in store.reals) return store.reals[varName];
       if (varName in store.times) return store.times[varName];
+      if (varName in store.dates) return store.dates[varName];
+      if (varName in store.timesOfDay) return store.timesOfDay[varName];
+      if (varName in store.dateAndTimes) return store.dateAndTimes[varName];
       if (varName in store.strings) return store.strings[varName];
 
       return false;
@@ -974,6 +1031,9 @@ function invokeUserFunctionBlock(
       if (name in store.integers) return store.integers[name];
       if (name in store.reals) return store.reals[name];
       if (name in store.times) return store.times[name];
+      if (name in store.dates) return store.dates[name];
+      if (name in store.timesOfDay) return store.timesOfDay[name];
+      if (name in store.dateAndTimes) return store.dateAndTimes[name];
       return false;
     },
     getTimerField: (timerName: string, field: string) => {
@@ -1082,6 +1142,30 @@ function invokeUserFunctionBlock(
       }
       instanceState.times[varName] = Math.trunc(value);
     },
+    setDate: (varName: string, value: number) => {
+      // Check if this is a VAR_IN_OUT parameter - write to caller's variable
+      if (varName in inOutBindings) {
+        store.setDate(inOutBindings[varName], Math.trunc(value));
+        return;
+      }
+      instanceState.dates[varName] = Math.trunc(value);
+    },
+    setTimeOfDay: (varName: string, value: number) => {
+      // Check if this is a VAR_IN_OUT parameter - write to caller's variable
+      if (varName in inOutBindings) {
+        store.setTimeOfDay(inOutBindings[varName], Math.trunc(value));
+        return;
+      }
+      instanceState.timesOfDay[varName] = Math.trunc(value);
+    },
+    setDateAndTime: (varName: string, value: number) => {
+      // Check if this is a VAR_IN_OUT parameter - write to caller's variable
+      if (varName in inOutBindings) {
+        store.setDateAndTime(inOutBindings[varName], Math.trunc(value));
+        return;
+      }
+      instanceState.dateAndTimes[varName] = Math.trunc(value);
+    },
     setString: (varName: string, value: string) => {
       // Check if this is a VAR_IN_OUT parameter - write to caller's variable
       if (varName in inOutBindings) {
@@ -1119,6 +1203,33 @@ function invokeUserFunctionBlock(
       if (varName in instanceState.reals) return instanceState.reals[varName];
       return store.getReal(varName);
     },
+    getDate: (varName: string) => {
+      // Check if this is a VAR_IN_OUT parameter - read from caller's variable
+      if (varName in inOutBindings) {
+        return store.getDate(inOutBindings[varName]);
+      }
+      if (varName in localInputs) return Math.trunc(Number(localInputs[varName]));
+      if (varName in instanceState.dates) return instanceState.dates[varName];
+      return store.getDate(varName);
+    },
+    getTimeOfDay: (varName: string) => {
+      // Check if this is a VAR_IN_OUT parameter - read from caller's variable
+      if (varName in inOutBindings) {
+        return store.getTimeOfDay(inOutBindings[varName]);
+      }
+      if (varName in localInputs) return Math.trunc(Number(localInputs[varName]));
+      if (varName in instanceState.timesOfDay) return instanceState.timesOfDay[varName];
+      return store.getTimeOfDay(varName);
+    },
+    getDateAndTime: (varName: string) => {
+      // Check if this is a VAR_IN_OUT parameter - read from caller's variable
+      if (varName in inOutBindings) {
+        return store.getDateAndTime(inOutBindings[varName]);
+      }
+      if (varName in localInputs) return Math.trunc(Number(localInputs[varName]));
+      if (varName in instanceState.dateAndTimes) return instanceState.dateAndTimes[varName];
+      return store.getDateAndTime(varName);
+    },
     getString: (varName: string) => {
       // Check if this is a VAR_IN_OUT parameter - read from caller's variable
       if (varName in inOutBindings) {
@@ -1150,6 +1261,9 @@ function invokeUserFunctionBlock(
         if (callerVar in store.integers) return store.integers[callerVar];
         if (callerVar in store.reals) return store.reals[callerVar];
         if (callerVar in store.times) return store.times[callerVar];
+        if (callerVar in store.dates) return store.dates[callerVar];
+        if (callerVar in store.timesOfDay) return store.timesOfDay[callerVar];
+        if (callerVar in store.dateAndTimes) return store.dateAndTimes[callerVar];
         if (callerVar in store.strings) return store.strings[callerVar];
         return false;
       }
@@ -1162,6 +1276,9 @@ function invokeUserFunctionBlock(
       if (varName in instanceState.integers) return instanceState.integers[varName];
       if (varName in instanceState.reals) return instanceState.reals[varName];
       if (varName in instanceState.times) return instanceState.times[varName];
+      if (varName in instanceState.dates) return instanceState.dates[varName];
+      if (varName in instanceState.timesOfDay) return instanceState.timesOfDay[varName];
+      if (varName in instanceState.dateAndTimes) return instanceState.dateAndTimes[varName];
       if (varName in instanceState.strings) return instanceState.strings[varName];
 
       // Fall back to global store
@@ -1169,6 +1286,9 @@ function invokeUserFunctionBlock(
       if (varName in store.integers) return store.integers[varName];
       if (varName in store.reals) return store.reals[varName];
       if (varName in store.times) return store.times[varName];
+      if (varName in store.dates) return store.dates[varName];
+      if (varName in store.timesOfDay) return store.timesOfDay[varName];
+      if (varName in store.dateAndTimes) return store.dateAndTimes[varName];
       if (varName in store.strings) return store.strings[varName];
 
       return false;

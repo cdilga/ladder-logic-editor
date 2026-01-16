@@ -15,7 +15,7 @@ import type { STAST, STVarBlock, STVariableDecl, STLiteral, STTypeDef, STStructF
 /**
  * Declared data type categories for variable storage.
  */
-export type DeclaredType = 'BOOL' | 'INT' | 'REAL' | 'TIME' | 'STRING' | 'TIMER' | 'COUNTER' | 'R_TRIG' | 'F_TRIG' | 'BISTABLE' | 'ARRAY' | 'ENUM' | 'UNKNOWN';
+export type DeclaredType = 'BOOL' | 'INT' | 'REAL' | 'TIME' | 'DATE' | 'TIME_OF_DAY' | 'DATE_AND_TIME' | 'STRING' | 'TIMER' | 'COUNTER' | 'R_TRIG' | 'F_TRIG' | 'BISTABLE' | 'ARRAY' | 'ENUM' | 'UNKNOWN';
 
 /**
  * Information about a user-defined enum type.
@@ -84,6 +84,9 @@ export interface InitializableStore {
   setInt: (name: string, value: number) => void;
   setReal: (name: string, value: number) => void;
   setTime: (name: string, value: number) => void;
+  setDate: (name: string, value: number) => void;
+  setTimeOfDay: (name: string, value: number) => void;
+  setDateAndTime: (name: string, value: number) => void;
   setString: (name: string, value: string) => void;
   initTimer: (name: string, pt: number, timerType?: TimerType) => void;
   initCounter: (name: string, pv: number) => void;
@@ -254,6 +257,18 @@ function initializeDeclaration(
         store.setTime(name, initialValue ? extractTimeValue(initialValue) : 0);
         break;
 
+      case 'DATE':
+        store.setDate(name, initialValue ? extractDateValue(initialValue) : 0);
+        break;
+
+      case 'TIME_OF_DAY':
+        store.setTimeOfDay(name, initialValue ? extractTimeOfDayValue(initialValue) : 0);
+        break;
+
+      case 'DATE_AND_TIME':
+        store.setDateAndTime(name, initialValue ? extractDateAndTimeValue(initialValue) : 0);
+        break;
+
       case 'STRING':
       case 'WSTRING':
         store.setString(name, initialValue ? extractStringValue(initialValue) : '');
@@ -419,6 +434,54 @@ function extractStringValue(expr: STVariableDecl['initialValue']): string {
   return '';
 }
 
+/**
+ * Extract DATE value from expression.
+ * DATE stored as days since epoch (1970-01-01)
+ */
+function extractDateValue(expr: STVariableDecl['initialValue']): number {
+  if (!expr) return 0;
+  if (expr.type === 'Literal' && expr.literalType === 'DATE') {
+    return parseDateString(String(expr.value));
+  }
+  // Try to parse from raw value if available
+  if (expr.type === 'Literal') {
+    return parseDateString((expr as STLiteral).rawValue);
+  }
+  return 0;
+}
+
+/**
+ * Extract TIME_OF_DAY value from expression.
+ * TIME_OF_DAY stored as milliseconds since midnight
+ */
+function extractTimeOfDayValue(expr: STVariableDecl['initialValue']): number {
+  if (!expr) return 0;
+  if (expr.type === 'Literal' && expr.literalType === 'TIME_OF_DAY') {
+    return parseTimeOfDayString(String(expr.value));
+  }
+  // Try to parse from raw value if available
+  if (expr.type === 'Literal') {
+    return parseTimeOfDayString((expr as STLiteral).rawValue);
+  }
+  return 0;
+}
+
+/**
+ * Extract DATE_AND_TIME value from expression.
+ * DATE_AND_TIME stored as milliseconds since epoch
+ */
+function extractDateAndTimeValue(expr: STVariableDecl['initialValue']): number {
+  if (!expr) return 0;
+  if (expr.type === 'Literal' && expr.literalType === 'DATE_AND_TIME') {
+    return parseDateAndTimeString(String(expr.value));
+  }
+  // Try to parse from raw value if available
+  if (expr.type === 'Literal') {
+    return parseDateAndTimeString((expr as STLiteral).rawValue);
+  }
+  return 0;
+}
+
 function extractTimerPreset(_decl: STVariableDecl): number {
   // Timer preset might be in initial value or default to 0
   // In IEC 61131-3, timers are typically initialized with PT in the call
@@ -575,6 +638,86 @@ function parseTimeString(timeStr: string): number {
   return isNaN(num) ? 0 : num;
 }
 
+/**
+ * Parse DATE literal string to days since epoch.
+ * Format: D#YYYY-MM-DD or DATE#YYYY-MM-DD
+ */
+function parseDateString(dateStr: string): number {
+  if (!dateStr) return 0;
+
+  // Remove D# or DATE# prefix if present
+  const str = dateStr.replace(/^(DATE#|D#)/i, '').trim();
+
+  // Parse YYYY-MM-DD format
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    const year = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10) - 1; // JS months are 0-indexed
+    const day = parseInt(match[3], 10);
+
+    // Create UTC date to avoid timezone issues
+    const date = Date.UTC(year, month, day);
+    // Convert to days since epoch (1970-01-01)
+    return Math.floor(date / (24 * 60 * 60 * 1000));
+  }
+
+  return 0;
+}
+
+/**
+ * Parse TIME_OF_DAY literal string to milliseconds since midnight.
+ * Format: TOD#HH:MM:SS or TIME_OF_DAY#HH:MM:SS or TOD#HH:MM:SS.mmm
+ */
+function parseTimeOfDayString(todStr: string): number {
+  if (!todStr) return 0;
+
+  // Remove TOD# or TIME_OF_DAY# prefix if present
+  const str = todStr.replace(/^(TIME_OF_DAY#|TOD#)/i, '').trim();
+
+  // Parse HH:MM:SS or HH:MM:SS.mmm format
+  const match = str.match(/^(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?$/);
+  if (match) {
+    const hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const seconds = parseInt(match[3], 10);
+    const milliseconds = match[4] ? parseInt(match[4].padEnd(3, '0'), 10) : 0;
+
+    return (hours * 3600 + minutes * 60 + seconds) * 1000 + milliseconds;
+  }
+
+  return 0;
+}
+
+/**
+ * Parse DATE_AND_TIME literal string to milliseconds since epoch.
+ * Format: DT#YYYY-MM-DD-HH:MM:SS or DATE_AND_TIME#YYYY-MM-DD-HH:MM:SS
+ * or DT#YYYY-MM-DD-HH:MM:SS.mmm
+ */
+function parseDateAndTimeString(dtStr: string): number {
+  if (!dtStr) return 0;
+
+  // Remove DT# or DATE_AND_TIME# prefix if present
+  const str = dtStr.replace(/^(DATE_AND_TIME#|DT#)/i, '').trim();
+
+  // Parse YYYY-MM-DD-HH:MM:SS or YYYY-MM-DD-HH:MM:SS.mmm format
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})-(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?$/);
+  if (match) {
+    const year = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10) - 1; // JS months are 0-indexed
+    const day = parseInt(match[3], 10);
+    const hours = parseInt(match[4], 10);
+    const minutes = parseInt(match[5], 10);
+    const seconds = parseInt(match[6], 10);
+    const milliseconds = match[7] ? parseInt(match[7].padEnd(3, '0'), 10) : 0;
+
+    // Create UTC date to avoid timezone issues
+    const dateMs = Date.UTC(year, month, day, hours, minutes, seconds, milliseconds);
+    return dateMs;
+  }
+
+  return 0;
+}
+
 // ============================================================================
 // Type Registry Builder
 // ============================================================================
@@ -670,6 +813,21 @@ function categorizeType(typeName: string): DeclaredType {
   // Time
   if (typeName === 'TIME') {
     return 'TIME';
+  }
+
+  // Date
+  if (typeName === 'DATE') {
+    return 'DATE';
+  }
+
+  // Time of day
+  if (typeName === 'TIME_OF_DAY') {
+    return 'TIME_OF_DAY';
+  }
+
+  // Date and time
+  if (typeName === 'DATE_AND_TIME') {
+    return 'DATE_AND_TIME';
   }
 
   // String types

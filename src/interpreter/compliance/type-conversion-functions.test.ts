@@ -27,6 +27,9 @@ function createTestStore(scanTime: number = 100): SimulationStoreInterface {
     integers: {} as Record<string, number>,
     reals: {} as Record<string, number>,
     times: {} as Record<string, number>,
+    dates: {} as Record<string, number>,
+    timesOfDay: {} as Record<string, number>,
+    dateAndTimes: {} as Record<string, number>,
     strings: {} as Record<string, string>,
     timers: {} as Record<string, { IN: boolean; PT: number; Q: boolean; ET: number; running: boolean }>,
     counters: {} as Record<string, { CU: boolean; CD: boolean; R: boolean; LD: boolean; PV: number; QU: boolean; QD: boolean; CV: number }>,
@@ -44,6 +47,12 @@ function createTestStore(scanTime: number = 100): SimulationStoreInterface {
     getReal: (name: string) => store.reals[name] ?? 0,
     setTime: (name: string, value: number) => { store.times[name] = value; },
     getTime: (name: string) => store.times[name] ?? 0,
+    setDate: (name: string, value: number) => { store.dates[name] = value; },
+    getDate: (name: string) => store.dates[name] ?? 0,
+    setTimeOfDay: (name: string, value: number) => { store.timesOfDay[name] = value; },
+    getTimeOfDay: (name: string) => store.timesOfDay[name] ?? 0,
+    setDateAndTime: (name: string, value: number) => { store.dateAndTimes[name] = value; },
+    getDateAndTime: (name: string) => store.dateAndTimes[name] ?? 0,
     setString: (name: string, value: string) => { store.strings[name] = value; },
     getString: (name: string) => store.strings[name] ?? '',
     initTimer: (name: string, pt: number) => {
@@ -143,6 +152,9 @@ function createTestStore(scanTime: number = 100): SimulationStoreInterface {
       store.integers = {};
       store.reals = {};
       store.times = {};
+      store.dates = {};
+      store.timesOfDay = {};
+      store.dateAndTimes = {};
       store.strings = {};
       store.timers = {};
       store.counters = {};

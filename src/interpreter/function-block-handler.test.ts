@@ -66,11 +66,17 @@ describe('handleFunctionBlockCall', () => {
     getInt: ReturnType<typeof vi.fn>;
     getReal: ReturnType<typeof vi.fn>;
     getTime: ReturnType<typeof vi.fn>;
+    getDate: ReturnType<typeof vi.fn>;
+    getTimeOfDay: ReturnType<typeof vi.fn>;
+    getDateAndTime: ReturnType<typeof vi.fn>;
     // Variable storage for existence checks
     booleans: Record<string, boolean>;
     integers: Record<string, number>;
     reals: Record<string, number>;
     times: Record<string, number>;
+    dates: Record<string, number>;
+    timesOfDay: Record<string, number>;
+    dateAndTimes: Record<string, number>;
   };
   let context: FunctionBlockContext;
   let previousInputs: Record<string, boolean>;
@@ -89,11 +95,17 @@ describe('handleFunctionBlockCall', () => {
       getInt: vi.fn().mockReturnValue(0),
       getReal: vi.fn().mockReturnValue(0),
       getTime: vi.fn().mockReturnValue(0),
+      getDate: vi.fn().mockReturnValue(0),
+      getTimeOfDay: vi.fn().mockReturnValue(0),
+      getDateAndTime: vi.fn().mockReturnValue(0),
       // Variable storage - empty by default
       booleans: {},
       integers: {},
       reals: {},
       times: {},
+      dates: {},
+      timesOfDay: {},
+      dateAndTimes: {},
     };
     previousInputs = {};
     context = createFunctionBlockContext(mockStore, previousInputs);

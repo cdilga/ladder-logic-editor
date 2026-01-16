@@ -120,7 +120,7 @@ export interface STVariable extends ASTNode {
   arrayIndices?: STExpression[]; // Array index expressions (e.g., arr[5] -> [5], arr[i][j] -> [i, j])
 }
 
-export type LiteralType = 'BOOL' | 'INT' | 'REAL' | 'TIME' | 'STRING';
+export type LiteralType = 'BOOL' | 'INT' | 'REAL' | 'TIME' | 'DATE' | 'TIME_OF_DAY' | 'DATE_AND_TIME' | 'STRING';
 
 export interface STLiteral extends ASTNode {
   type: 'Literal';
