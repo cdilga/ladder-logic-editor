@@ -17,10 +17,11 @@ Must implement type saftey to a golden standard. NO hacks, no using typescript t
 ```
 specs/
 ├── INTERPRETER_TEST_SPEC.md      ← YOU ARE HERE (navigation, update rules)
-├── IEC_61131_3_REFERENCE.md      ← What the standard requires (IMMUTABLE)
+├── IEC_61131_3_REFERENCE.md      ← IEC 61131-3 requirements (IMMUTABLE DURING IMPLEMENTATION)
 ├── IMPLEMENTATION_STATUS.md       ← Our progress (STATUS UPDATES GO HERE)
+├── GUARDRAILS.md                  ← Internal dev notes (NOT a spec - lessons learned)
 └── testing/
-    ├── TIMERS.md                  ← Test requirements (immutable)
+    ├── TIMERS.md                  ← Test requirements (IMMUTABLE DURING IMPLEMENTATION)
     ├── COUNTERS.md
     ├── DATA_TYPES.md
     ├── OPERATORS.md
@@ -36,14 +37,15 @@ specs/
 
 ### Update Rules
 
-| Document | Purpose | Who Updates | When |
-|----------|---------|-------------|------|
-| `IEC_61131_3_REFERENCE.md` | What IEC 61131-3 requires | Only from authoritative sources | When we discover spec gaps |
-| `IMPLEMENTATION_STATUS.md` | Our implementation progress | **Any developer** | After implementing features or running tests |
-| `testing/*.md` | Test requirements per domain | Only from authoritative sources | When adding new test requirements |
-| `INTERPRETER_TEST_SPEC.md` | Navigation and process docs | When structure changes | Rarely |
+| Document | Purpose | Mutable During Impl? | Who Updates |
+|----------|---------|---------------------|-------------|
+| `IEC_61131_3_REFERENCE.md` | IEC 61131-3 requirements | **NO** - Immutable | Only from authoritative sources |
+| `testing/*.md` | Test requirements per domain | **NO** - Immutable | Only from authoritative sources |
+| `IMPLEMENTATION_STATUS.md` | Implementation progress | **YES** - Update freely | Any developer |
+| `GUARDRAILS.md` | Internal dev notes/lessons | **YES** - Update freely | Any developer |
+| `INTERPRETER_TEST_SPEC.md` | Navigation and process | Rarely | When structure changes |
 
-**Rule:** Status/progress tracking ONLY goes in `IMPLEMENTATION_STATUS.md`. All other docs describe requirements, not status.
+**CRITICAL RULE:** During implementation work, treat `IEC_61131_3_REFERENCE.md` and all `testing/*.md` files as **read-only specifications**. Implementation progress goes ONLY in `IMPLEMENTATION_STATUS.md`. Failed approaches and lessons learned go in `GUARDRAILS.md`.
 
 ---
 

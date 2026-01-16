@@ -34,13 +34,19 @@ export type VariableScopeKind =
   | 'VAR_OUTPUT'
   | 'VAR_IN_OUT'
   | 'VAR_TEMP'
-  | 'VAR_GLOBAL';
+  | 'VAR_GLOBAL'
+  | 'VAR_EXTERNAL';
+
+export type VariableQualifier = 'CONSTANT' | 'RETAIN';
 
 export interface STTypeSpec extends ASTNode {
   type: 'TypeSpec';
   typeName: string;
   isArray: boolean;
+  /** Single range for single-dimensional arrays (legacy) */
   arrayRange?: { start: number; end: number };
+  /** Multiple ranges for multi-dimensional arrays: ARRAY[1..3, 1..4] OF INT */
+  arrayRanges?: { start: number; end: number }[];
 }
 
 export interface STVariableDecl extends ASTNode {
@@ -48,11 +54,14 @@ export interface STVariableDecl extends ASTNode {
   names: string[];
   dataType: STTypeSpec;
   initialValue?: STExpression;
+  /** AT address for direct hardware addressing (e.g., %IX0.0, %MW0, %QX1.2) */
+  atAddress?: string;
 }
 
 export interface STVarBlock extends ASTNode {
   type: 'VarBlock';
   scope: VariableScopeKind;
+  qualifier?: VariableQualifier;
   declarations: STVariableDecl[];
 }
 
@@ -82,7 +91,8 @@ export type BinaryOperator =
   | '-'
   | '*'
   | '/'
-  | 'MOD';
+  | 'MOD'
+  | '**';
 
 export interface STBinaryExpr extends ASTNode {
   type: 'BinaryExpr';
@@ -99,13 +109,21 @@ export interface STUnaryExpr extends ASTNode {
   operand: STExpression;
 }
 
+/**
+ * Access path element - can be a field name or an array index
+ */
+export type AccessPathElement =
+  | { kind: 'field'; name: string }
+  | { kind: 'index'; expression: STExpression };
+
 export interface STVariable extends ASTNode {
   type: 'Variable';
   name: string;
-  accessPath: string[]; // For nested access like Timer1.Q -> ['Timer1', 'Q']
+  accessPath: string[]; // Legacy: For nested access like Timer1.Q -> ['Timer1', 'Q']
+  arrayIndices?: STExpression[]; // Array index expressions (e.g., arr[5] -> [5], arr[i][j] -> [i, j])
 }
 
-export type LiteralType = 'BOOL' | 'INT' | 'REAL' | 'TIME' | 'STRING';
+export type LiteralType = 'BOOL' | 'INT' | 'REAL' | 'TIME' | 'DATE' | 'TIME_OF_DAY' | 'DATE_AND_TIME' | 'STRING' | 'ENUM';
 
 export interface STLiteral extends ASTNode {
   type: 'Literal';
@@ -138,7 +156,8 @@ export type STStatement =
   | STWhileStatement
   | STRepeatStatement
   | STReturnStatement
-  | STExitStatement;
+  | STExitStatement
+  | STContinueStatement;
 
 export interface STAssignment extends ASTNode {
   type: 'Assignment';
@@ -218,18 +237,59 @@ export interface STExitStatement extends ASTNode {
   type: 'ExitStatement';
 }
 
+export interface STContinueStatement extends ASTNode {
+  type: 'ContinueStatement';
+}
+
 // ============================================================================
 // Program Structure
 // ============================================================================
 
-export type ProgramType = 'PROGRAM' | 'FUNCTION_BLOCK';
+export type ProgramType = 'PROGRAM' | 'FUNCTION' | 'FUNCTION_BLOCK';
 
 export interface STProgram extends ASTNode {
   type: 'Program';
   name: string;
   programType: ProgramType;
+  returnType?: string; // Only for FUNCTION - the return type (INT, BOOL, REAL, etc.)
   varBlocks: STVarBlock[];
   statements: STStatement[];
+}
+
+// ============================================================================
+// Type Definitions (STRUCT, etc.)
+// ============================================================================
+
+/**
+ * A field within a STRUCT definition.
+ */
+export interface STStructField extends ASTNode {
+  type: 'StructField';
+  name: string;
+  dataType: STTypeSpec;
+  initialValue?: STExpression;
+}
+
+/**
+ * An enumeration value with name and optional explicit integer value.
+ * If value is not specified, it auto-increments from the previous value.
+ */
+export interface STEnumValue {
+  name: string;
+  value: number;
+}
+
+/**
+ * A user-defined type definition (STRUCT, ENUM, etc.).
+ */
+export interface STTypeDef extends ASTNode {
+  type: 'TypeDef';
+  name: string;
+  defType: 'STRUCT' | 'ENUM';
+  /** Fields of a STRUCT type */
+  structFields?: STStructField[];
+  /** Values of an ENUM type */
+  enumValues?: STEnumValue[];
 }
 
 // ============================================================================
@@ -248,6 +308,8 @@ export interface STAST {
   topLevelStatements: STStatement[];
   /** Top-level variable blocks outside any program block */
   topLevelVarBlocks: STVarBlock[];
+  /** User-defined type definitions (STRUCT, ENUM, etc.) */
+  typeDefinitions: STTypeDef[];
   errors: ParseError[];
 }
 
@@ -288,5 +350,5 @@ export function isComparisonOperator(op: BinaryOperator): boolean {
 }
 
 export function isArithmeticOperator(op: BinaryOperator): boolean {
-  return op === '+' || op === '-' || op === '*' || op === '/' || op === 'MOD';
+  return op === '+' || op === '-' || op === '*' || op === '/' || op === 'MOD' || op === '**';
 }

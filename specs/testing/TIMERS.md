@@ -1,6 +1,9 @@
 # Timer Compliance Tests
 
-**IEC 61131-3 Section:** 2.5.1
+**IEC 61131-3 Section:** 2.5.2.3.3 (Standard Function Blocks for Timers)
+**IEC 61131-3 Tables:**
+- Edition 2 (2003): Table 37.1 (TP), Table 37.2 (TON), Table 37.3 (TOF)
+- Edition 3 (2013): Table 46.1a (TP), Table 46.2a (TON), Table 46.3a (TOF)
 **Status:** 🟢 Complete (47 tests, 100% coverage)
 **Test File:** `src/interpreter/compliance/timer-compliance.test.ts`
 **Last Updated:** 2026-01-16
@@ -38,7 +41,7 @@ Q:   _________/‾‾‾‾‾‾‾‾‾‾\___
 - [x] PT = 0 means Q is TRUE immediately when IN is TRUE
 - [x] PT = T#0ms same as PT = 0
 - [x] Very large PT (T#24h) doesn't overflow
-- [x] Re-triggering while timing restarts from 0
+- [x] IN going FALSE then TRUE restarts timing from ET=0 (no re-trigger while IN stays TRUE)
 - [x] Rapid IN toggling doesn't corrupt state
 
 #### Self-Resetting Pattern
@@ -87,10 +90,11 @@ Output Q is TRUE for exactly PT duration after rising edge on IN. Cannot be retr
 ### Timing Diagram
 ```
 IN:  ___/‾‾‾\/‾‾‾‾‾‾‾‾‾‾‾‾\___
-ET:  ___/   PT   \____________
+ET:  ___/   PT‾‾‾‾‾‾‾‾‾‾‾‾\___
 Q:   ___/‾‾‾‾‾‾‾‾\____________
               ^exactly PT duration, retrigger ignored
 ```
+**Note:** Per IEC 61131-3, ET holds at PT after pulse completes until next rising edge resets it.
 
 ### Test Cases
 

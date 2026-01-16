@@ -13,9 +13,9 @@
 | Priority | Operator | Description | Associativity |
 |----------|----------|-------------|---------------|
 | 1 | `( )` | Parentheses | - |
-| 2 | `**` | Exponentiation | Left-to-right |
-| 3 | `-` (unary) | Negation | Right-to-left |
-| 4 | `NOT` | Boolean negation | Right-to-left |
+| 2 | Function calls | Function evaluation | - |
+| 3 | `**` | Exponentiation | Left-to-right |
+| 4 | `-`, `NOT` | Unary negation, Boolean negation | Right-to-left |
 | 5 | `*`, `/`, `MOD` | Multiplication, Division, Modulo | Left-to-right |
 | 6 | `+`, `-` | Addition, Subtraction | Left-to-right |
 | 7 | `<`, `>`, `<=`, `>=` | Comparison | Left-to-right |
@@ -23,6 +23,9 @@
 | 9 | `AND`, `&` | Boolean AND | Left-to-right |
 | 10 | `XOR` | Boolean XOR | Left-to-right |
 | 11 | `OR` | Boolean OR | Left-to-right |
+
+**Implementation Note:** Some vendors (e.g., PLC Academy) show unary operators above exponentiation.
+CODESYS/Beckhoff show exponentiation above unary. This table follows CODESYS/Beckhoff ordering.
 
 ---
 
@@ -32,7 +35,7 @@
 - [x] INT + INT
 - [x] REAL + REAL
 - [x] INT + REAL (implicit coercion)
-- [ ] TIME + TIME
+- [x] TIME + TIME
 - [ ] Overflow behavior
 
 ### Subtraction (-)
@@ -44,14 +47,14 @@
 ### Multiplication (*)
 - [x] INT * INT
 - [x] REAL * REAL
-- [ ] TIME * INT (scaling)
+- [x] TIME * INT (scaling)
 - [ ] Overflow behavior
 
 ### Division (/)
 - [x] INT / INT (truncation toward zero)
 - [x] REAL / REAL
 - [ ] Division by zero → error flag + Infinity
-- [ ] TIME / INT (scaling)
+- [x] TIME / INT (scaling)
 
 ### Modulo (MOD)
 - [x] Positive MOD positive
@@ -61,11 +64,11 @@
 - [x] MOD by zero behavior (tested in error-handling.test.ts)
 
 ### Exponentiation (**)
-- [ ] INT ** INT
-- [ ] REAL ** REAL
-- [ ] Negative base
-- [ ] Fractional exponent
-- [ ] 0 ** 0 behavior
+- [x] INT ** INT
+- [x] REAL ** REAL
+- [x] Negative base
+- [x] Fractional exponent
+- [x] 0 ** 0 behavior
 
 ### Unary Negation (-)
 - [x] -INT
@@ -175,7 +178,7 @@ Result := a > b AND c < d;
 
 ### Associativity Tests
 **Note:** IEC 61131-3 specifies left-to-right for `**` (unlike most languages which use right-to-left).
-- [ ] `2 ** 3 ** 2 = 64` (IEC left-to-right: (2 ** 3) ** 2 = 8 ** 2) - Exponentiation not implemented
+- [x] `2 ** 3 ** 2 = 64` (IEC left-to-right: (2 ** 3) ** 2 = 8 ** 2)
 - [x] `NOT NOT TRUE = TRUE` (unary operators are right-to-left)
 - [x] `NOT NOT FALSE = FALSE`
 
@@ -219,7 +222,7 @@ fc.assert(fc.property(fc.boolean(), fc.boolean(), (a, b) => {
 
 ## Known Issues
 
-1. **Exponentiation** (`**`) is not implemented (parser/interpreter support missing)
+1. ~~**Exponentiation** (`**`) is not implemented~~ ✅ Implemented with left-to-right associativity per IEC 61131-3
 2. **Short-circuit evaluation** - NOT implemented; both operands always evaluated (documented)
 3. **Type coercion** in mixed expressions needs verification
 
@@ -228,4 +231,7 @@ fc.assert(fc.property(fc.boolean(), fc.boolean(), (a, b) => {
 ## References
 
 - IEC 61131-3:2013 Section 3.3 - Operators
-- IEC 61131-3:2013 Table 52 - Operator precedence
+- IEC 61131-3 Operator Precedence Tables:
+  - Edition 2 (2003): Table 55 (ST Operators)
+  - Edition 3 (2013): Table 69 (ST Operators)
+  - Note: Table 52 covers Instruction List (IL) operators, not Structured Text

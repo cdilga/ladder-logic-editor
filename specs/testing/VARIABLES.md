@@ -1,6 +1,9 @@
 # Variables & Scope Compliance Tests
 
-**IEC 61131-3 Section:** 2.4
+**IEC 61131-3 Section:** 2.4 (Variable Declaration), Table 10 (Default Values)
+**IEC 61131-3 Tables:**
+- Edition 2 (2003): Table 18 (Variable Declarations), Table 10 (Elementary Types)
+- Edition 3 (2013): Table 18 (Variable Declarations), Table 10 (Elementary Types)
 **Status:** 🟢 Complete (59 tests, 100% coverage)
 **Test File:** `src/interpreter/compliance/variables.test.ts`
 
@@ -109,6 +112,26 @@ END_VAR
 - [ ] Persists across function calls
 - [ ] Single instance
 
+### VAR_TEMP (Not Implemented)
+```st
+FUNCTION_BLOCK MyFB
+VAR_TEMP
+  tempVar : INT;  (* Not retained between calls *)
+END_VAR
+```
+- [ ] Temporary storage within function block/method
+- [ ] Value NOT maintained between calls (unlike VAR)
+
+### VAR_EXTERNAL (Not Implemented)
+```st
+PROGRAM Main
+VAR_EXTERNAL
+  globalCounter : INT;  (* Reference to VAR_GLOBAL *)
+END_VAR
+```
+- [ ] References a VAR_GLOBAL declared elsewhere
+- [ ] Required per IEC 61131-3 §2.4.3
+
 ### VAR RETAIN
 ```st
 VAR RETAIN
@@ -116,14 +139,33 @@ VAR RETAIN
 END_VAR
 ```
 **Note:** RETAIN is a qualifier after VAR, not a combined keyword.
+**Important:** CONSTANT and RETAIN cannot be combined (mutually exclusive qualifiers).
 - [ ] Survives power cycle (simulation: survives reset?)
-- [ ] Combined qualifiers: `VAR RETAIN`, `VAR_GLOBAL RETAIN`, `VAR CONSTANT`
+- [ ] Combined qualifiers: `VAR RETAIN`, `VAR_GLOBAL RETAIN`
+
+### VAR CONSTANT
+```st
+VAR CONSTANT
+  PI : REAL := 3.14159;
+END_VAR
+```
+- [ ] Read-only after initialization
+- [ ] Cannot be combined with RETAIN
+
+### NON_RETAIN Qualifier (Not Implemented)
+```st
+VAR NON_RETAIN
+  volatileValue : INT;  (* Explicitly NOT retained *)
+END_VAR
+```
+- [ ] Explicit qualifier for non-retained variables
 
 ---
 
 ## Variable Naming
 
 ### Valid Names
+Per IEC 61131-3 §6.1.2:
 - [x] `myVar` - lowercase start
 - [x] `MyVar` - uppercase start
 - [x] `_myVar` - underscore start
@@ -131,10 +173,13 @@ END_VAR
 - [x] `my123` - numbers (not first char)
 
 ### Invalid Names
-Note: Parser does not reject invalid names but parses them unexpectedly:
-- `123var` - parses as Number `123` followed by Identifier `var` (variable becomes `var`)
-- `my-var` - parses as `my` minus `var` (subtraction expression, not identifier)
-- `my var` - parses as two separate identifiers
+Per IEC 61131-3 identifier rules:
+- `123var` - Cannot start with digit
+- `my-var` - Hyphens not allowed (parses as subtraction)
+- `my var` - Spaces not allowed (parses as two identifiers)
+- `my__var` - **Two consecutive underscores (`__`) are forbidden per IEC 61131-3**
+
+Note: Parser may not reject all invalid names but parses them unexpectedly.
 
 ### Reserved Words
 Reserved word protection is not enforced at the parser level. Using reserved words as variable names may cause unexpected behavior:
@@ -197,6 +242,12 @@ FB2.inputVar := 20;
 - [x] All VAR initialized before first scan
 - [x] Initialization order is declaration order
 - [x] Dependent initialization (a := b + 1)
+
+### IEC 61131-3 Initialization Priority
+Per IEC 61131-3 §2.4.2, initialization priority (highest to lowest):
+1. **Retained values** (from non-volatile memory) - highest priority
+2. **Explicit initialization** (`:= value` in declaration)
+3. **Default value** (from data type, e.g., INT=0, BOOL=FALSE) - lowest priority
 
 ### Function Block Call
 - [ ] VAR_INPUT set from call parameters

@@ -1,5 +1,11 @@
 # Implementation Guardrails
 
+> **INTERNAL DEVELOPMENT DOCUMENT**
+> This file is NOT part of the IEC 61131-3 specification. It is an internal engineering
+> reference that documents implementation decisions, failed approaches, and lessons learned
+> during development to prevent repeating mistakes. Do NOT reference this document from
+> specification files in `specs/testing/`.
+
 This document tracks approaches that have been tried and failed, to prevent repeating mistakes.
 
 ## Phase 1: Mobile Scroll Prevention (2026-01-14)
@@ -598,5 +604,38 @@ The `executeAssignment()` function now checks the target variable's declared typ
 - `TIME` → `context.setTime()` stores in `store.times` dictionary
 
 **Tests:** TIME arithmetic tests in `src/interpreter/compliance/type-aware-assignment.test.ts`
+
+---
+
+## Enumeration Types (2026-01-17) ✅ RESOLVED
+
+### ✅ Qualified Enum Syntax - IMPLEMENTED
+
+**Previously a limitation**, now fully working. Both simple and qualified enum syntax are supported.
+
+**What now works:**
+```st
+TYPE
+  TrafficLight : (Red, Yellow, Green);
+END_TYPE
+VAR
+  light1 : TrafficLight := Yellow;             (* ✅ Simple identifier works *)
+  light2 : TrafficLight := TrafficLight#Yellow; (* ✅ Qualified syntax now works *)
+END_VAR
+```
+
+**Implementation:**
+1. Added `QualifiedEnumValue` grammar rule: `Identifier "#" Identifier`
+2. Added `ENUM` literal type to AST types
+3. CST-to-AST converter extracts qualified name as `"TypeName#ValueName"` string
+4. Variable initializer resolves qualified names to enum integer values
+
+**Key insight:** The `#` character doesn't conflict with hex/binary/time literals because:
+- `16#FF` starts with a digit → HexNumber token
+- `TrafficLight#Yellow` starts with an identifier → QualifiedEnumValue grammar rule
+
+The Lezer LR parser disambiguates based on the first token.
+
+**Test Status:** All 17 enum-types.test.ts tests pass (no skipped tests).
 
 ---

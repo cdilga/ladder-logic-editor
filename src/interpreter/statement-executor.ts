@@ -18,6 +18,7 @@ import type {
 } from '../transformer/ast/st-ast-types';
 import { evaluateExpression, type Value, type EvaluationContext } from './expression-evaluator';
 import type { DeclaredType } from './variable-initializer';
+import { parseTimeLiteral, timeValueToMs } from '../models/plc-types';
 
 // ============================================================================
 // Exit Signal (for EXIT statement support)
@@ -31,6 +32,28 @@ export class ExitSignal extends Error {
   constructor() {
     super('EXIT');
     this.name = 'ExitSignal';
+  }
+}
+
+/**
+ * Signal thrown by CONTINUE statement to skip to the next iteration.
+ * Caught by loop executors (FOR, WHILE, REPEAT).
+ */
+export class ContinueSignal extends Error {
+  constructor() {
+    super('CONTINUE');
+    this.name = 'ContinueSignal';
+  }
+}
+
+/**
+ * Signal thrown by RETURN statement to exit from a function.
+ * Caught by function invokers.
+ */
+export class ReturnSignal extends Error {
+  constructor() {
+    super('RETURN');
+    this.name = 'ReturnSignal';
   }
 }
 
@@ -51,16 +74,38 @@ export interface ExecutionContext extends EvaluationContext {
   setReal: (name: string, value: number) => void;
   /** Set a time variable */
   setTime: (name: string, value: number) => void;
+  /** Set a date variable (days since epoch) */
+  setDate: (name: string, value: number) => void;
+  /** Set a time of day variable (ms since midnight) */
+  setTimeOfDay: (name: string, value: number) => void;
+  /** Set a date and time variable (ms since epoch) */
+  setDateAndTime: (name: string, value: number) => void;
+  /** Set a string variable */
+  setString: (name: string, value: string) => void;
   /** Get a boolean variable */
   getBool: (name: string) => boolean;
   /** Get an integer variable */
   getInt: (name: string) => number;
   /** Get a real variable */
   getReal: (name: string) => number;
+  /** Get a date variable */
+  getDate: (name: string) => number;
+  /** Get a time of day variable */
+  getTimeOfDay: (name: string) => number;
+  /** Get a date and time variable */
+  getDateAndTime: (name: string) => number;
+  /** Get a string variable */
+  getString: (name: string) => string;
   /** Get the declared type of a variable */
   getVariableType: (name: string) => DeclaredType | undefined;
+  /** Check if a variable is declared as CONSTANT */
+  isConstant: (name: string) => boolean;
   /** Handle function block calls (timers, counters) */
   handleFunctionBlockCall: (call: STFunctionBlockCall, ctx: ExecutionContext) => void;
+  /** Set an array element by name and index - optional for array support */
+  setArrayElement?: (name: string, index: number, value: boolean | number) => void;
+  /** Set a multi-dimensional array element - optional for multi-dim array support */
+  setMultiDimArrayElement?: (name: string, indices: number[], value: boolean | number) => void;
 }
 
 // ============================================================================
@@ -104,13 +149,16 @@ export function executeStatement(stmt: STStatement, context: ExecutionContext): 
       break;
 
     case 'ReturnStatement':
-      // Return statements exit the current program/function block
-      // For now, we just return (no-op at statement level)
-      break;
+      // Return statements exit the current program/function
+      throw new ReturnSignal();
 
     case 'ExitStatement':
       // EXIT statement breaks out of the innermost enclosing loop
       throw new ExitSignal();
+
+    case 'ContinueStatement':
+      // CONTINUE statement skips to the next iteration of the innermost loop
+      throw new ContinueSignal();
 
     default:
       console.warn(`Unknown statement type: ${(stmt as STStatement).type}`);
@@ -131,8 +179,36 @@ export function executeStatements(stmts: STStatement[], context: ExecutionContex
 // ============================================================================
 
 function executeAssignment(stmt: STAssignment, context: ExecutionContext): void {
-  const value = evaluateExpression(stmt.expression, context);
   const targetName = stmt.target.name;
+  const arrayIndices = stmt.target.arrayIndices;
+
+  // Check if the target variable is CONSTANT
+  if (context.isConstant(targetName)) {
+    console.warn(`Cannot assign to CONSTANT variable '${targetName}'`);
+    return; // Silently skip assignment to constants (per IEC 61131-3)
+  }
+
+  const value = evaluateExpression(stmt.expression, context);
+
+  // Handle array element assignment: arr[i] := value, arr[i, j] := value, or arr[i][j] := value
+  if (arrayIndices && arrayIndices.length > 0) {
+    const numericValue = typeof value === 'boolean' ? (value ? 1 : 0) : toNumber(value);
+    const finalValue = typeof value === 'boolean' ? value : numericValue;
+
+    // Multi-dimensional array: arr[i, j] or arr[i][j] (multiple indices)
+    if (arrayIndices.length > 1 && context.setMultiDimArrayElement) {
+      const indices = arrayIndices.map(idx => toNumber(evaluateExpression(idx, context)));
+      context.setMultiDimArrayElement(targetName, indices, finalValue);
+      return;
+    }
+
+    // Single-dimensional array: arr[i]
+    if (context.setArrayElement) {
+      const index = toNumber(evaluateExpression(arrayIndices[0], context));
+      context.setArrayElement(targetName, index, finalValue);
+      return;
+    }
+  }
 
   // Get the declared type of the target variable
   const declaredType = context.getVariableType(targetName);
@@ -159,9 +235,34 @@ function executeAssignment(stmt: STAssignment, context: ExecutionContext): void 
         context.setTime(targetName, Math.trunc(toNumber(value)));
         return;
 
+      case 'DATE':
+        // DATE values are stored as days since epoch (numbers)
+        context.setDate(targetName, Math.trunc(toNumber(value)));
+        return;
+
+      case 'TIME_OF_DAY':
+        // TIME_OF_DAY values are stored as milliseconds since midnight (numbers)
+        context.setTimeOfDay(targetName, Math.trunc(toNumber(value)));
+        return;
+
+      case 'DATE_AND_TIME':
+        // DATE_AND_TIME values are stored as milliseconds since epoch (numbers)
+        context.setDateAndTime(targetName, Math.trunc(toNumber(value)));
+        return;
+
+      case 'STRING':
+        // STRING values are stored as strings
+        context.setString(targetName, toString(value));
+        return;
+
       case 'TIMER':
       case 'COUNTER':
         // Function blocks are handled differently, skip
+        return;
+
+      case 'ARRAY':
+        // Array without index - not supported for direct assignment
+        console.warn(`Cannot assign directly to array '${targetName}' - use indexed access`);
         return;
 
       case 'UNKNOWN':
@@ -180,8 +281,11 @@ function executeAssignment(stmt: STAssignment, context: ExecutionContext): void 
     } else {
       context.setReal(targetName, value);
     }
+  } else if (typeof value === 'string') {
+    // String value - store as string
+    context.setString(targetName, value);
   } else {
-    // String or other - treat as boolean false for now
+    // Unknown type
     console.warn(`Unsupported assignment value type: ${typeof value}`);
   }
 }
@@ -286,81 +390,113 @@ function executeForStatement(stmt: STForStatement, context: ExecutionContext): v
   }
 
   let iterations = 0;
-  try {
-    if (stepVal > 0) {
-      for (let i = startVal; i <= endVal && iterations < MAX_ITERATIONS; i += stepVal) {
-        context.setInt(stmt.variable, i);
+  if (stepVal > 0) {
+    for (let i = startVal; i <= endVal && iterations < MAX_ITERATIONS; i += stepVal) {
+      context.setInt(stmt.variable, i);
+      try {
         executeStatements(stmt.body, context);
-        iterations++;
+      } catch (e) {
+        if (e instanceof ExitSignal) {
+          // EXIT statement - break out of loop
+          return;
+        }
+        if (e instanceof ContinueSignal) {
+          // CONTINUE statement - skip to next iteration
+          iterations++;
+          continue;
+        }
+        throw e; // Re-throw other errors
       }
-    } else {
-      for (let i = startVal; i >= endVal && iterations < MAX_ITERATIONS; i += stepVal) {
-        context.setInt(stmt.variable, i);
-        executeStatements(stmt.body, context);
-        iterations++;
-      }
+      iterations++;
     }
+  } else {
+    for (let i = startVal; i >= endVal && iterations < MAX_ITERATIONS; i += stepVal) {
+      context.setInt(stmt.variable, i);
+      try {
+        executeStatements(stmt.body, context);
+      } catch (e) {
+        if (e instanceof ExitSignal) {
+          // EXIT statement - break out of loop
+          return;
+        }
+        if (e instanceof ContinueSignal) {
+          // CONTINUE statement - skip to next iteration
+          iterations++;
+          continue;
+        }
+        throw e; // Re-throw other errors
+      }
+      iterations++;
+    }
+  }
 
-    if (iterations >= MAX_ITERATIONS) {
-      console.warn(`FOR loop exceeded maximum iterations (${MAX_ITERATIONS})`);
-    }
-  } catch (e) {
-    if (e instanceof ExitSignal) {
-      // EXIT statement - break out of loop normally
-      return;
-    }
-    throw e; // Re-throw other errors
+  if (iterations >= MAX_ITERATIONS) {
+    console.warn(`FOR loop exceeded maximum iterations (${MAX_ITERATIONS})`);
   }
 }
 
 function executeWhileStatement(stmt: STWhileStatement, context: ExecutionContext): void {
   let iterations = 0;
 
-  try {
-    while (iterations < MAX_ITERATIONS) {
-      const conditionValue = evaluateExpression(stmt.condition, context);
-      if (!toBoolean(conditionValue)) {
-        break;
-      }
+  while (iterations < MAX_ITERATIONS) {
+    const conditionValue = evaluateExpression(stmt.condition, context);
+    if (!toBoolean(conditionValue)) {
+      break;
+    }
+    try {
       executeStatements(stmt.body, context);
-      iterations++;
+    } catch (e) {
+      if (e instanceof ExitSignal) {
+        // EXIT statement - break out of loop
+        return;
+      }
+      if (e instanceof ContinueSignal) {
+        // CONTINUE statement - skip to next iteration
+        iterations++;
+        continue;
+      }
+      throw e; // Re-throw other errors
     }
+    iterations++;
+  }
 
-    if (iterations >= MAX_ITERATIONS) {
-      console.warn(`WHILE loop exceeded maximum iterations (${MAX_ITERATIONS})`);
-    }
-  } catch (e) {
-    if (e instanceof ExitSignal) {
-      // EXIT statement - break out of loop normally
-      return;
-    }
-    throw e; // Re-throw other errors
+  if (iterations >= MAX_ITERATIONS) {
+    console.warn(`WHILE loop exceeded maximum iterations (${MAX_ITERATIONS})`);
   }
 }
 
 function executeRepeatStatement(stmt: STRepeatStatement, context: ExecutionContext): void {
   let iterations = 0;
 
-  try {
-    do {
+  do {
+    try {
       executeStatements(stmt.body, context);
-      iterations++;
-
-      const conditionValue = evaluateExpression(stmt.condition, context);
-      if (toBoolean(conditionValue)) {
-        break; // REPEAT exits when condition becomes TRUE
+    } catch (e) {
+      if (e instanceof ExitSignal) {
+        // EXIT statement - break out of loop
+        return;
       }
-    } while (iterations < MAX_ITERATIONS);
+      if (e instanceof ContinueSignal) {
+        // CONTINUE statement - skip to condition check
+        iterations++;
+        const conditionValue = evaluateExpression(stmt.condition, context);
+        if (toBoolean(conditionValue)) {
+          return; // Exit when condition becomes TRUE
+        }
+        continue;
+      }
+      throw e; // Re-throw other errors
+    }
+    iterations++;
 
-    if (iterations >= MAX_ITERATIONS) {
-      console.warn(`REPEAT loop exceeded maximum iterations (${MAX_ITERATIONS})`);
+    const conditionValue = evaluateExpression(stmt.condition, context);
+    if (toBoolean(conditionValue)) {
+      break; // REPEAT exits when condition becomes TRUE
     }
-  } catch (e) {
-    if (e instanceof ExitSignal) {
-      // EXIT statement - break out of loop normally
-      return;
-    }
-    throw e; // Re-throw other errors
+  } while (iterations < MAX_ITERATIONS);
+
+  if (iterations >= MAX_ITERATIONS) {
+    console.warn(`REPEAT loop exceeded maximum iterations (${MAX_ITERATIONS})`);
   }
 }
 
@@ -389,8 +525,26 @@ function toNumber(value: Value): number {
     return value ? 1 : 0;
   }
   if (typeof value === 'string') {
+    // Check for TIME literal (e.g., "T#5s", "TIME#100ms", "T#1h30m")
+    if (value.match(/^(T#|TIME#)/i)) {
+      const timeValue = parseTimeLiteral(value);
+      return timeValueToMs(timeValue);
+    }
     const parsed = parseFloat(value);
     return isNaN(parsed) ? 0 : parsed;
   }
   return 0;
+}
+
+function toString(value: Value): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value === 'boolean') {
+    return value ? 'TRUE' : 'FALSE';
+  }
+  if (typeof value === 'number') {
+    return String(value);
+  }
+  return String(value);
 }

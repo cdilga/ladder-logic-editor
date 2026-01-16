@@ -144,7 +144,10 @@ Per IEEE 754 (referenced by IEC 61131-3 for REAL/LREAL):
 TIME overflow behavior is **implementation-defined**:
 - Some implementations wrap around (UDINT semantics)
 - Some implementations saturate at maximum
-- Negative TIME values are not standard (TIME is unsigned)
+
+**Note on Negative TIME:** Negative TIME values ARE supported in IEC 61131-3. The literal `T#-250ms`
+is valid syntax. Some implementations treat TIME as signed 32-bit (range: -24d20h31m23s648ms to +24d20h31m23s647ms).
+See [Fernhill TIME literals](https://www.fernhillsoftware.com/help/iec-61131/common-elements/literals-time.html).
 
 ### Test Cases
 
@@ -288,8 +291,11 @@ Per IEC 61131-3 §6.4.4.1:
 
 | Type | Encoding | Max Length | Default Length | IEC Reference |
 |------|----------|------------|----------------|---------------|
-| STRING | 1 byte/char (ISO 10646) | 65,535 | 254 | Table 10, §6.3.1 |
-| WSTRING | 2 bytes/char (UTF-16) | 65,535 | 254 | Table 10, §6.3.1 |
+| STRING | 1 byte/char (ASCII/Latin-1) | 65,535 | 254 | Table 10, §6.3.1 |
+| WSTRING | 2 bytes/char (UCS-2) | 65,535 | 254 | Table 10, §6.3.1 |
+
+**Note:** STRING uses single-byte encoding (ASCII or ISO 8859-1/Latin-1). WSTRING uses UCS-2
+(fixed 2-byte Unicode), not UTF-16. Some implementations extend these to UTF-8/UTF-16.
 
 - Declaration with explicit length: `STRING[80]`
 - Default value: empty string `''`

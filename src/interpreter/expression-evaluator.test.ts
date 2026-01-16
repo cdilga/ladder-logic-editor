@@ -103,7 +103,7 @@ describe('evaluateExpression', () => {
 
     it('returns time literal from string (as parsed from ST code)', () => {
       // When the parser reads "T#60s", it stores the string in value
-      // This tests that the evaluator handles string TIME literals correctly
+      // The evaluator should parse this to milliseconds
       const stringTimeLiteral: STLiteral = {
         type: 'Literal',
         value: 'T#60s',  // String as stored by parser
@@ -112,7 +112,7 @@ describe('evaluateExpression', () => {
         loc,
       };
       const result = evaluateExpression(stringTimeLiteral, context);
-      expect(result).toBe('T#60s');  // evaluateLiteral returns the raw value
+      expect(result).toBe(60000);  // 60 seconds = 60000 milliseconds
     });
   });
 

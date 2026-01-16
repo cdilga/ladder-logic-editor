@@ -6,7 +6,7 @@
  */
 
 import type { STAST } from '../transformer/ast/st-ast-types';
-import { executeStatements } from './statement-executor';
+import { executeStatements, ReturnSignal } from './statement-executor';
 import { createExecutionContext, type SimulationStoreInterface, type RuntimeState } from './execution-context';
 
 // ============================================================================
@@ -31,14 +31,33 @@ export function runScanCycle(
   // Create execution context
   const context = createExecutionContext(store, runtimeState);
 
-  // Execute each program's statements
+  // Execute each program's statements (skip FUNCTION and FUNCTION_BLOCK definitions - they're invoked on demand)
   for (const program of ast.programs) {
-    executeStatements(program.statements, context);
+    if (program.programType === 'FUNCTION' || program.programType === 'FUNCTION_BLOCK') {
+      continue; // Functions and function blocks are invoked, not executed in scan cycle
+    }
+    try {
+      executeStatements(program.statements, context);
+    } catch (e) {
+      if (e instanceof ReturnSignal) {
+        // RETURN in a PROGRAM just exits that program
+        continue;
+      }
+      throw e;
+    }
   }
 
   // Execute top-level statements (if any)
   if (ast.topLevelStatements.length > 0) {
-    executeStatements(ast.topLevelStatements, context);
+    try {
+      executeStatements(ast.topLevelStatements, context);
+    } catch (e) {
+      if (e instanceof ReturnSignal) {
+        // RETURN in top-level code - just exit
+      } else {
+        throw e;
+      }
+    }
   }
 
   // Update all timer elapsed times

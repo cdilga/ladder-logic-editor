@@ -113,7 +113,9 @@ REAL and LREAL types must conform to IEEE 754 (IEC 60559) per IEC 61131-3 §6.3.
 
 ### Modulo by Zero
 
-**IEC 61131-3 Position:** Behavior is **implementation-defined** (§7.3.1).
+**IEC 61131-3 Position:** The standard defines MOD(x, 0) = 0 per Table 24 (Ed. 2) / Table 29 (Ed. 3).
+However, actual implementations vary - CODESYS notes "Division by zero may have different results
+depending on the target system."
 
 ```st
 result := 100 MOD 0;
@@ -232,7 +234,7 @@ value := arr[0]; (* Also out of bounds *)
 
 #### IEC 61131-3 Standard Position
 
-Type conversion is well-defined in IEC 61131-3 (§6.6.2.5):
+Type conversion is well-defined in IEC 61131-3 (Table 22.1):
 
 **Implicit conversion:** Only allowed when range and precision are not affected (widening conversions)
 - INT → DINT ✓

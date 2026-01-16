@@ -30,7 +30,11 @@ import type {
   STVariable,
   STLiteral,
   STFunctionCall,
+  STTypeDef,
+  STStructField,
+  STEnumValue,
   VariableScopeKind,
+  VariableQualifier,
   BinaryOperator,
   ProgramType,
   ParseError,
@@ -46,6 +50,7 @@ export function parseSTToAST(source: string): STAST {
   const programs: STProgram[] = [];
   const topLevelStatements: STStatement[] = [];
   const topLevelVarBlocks: STVarBlock[] = [];
+  const typeDefinitions: STTypeDef[] = [];
   const errors: ParseError[] = [];
 
   // Collect any syntax errors from the tree
@@ -62,8 +67,14 @@ export function parseSTToAST(source: string): STAST {
         case 'ProgramDecl':
           programs.push(parseProgramDecl(cursor.node, source, 'PROGRAM'));
           break;
+        case 'FunctionDecl':
+          programs.push(parseFunctionDecl(cursor.node, source));
+          break;
         case 'FunctionBlockDecl':
           programs.push(parseProgramDecl(cursor.node, source, 'FUNCTION_BLOCK'));
+          break;
+        case 'TypeDecl':
+          typeDefinitions.push(...parseTypeDecl(cursor.node, source));
           break;
         case 'VarBlock':
           topLevelVarBlocks.push(parseVarBlock(cursor.node, source));
@@ -95,6 +106,9 @@ export function parseSTToAST(source: string): STAST {
         case 'ExitStatement':
           topLevelStatements.push({ type: 'ExitStatement', loc });
           break;
+        case 'ContinueStatement':
+          topLevelStatements.push({ type: 'ContinueStatement', loc });
+          break;
         // Skip whitespace, comments, and error nodes handled elsewhere
         case '⚠':
         case 'LineComment':
@@ -104,7 +118,7 @@ export function parseSTToAST(source: string): STAST {
     } while (cursor.nextSibling());
   }
 
-  return { programs, topLevelStatements, topLevelVarBlocks, errors };
+  return { programs, topLevelStatements, topLevelVarBlocks, typeDefinitions, errors };
 }
 
 // ============================================================================
@@ -175,6 +189,9 @@ function parseProgramDecl(
       case 'ExitStatement':
         statements.push({ type: 'ExitStatement', loc: { start: child.from, end: child.to } });
         break;
+      case 'ContinueStatement':
+        statements.push({ type: 'ContinueStatement', loc: { start: child.from, end: child.to } });
+        break;
     }
     child = child.nextSibling;
   }
@@ -182,52 +199,129 @@ function parseProgramDecl(
   return { type: 'Program', name, programType, varBlocks, statements, loc };
 }
 
-// ============================================================================
-// Variable Block Parsing
-// ============================================================================
-
-function parseVarBlock(node: SyntaxNode, source: string): STVarBlock {
+function parseFunctionDecl(node: SyntaxNode, source: string): STProgram {
   const loc = { start: node.from, end: node.to };
-  let scope: VariableScopeKind = 'VAR';
-  const declarations: STVariableDecl[] = [];
+  let name = 'Untitled';
+  let returnType = 'INT';
+  const varBlocks: STVarBlock[] = [];
+  const statements: STStatement[] = [];
+  let foundName = false;
 
+  // Walk children: FUNCTION Identifier ":" TypeName statement* END_FUNCTION
   let child = node.firstChild;
   while (child) {
     switch (child.name) {
-      case 'VarKeyword':
-        scope = parseVarKeyword(child, source);
+      case 'Identifier':
+        if (!foundName) {
+          name = source.slice(child.from, child.to);
+          foundName = true;
+        }
         break;
-      case 'VariableDecl':
-        declarations.push(parseVariableDecl(child, source));
+      case 'TypeName':
+        returnType = parseTypeName(child, source);
+        break;
+      case 'VarBlock':
+        varBlocks.push(parseVarBlock(child, source));
+        break;
+      case 'Assignment':
+        statements.push(parseAssignment(child, source));
+        break;
+      case 'FunctionBlockCall':
+        statements.push(parseFunctionBlockCall(child, source));
+        break;
+      case 'IfStatement':
+        statements.push(parseIfStatement(child, source));
+        break;
+      case 'CaseStatement':
+        statements.push(parseCaseStatement(child, source));
+        break;
+      case 'ForStatement':
+        statements.push(parseForStatement(child, source));
+        break;
+      case 'WhileStatement':
+        statements.push(parseWhileStatement(child, source));
+        break;
+      case 'RepeatStatement':
+        statements.push(parseRepeatStatement(child, source));
+        break;
+      case 'ReturnStatement':
+        statements.push({ type: 'ReturnStatement', loc: { start: child.from, end: child.to } });
+        break;
+      case 'ExitStatement':
+        statements.push({ type: 'ExitStatement', loc: { start: child.from, end: child.to } });
+        break;
+      case 'ContinueStatement':
+        statements.push({ type: 'ContinueStatement', loc: { start: child.from, end: child.to } });
         break;
     }
     child = child.nextSibling;
   }
 
-  return { type: 'VarBlock', scope, declarations, loc };
+  return { type: 'Program', name, programType: 'FUNCTION', returnType, varBlocks, statements, loc };
 }
 
-function parseVarKeyword(node: SyntaxNode, source: string): VariableScopeKind {
-  const text = source.slice(node.from, node.to).toUpperCase().trim();
-  if (text.includes('VAR_INPUT')) return 'VAR_INPUT';
-  if (text.includes('VAR_OUTPUT')) return 'VAR_OUTPUT';
-  if (text.includes('VAR_IN_OUT')) return 'VAR_IN_OUT';
-  if (text.includes('VAR_TEMP')) return 'VAR_TEMP';
-  if (text.includes('VAR_GLOBAL')) return 'VAR_GLOBAL';
-  return 'VAR';
+// ============================================================================
+// Type Declaration Parsing (STRUCT, etc.)
+// ============================================================================
+
+/**
+ * Parse a TYPE...END_TYPE block.
+ * Returns an array of type definitions (one TYPE block can contain multiple STRUCTs or ENUMs).
+ */
+function parseTypeDecl(node: SyntaxNode, source: string): STTypeDef[] {
+  const typeDefs: STTypeDef[] = [];
+
+  let child = node.firstChild;
+  while (child) {
+    if (child.name === 'StructDef') {
+      typeDefs.push(parseStructDef(child, source));
+    } else if (child.name === 'EnumDef') {
+      typeDefs.push(parseEnumDef(child, source));
+    }
+    child = child.nextSibling;
+  }
+
+  return typeDefs;
 }
 
-function parseVariableDecl(node: SyntaxNode, source: string): STVariableDecl {
+/**
+ * Parse a STRUCT definition.
+ */
+function parseStructDef(node: SyntaxNode, source: string): STTypeDef {
   const loc = { start: node.from, end: node.to };
-  const names: string[] = [];
-  let dataType: STTypeSpec = { type: 'TypeSpec', typeName: 'BOOL', isArray: false, loc };
+  let name = 'UnnamedStruct';
+  const structFields: STStructField[] = [];
+
+  let child = node.firstChild;
+  while (child) {
+    switch (child.name) {
+      case 'Identifier':
+        name = source.slice(child.from, child.to);
+        break;
+      case 'StructField':
+        structFields.push(parseStructField(child, source));
+        break;
+    }
+    child = child.nextSibling;
+  }
+
+  return { type: 'TypeDef', name, defType: 'STRUCT', structFields, loc };
+}
+
+/**
+ * Parse a field within a STRUCT definition.
+ */
+function parseStructField(node: SyntaxNode, source: string): STStructField {
+  const loc = { start: node.from, end: node.to };
+  let name = 'unnamed';
+  let dataType: STTypeSpec = { type: 'TypeSpec', typeName: 'INT', isArray: false, loc };
   let initialValue: STExpression | undefined;
 
   let child = node.firstChild;
   while (child) {
     switch (child.name) {
-      case 'VariableList':
-        names.push(...parseVariableList(child, source));
+      case 'Identifier':
+        name = source.slice(child.from, child.to);
         break;
       case 'TypeSpec':
         dataType = parseTypeSpec(child, source);
@@ -239,7 +333,175 @@ function parseVariableDecl(node: SyntaxNode, source: string): STVariableDecl {
     child = child.nextSibling;
   }
 
-  return { type: 'VariableDecl', names, dataType, initialValue, loc };
+  return { type: 'StructField', name, dataType, initialValue, loc };
+}
+
+/**
+ * Parse an ENUM definition.
+ * Format: TypeName : (Value1, Value2 := 5, Value3);
+ */
+function parseEnumDef(node: SyntaxNode, source: string): STTypeDef {
+  const loc = { start: node.from, end: node.to };
+  let name = 'UnnamedEnum';
+  const enumValues: STEnumValue[] = [];
+
+  let child = node.firstChild;
+  while (child) {
+    switch (child.name) {
+      case 'Identifier':
+        name = source.slice(child.from, child.to);
+        break;
+      case 'EnumValueList':
+        parseEnumValueList(child, source, enumValues);
+        break;
+    }
+    child = child.nextSibling;
+  }
+
+  return { type: 'TypeDef', name, defType: 'ENUM', enumValues, loc };
+}
+
+/**
+ * Parse the list of enum values, handling auto-incrementing values.
+ */
+function parseEnumValueList(node: SyntaxNode, source: string, enumValues: STEnumValue[]): void {
+  let nextValue = 0;
+
+  let child = node.firstChild;
+  while (child) {
+    if (child.name === 'EnumValue') {
+      const enumValue = parseEnumValue(child, source, nextValue);
+      enumValues.push(enumValue);
+      // Next auto-increment value is one more than this value
+      nextValue = enumValue.value + 1;
+    }
+    child = child.nextSibling;
+  }
+}
+
+/**
+ * Parse a single enum value with optional explicit integer value.
+ */
+function parseEnumValue(node: SyntaxNode, source: string, defaultValue: number): STEnumValue {
+  let name = 'UnnamedValue';
+  let value = defaultValue;
+  let hasExplicitValue = false;
+
+  let child = node.firstChild;
+  while (child) {
+    switch (child.name) {
+      case 'Identifier':
+        name = source.slice(child.from, child.to);
+        break;
+      case 'Number':
+        value = parseInt(source.slice(child.from, child.to), 10);
+        hasExplicitValue = true;
+        break;
+    }
+    child = child.nextSibling;
+  }
+
+  // If no explicit value, use the default (auto-incremented)
+  if (!hasExplicitValue) {
+    value = defaultValue;
+  }
+
+  return { name, value };
+}
+
+// ============================================================================
+// Variable Block Parsing
+// ============================================================================
+
+function parseVarBlock(node: SyntaxNode, source: string): STVarBlock {
+  const loc = { start: node.from, end: node.to };
+  let scope: VariableScopeKind = 'VAR';
+  let qualifier: VariableQualifier | undefined;
+  const declarations: STVariableDecl[] = [];
+
+  let child = node.firstChild;
+  while (child) {
+    switch (child.name) {
+      case 'VarKeyword':
+        scope = parseVarKeyword(child, source);
+        break;
+      case 'VarQualifier':
+        qualifier = parseVarQualifier(child, source);
+        break;
+      case 'VariableDecl':
+        declarations.push(parseVariableDecl(child, source));
+        break;
+    }
+    child = child.nextSibling;
+  }
+
+  return { type: 'VarBlock', scope, qualifier, declarations, loc };
+}
+
+function parseVarQualifier(node: SyntaxNode, source: string): VariableQualifier | undefined {
+  const text = source.slice(node.from, node.to).toUpperCase().trim();
+  if (text === 'CONSTANT') return 'CONSTANT';
+  if (text === 'RETAIN') return 'RETAIN';
+  return undefined;
+}
+
+function parseVarKeyword(node: SyntaxNode, source: string): VariableScopeKind {
+  const text = source.slice(node.from, node.to).toUpperCase().trim();
+  if (text.includes('VAR_INPUT')) return 'VAR_INPUT';
+  if (text.includes('VAR_OUTPUT')) return 'VAR_OUTPUT';
+  if (text.includes('VAR_IN_OUT')) return 'VAR_IN_OUT';
+  if (text.includes('VAR_TEMP')) return 'VAR_TEMP';
+  if (text.includes('VAR_EXTERNAL')) return 'VAR_EXTERNAL';
+  if (text.includes('VAR_GLOBAL')) return 'VAR_GLOBAL';
+  return 'VAR';
+}
+
+function parseVariableDecl(node: SyntaxNode, source: string): STVariableDecl {
+  const loc = { start: node.from, end: node.to };
+  const names: string[] = [];
+  let dataType: STTypeSpec = { type: 'TypeSpec', typeName: 'BOOL', isArray: false, loc };
+  let initialValue: STExpression | undefined;
+  let atAddress: string | undefined;
+
+  let child = node.firstChild;
+  while (child) {
+    switch (child.name) {
+      case 'VariableList':
+        names.push(...parseVariableList(child, source));
+        break;
+      case 'AtAddress':
+        atAddress = parseAtAddress(child, source);
+        break;
+      case 'TypeSpec':
+        dataType = parseTypeSpec(child, source);
+        break;
+      case 'Expression':
+        initialValue = parseExpression(child, source);
+        break;
+    }
+    child = child.nextSibling;
+  }
+
+  const result: STVariableDecl = { type: 'VariableDecl', names, dataType, initialValue, loc };
+  if (atAddress) {
+    result.atAddress = atAddress;
+  }
+  return result;
+}
+
+/**
+ * Parse an AT address from the AtAddress node.
+ * Returns the direct address string (e.g., "%IX0.0", "%MW10", "%QX1.2.3")
+ */
+function parseAtAddress(node: SyntaxNode, source: string): string | undefined {
+  let child = node.firstChild;
+  while (child) {
+    if (child.name === 'DirectAddress') {
+      return source.slice(child.from, child.to);
+    }
+    child = child.nextSibling;
+  }
+  return undefined;
 }
 
 function parseVariableList(node: SyntaxNode, source: string): string[] {
@@ -259,6 +521,7 @@ function parseTypeSpec(node: SyntaxNode, source: string): STTypeSpec {
   let typeName = 'BOOL';
   let isArray = false;
   let arrayRange: { start: number; end: number } | undefined;
+  let arrayRanges: { start: number; end: number }[] | undefined;
 
   let child = node.firstChild;
   while (child) {
@@ -270,13 +533,20 @@ function parseTypeSpec(node: SyntaxNode, source: string): STTypeSpec {
         isArray = true;
         const result = parseArrayType(child, source);
         typeName = result.typeName;
-        arrayRange = result.range;
+        // Support both single and multi-dimensional arrays
+        if (result.ranges && result.ranges.length > 0) {
+          arrayRanges = result.ranges;
+          // For backwards compatibility, also set arrayRange for single-dimensional
+          if (result.ranges.length === 1) {
+            arrayRange = result.ranges[0];
+          }
+        }
         break;
     }
     child = child.nextSibling;
   }
 
-  return { type: 'TypeSpec', typeName, isArray, arrayRange, loc };
+  return { type: 'TypeSpec', typeName, isArray, arrayRange, arrayRanges, loc };
 }
 
 function parseTypeName(node: SyntaxNode, source: string): string {
@@ -293,15 +563,26 @@ function parseTypeName(node: SyntaxNode, source: string): string {
 function parseArrayType(
   node: SyntaxNode,
   source: string
-): { typeName: string; range?: { start: number; end: number } } {
+): { typeName: string; ranges: { start: number; end: number }[] } {
   let typeName = 'BOOL';
-  let range: { start: number; end: number } | undefined;
+  const ranges: { start: number; end: number }[] = [];
 
   let child = node.firstChild;
   while (child) {
     switch (child.name) {
+      case 'RangeList':
+        // Parse all ranges from the RangeList
+        let rangeChild = child.firstChild;
+        while (rangeChild) {
+          if (rangeChild.name === 'Range') {
+            ranges.push(parseRange(rangeChild, source));
+          }
+          rangeChild = rangeChild.nextSibling;
+        }
+        break;
       case 'Range':
-        range = parseRange(child, source);
+        // Fallback for grammar without RangeList
+        ranges.push(parseRange(child, source));
         break;
       case 'TypeName':
         typeName = parseTypeName(child, source);
@@ -310,7 +591,7 @@ function parseArrayType(
     child = child.nextSibling;
   }
 
-  return { typeName, range };
+  return { typeName, ranges };
 }
 
 function parseRange(node: SyntaxNode, source: string): { start: number; end: number } {
@@ -440,6 +721,7 @@ function parseIfStatement(node: SyntaxNode, source: string): STIfStatement {
       case 'RepeatStatement':
       case 'ReturnStatement':
       case 'ExitStatement':
+      case 'ContinueStatement':
         if (inThen) {
           thenBranch.push(parseStatementNode(child, source));
         }
@@ -488,6 +770,7 @@ function parseElsifClause(node: SyntaxNode, source: string): STElsifClause {
       case 'RepeatStatement':
       case 'ReturnStatement':
       case 'ExitStatement':
+      case 'ContinueStatement':
         if (inThen) {
           statements.push(parseStatementNode(child, source));
         }
@@ -555,6 +838,7 @@ function parseCaseClause(node: SyntaxNode, source: string): STCaseClause {
       case 'RepeatStatement':
       case 'ReturnStatement':
       case 'ExitStatement':
+      case 'ContinueStatement':
         statements.push(parseStatementNode(child, source));
         break;
     }
@@ -623,6 +907,7 @@ function parseForStatement(node: SyntaxNode, source: string): STForStatement {
       case 'RepeatStatement':
       case 'ReturnStatement':
       case 'ExitStatement':
+      case 'ContinueStatement':
         if (inDo) {
           body.push(parseStatementNode(child, source));
         }
@@ -660,6 +945,7 @@ function parseWhileStatement(node: SyntaxNode, source: string): STWhileStatement
       case 'RepeatStatement':
       case 'ReturnStatement':
       case 'ExitStatement':
+      case 'ContinueStatement':
         if (inDo) {
           body.push(parseStatementNode(child, source));
         }
@@ -689,6 +975,7 @@ function parseRepeatStatement(node: SyntaxNode, source: string): STRepeatStateme
       case 'RepeatStatement':
       case 'ReturnStatement':
       case 'ExitStatement':
+      case 'ContinueStatement':
         if (!inUntil) {
           body.push(parseStatementNode(child, source));
         }
@@ -719,6 +1006,7 @@ function isStatementNode(name: string): boolean {
     'RepeatStatement',
     'ReturnStatement',
     'ExitStatement',
+    'ContinueStatement',
   ].includes(name);
 }
 
@@ -743,6 +1031,8 @@ function parseStatementNode(node: SyntaxNode, source: string): STStatement {
       return { type: 'ReturnStatement', loc };
     case 'ExitStatement':
       return { type: 'ExitStatement', loc };
+    case 'ContinueStatement':
+      return { type: 'ContinueStatement', loc };
     default:
       // Return a dummy statement for unknown types
       return { type: 'ReturnStatement', loc };
@@ -881,7 +1171,7 @@ function parseMulExpression(node: SyntaxNode, source: string): STExpression {
 function parseUnaryExpression(node: SyntaxNode, source: string): STExpression {
   const loc = { start: node.from, end: node.to };
   const unaryOps: Array<'NOT' | '-'> = [];
-  let primary: STExpression | null = null;
+  let powerExpr: STExpression | null = null;
 
   let child = node.firstChild;
   while (child) {
@@ -890,15 +1180,15 @@ function parseUnaryExpression(node: SyntaxNode, source: string): STExpression {
       unaryOps.push('NOT');
     } else if (text === '-') {
       unaryOps.push('-');
-    } else if (child.name === 'PrimaryExpression') {
-      primary = parsePrimaryExpression(child, source);
+    } else if (child.name === 'PowerExpression') {
+      powerExpr = parsePowerExpression(child, source);
     }
     child = child.nextSibling;
   }
 
-  if (primary) {
+  if (powerExpr) {
     // Apply unary operators in reverse order (innermost first)
-    let result = primary;
+    let result = powerExpr;
     for (let i = unaryOps.length - 1; i >= 0; i--) {
       result = {
         type: 'UnaryExpr',
@@ -911,6 +1201,29 @@ function parseUnaryExpression(node: SyntaxNode, source: string): STExpression {
   }
 
   return { type: 'Literal', value: false, literalType: 'BOOL', rawValue: 'FALSE', loc };
+}
+
+function parsePowerExpression(node: SyntaxNode, source: string): STExpression {
+  const loc = { start: node.from, end: node.to };
+  const parts: { expr: STExpression; op?: BinaryOperator }[] = [];
+
+  let child = node.firstChild;
+  while (child) {
+    if (child.name === 'PrimaryExpression') {
+      parts.push({ expr: parsePrimaryExpression(child, source) });
+    } else {
+      const text = source.slice(child.from, child.to);
+      if (text === '**') {
+        if (parts.length > 0) {
+          parts[parts.length - 1].op = '**';
+        }
+      }
+    }
+    child = child.nextSibling;
+  }
+
+  // IEC 61131-3 specifies left-to-right associativity for **
+  return buildLeftAssociativeExpr(parts, loc);
 }
 
 function parsePrimaryExpression(node: SyntaxNode, source: string): STExpression {
@@ -938,17 +1251,44 @@ function parsePrimaryExpression(node: SyntaxNode, source: string): STExpression 
 function parseVariable(node: SyntaxNode, source: string): STVariable {
   const loc = { start: node.from, end: node.to };
   const accessPath: string[] = [];
+  const arrayIndices: STExpression[] = [];
 
   let child = node.firstChild;
   while (child) {
     if (child.name === 'Identifier') {
       accessPath.push(source.slice(child.from, child.to));
+    } else if (child.name === 'ArrayIndex') {
+      // ArrayIndex contains IndexList which contains comma-separated Expressions
+      // This supports both arr[i] and arr[i, j] syntax
+      let indexChild = child.firstChild;
+      while (indexChild) {
+        if (indexChild.name === 'IndexList') {
+          // Parse all expressions in the IndexList
+          let listChild = indexChild.firstChild;
+          while (listChild) {
+            if (listChild.name === 'Expression') {
+              arrayIndices.push(parseExpression(listChild, source));
+            }
+            listChild = listChild.nextSibling;
+          }
+        } else if (indexChild.name === 'Expression') {
+          // Fallback for grammar without IndexList
+          arrayIndices.push(parseExpression(indexChild, source));
+        }
+        indexChild = indexChild.nextSibling;
+      }
     }
     child = child.nextSibling;
   }
 
   const name = accessPath.join('.');
-  return { type: 'Variable', name, accessPath, loc };
+  const result: STVariable = { type: 'Variable', name, accessPath, loc };
+
+  if (arrayIndices.length > 0) {
+    result.arrayIndices = arrayIndices;
+  }
+
+  return result;
 }
 
 function parseLiteral(node: SyntaxNode, source: string): STLiteral {
@@ -957,7 +1297,33 @@ function parseLiteral(node: SyntaxNode, source: string): STLiteral {
   let child = node.firstChild;
   while (child) {
     switch (child.name) {
-      case 'Number':
+      case 'HexNumber': {
+        const hexText = source.slice(child.from, child.to);
+        // Parse 16#FF format - extract digits after 16#
+        const hexDigits = hexText.slice(3); // Remove "16#"
+        const hexValue = parseInt(hexDigits, 16);
+        return {
+          type: 'Literal',
+          value: hexValue,
+          literalType: 'INT',
+          rawValue: hexText,
+          loc,
+        };
+      }
+      case 'BinaryNumber': {
+        const binText = source.slice(child.from, child.to);
+        // Parse 2#1010 format - extract digits after 2# and remove underscores
+        const binDigits = binText.slice(2).replace(/_/g, ''); // Remove "2#" and underscores
+        const binValue = parseInt(binDigits, 2);
+        return {
+          type: 'Literal',
+          value: binValue,
+          literalType: 'INT',
+          rawValue: binText,
+          loc,
+        };
+      }
+      case 'Number': {
         const numText = source.slice(child.from, child.to);
         const numValue = numText.includes('.') ? parseFloat(numText) : parseInt(numText, 10);
         return {
@@ -967,7 +1333,8 @@ function parseLiteral(node: SyntaxNode, source: string): STLiteral {
           rawValue: numText,
           loc,
         };
-      case 'Boolean':
+      }
+      case 'Boolean': {
         const boolText = source.slice(child.from, child.to).toUpperCase();
         return {
           type: 'Literal',
@@ -976,7 +1343,8 @@ function parseLiteral(node: SyntaxNode, source: string): STLiteral {
           rawValue: boolText,
           loc,
         };
-      case 'String':
+      }
+      case 'String': {
         const strText = source.slice(child.from, child.to);
         // Remove quotes
         const strValue = strText.slice(1, -1);
@@ -987,7 +1355,8 @@ function parseLiteral(node: SyntaxNode, source: string): STLiteral {
           rawValue: strText,
           loc,
         };
-      case 'TimeLiteral':
+      }
+      case 'TimeLiteral': {
         const timeText = source.slice(child.from, child.to);
         return {
           type: 'Literal',
@@ -996,6 +1365,58 @@ function parseLiteral(node: SyntaxNode, source: string): STLiteral {
           rawValue: timeText,
           loc,
         };
+      }
+      case 'DateLiteral': {
+        const dateText = source.slice(child.from, child.to);
+        return {
+          type: 'Literal',
+          value: dateText,
+          literalType: 'DATE',
+          rawValue: dateText,
+          loc,
+        };
+      }
+      case 'TimeOfDayLiteral': {
+        const todText = source.slice(child.from, child.to);
+        return {
+          type: 'Literal',
+          value: todText,
+          literalType: 'TIME_OF_DAY',
+          rawValue: todText,
+          loc,
+        };
+      }
+      case 'DateAndTimeLiteral': {
+        const dtText = source.slice(child.from, child.to);
+        return {
+          type: 'Literal',
+          value: dtText,
+          literalType: 'DATE_AND_TIME',
+          rawValue: dtText,
+          loc,
+        };
+      }
+      case 'QualifiedEnumValue': {
+        // QualifiedEnumValue contains two Identifiers: TypeName#ValueName
+        // e.g., TrafficLight#Yellow
+        const identifiers: string[] = [];
+        let enumChild = child.firstChild;
+        while (enumChild) {
+          if (enumChild.name === 'Identifier') {
+            identifiers.push(source.slice(enumChild.from, enumChild.to));
+          }
+          enumChild = enumChild.nextSibling;
+        }
+        // Build qualified name: TypeName#ValueName
+        const qualifiedName = identifiers.join('#');
+        return {
+          type: 'Literal',
+          value: qualifiedName,
+          literalType: 'ENUM',
+          rawValue: qualifiedName,
+          loc,
+        };
+      }
     }
     child = child.nextSibling;
   }
@@ -1129,6 +1550,8 @@ function parseExpressionNode(node: SyntaxNode, source: string): STExpression {
       return parseAddExpression(node, source);
     case 'MulExpression':
       return parseMulExpression(node, source);
+    case 'PowerExpression':
+      return parsePowerExpression(node, source);
     case 'UnaryExpression':
       return parseUnaryExpression(node, source);
     case 'PrimaryExpression':

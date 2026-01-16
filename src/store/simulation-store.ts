@@ -74,6 +74,10 @@ interface SimulationState {
   integers: Record<string, number>;
   reals: Record<string, number>;
   times: Record<string, number>; // Time values in ms
+  dates: Record<string, number>; // Date values (days since epoch)
+  timesOfDay: Record<string, number>; // Time of day values (ms since midnight)
+  dateAndTimes: Record<string, number>; // Date and time values (ms since epoch)
+  strings: Record<string, string>; // String values (IEC 61131-3 STRING type)
 
   // Timer instances
   timers: Record<string, TimerState>;
@@ -103,6 +107,14 @@ interface SimulationState {
   getReal: (name: string) => number;
   setTime: (name: string, value: number) => void;
   getTime: (name: string) => number;
+  setDate: (name: string, value: number) => void;
+  getDate: (name: string) => number;
+  setTimeOfDay: (name: string, value: number) => void;
+  getTimeOfDay: (name: string) => number;
+  setDateAndTime: (name: string, value: number) => void;
+  getDateAndTime: (name: string) => number;
+  setString: (name: string, value: string) => void;
+  getString: (name: string) => string;
 
   // Timer operations
   initTimer: (name: string, pt: number, timerType?: TimerType) => void;
@@ -206,6 +218,10 @@ export const useSimulationStore = create<SimulationState>()(
     integers: {},
     reals: {},
     times: {},
+    dates: {},
+    timesOfDay: {},
+    dateAndTimes: {},
+    strings: {},
     timers: {},
     counters: {},
     edgeDetectors: {},
@@ -225,6 +241,10 @@ export const useSimulationStore = create<SimulationState>()(
         integers: {},
         reals: {},
         times: {},
+        dates: {},
+        timesOfDay: {},
+        dateAndTimes: {},
+        strings: {},
         timers: {},
         counters: {},
         edgeDetectors: {},
@@ -282,6 +302,50 @@ export const useSimulationStore = create<SimulationState>()(
 
     getTime: (name: string) => {
       return get().times[name] ?? 0;
+    },
+
+    // Date variables
+    setDate: (name: string, value: number) => {
+      set((state) => ({
+        dates: { ...state.dates, [name]: value },
+      }));
+    },
+
+    getDate: (name: string) => {
+      return get().dates[name] ?? 0;
+    },
+
+    // Time of day variables
+    setTimeOfDay: (name: string, value: number) => {
+      set((state) => ({
+        timesOfDay: { ...state.timesOfDay, [name]: value },
+      }));
+    },
+
+    getTimeOfDay: (name: string) => {
+      return get().timesOfDay[name] ?? 0;
+    },
+
+    // Date and time variables
+    setDateAndTime: (name: string, value: number) => {
+      set((state) => ({
+        dateAndTimes: { ...state.dateAndTimes, [name]: value },
+      }));
+    },
+
+    getDateAndTime: (name: string) => {
+      return get().dateAndTimes[name] ?? 0;
+    },
+
+    // String variables
+    setString: (name: string, value: string) => {
+      set((state) => ({
+        strings: { ...state.strings, [name]: value },
+      }));
+    },
+
+    getString: (name: string) => {
+      return get().strings[name] ?? '';
     },
 
     // Timer operations
@@ -701,6 +765,10 @@ export const useSimulationStore = create<SimulationState>()(
         integers: {},
         reals: {},
         times: {},
+        dates: {},
+        timesOfDay: {},
+        dateAndTimes: {},
+        strings: {},
         timers: {},
         counters: {},
         edgeDetectors: {},

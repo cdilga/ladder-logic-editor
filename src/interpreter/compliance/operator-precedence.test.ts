@@ -1145,6 +1145,366 @@ describe('Short-Circuit Evaluation Behavior', () => {
 });
 
 // ============================================================================
+// Exponentiation Operator Tests
+// ============================================================================
+
+describe('Exponentiation Operator (**)', () => {
+  describe('Basic Exponentiation', () => {
+    it('2 ** 3 = 8', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := 2 ** 3;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(8);
+    });
+
+    it('3 ** 2 = 9', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := 3 ** 2;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(9);
+    });
+
+    it('10 ** 0 = 1 (any number to power 0 is 1)', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := 10 ** 0;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(1);
+    });
+
+    it('5 ** 1 = 5 (any number to power 1 is itself)', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := 5 ** 1;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(5);
+    });
+  });
+
+  describe('REAL Exponentiation', () => {
+    it('2.0 ** 3.0 = 8.0', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : REAL;
+        END_VAR
+        Result := 2.0 ** 3.0;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getReal('Result')).toBeCloseTo(8.0, 5);
+    });
+
+    it('4.0 ** 0.5 = 2.0 (square root)', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : REAL;
+        END_VAR
+        Result := 4.0 ** 0.5;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getReal('Result')).toBeCloseTo(2.0, 5);
+    });
+
+    it('27.0 ** (1.0 / 3.0) = 3.0 (cube root)', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : REAL;
+        END_VAR
+        Result := 27.0 ** (1.0 / 3.0);
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getReal('Result')).toBeCloseTo(3.0, 5);
+    });
+  });
+
+  describe('Negative Base', () => {
+    it('(-2) ** 2 = 4', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := (-2) ** 2;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(4);
+    });
+
+    it('(-2) ** 3 = -8', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := (-2) ** 3;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(-8);
+    });
+  });
+
+  describe('0 ** 0 Behavior', () => {
+    it('0 ** 0 = 1 (JavaScript/Math.pow convention)', () => {
+      // Note: 0^0 is mathematically indeterminate, but JavaScript Math.pow returns 1
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := 0 ** 0;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(1);
+    });
+  });
+
+  describe('Exponentiation Precedence', () => {
+    it('** has higher precedence than *: 2 * 3 ** 2 = 18 (not 36)', () => {
+      // 2 * (3 ** 2) = 2 * 9 = 18
+      // vs (2 * 3) ** 2 = 6 ** 2 = 36
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := 2 * 3 ** 2;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(18);
+    });
+
+    it('** has higher precedence than /: 16 / 2 ** 2 = 4 (not 64)', () => {
+      // 16 / (2 ** 2) = 16 / 4 = 4
+      // vs (16 / 2) ** 2 = 8 ** 2 = 64
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := 16 / 2 ** 2;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(4);
+    });
+
+    it('** has higher precedence than +: 1 + 2 ** 3 = 9 (not 27)', () => {
+      // 1 + (2 ** 3) = 1 + 8 = 9
+      // vs (1 + 2) ** 3 = 3 ** 3 = 27
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := 1 + 2 ** 3;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(9);
+    });
+
+    it('unary minus applies to result of **: -2 ** 2 = -4 (not 4)', () => {
+      // -(2 ** 2) = -(4) = -4
+      // vs (-2) ** 2 = 4
+      // Per IEC 61131-3, ** has higher precedence than unary minus
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := -2 ** 2;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(-4);
+    });
+  });
+
+  describe('Exponentiation Associativity (Left-to-Right per IEC 61131-3)', () => {
+    it('2 ** 3 ** 2 = 64 (left-to-right: (2 ** 3) ** 2 = 8 ** 2)', () => {
+      // IEC 61131-3 specifies left-to-right associativity for **
+      // (2 ** 3) ** 2 = 8 ** 2 = 64
+      // vs right-to-left: 2 ** (3 ** 2) = 2 ** 9 = 512
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := 2 ** 3 ** 2;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(64);
+    });
+
+    it('4 ** 2 ** 1 = 16 (left-to-right: (4 ** 2) ** 1 = 16 ** 1)', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := 4 ** 2 ** 1;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(16);
+    });
+  });
+
+  describe('Parentheses Override Exponentiation', () => {
+    it('(2 * 3) ** 2 = 36', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := (2 * 3) ** 2;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(36);
+    });
+
+    it('2 ** (3 ** 2) = 512 (right-to-left with parens)', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          Result : INT;
+        END_VAR
+        Result := 2 ** (3 ** 2);
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(512);
+    });
+  });
+
+  describe('Variables with Exponentiation', () => {
+    it('x ** y with variables', () => {
+      const store = createTestStore();
+      const ast = parseSTToAST(`
+        PROGRAM Test
+        VAR
+          x : INT := 2;
+          y : INT := 10;
+          Result : INT;
+        END_VAR
+        Result := x ** y;
+        END_PROGRAM
+      `);
+
+      initializeVariables(ast, store);
+      runScanCycle(ast, store, createRuntimeState(ast));
+
+      expect(store.getInt('Result')).toBe(1024);
+    });
+  });
+});
+
+// ============================================================================
 // Left-to-Right Associativity Tests
 // ============================================================================
 

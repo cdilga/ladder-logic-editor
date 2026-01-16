@@ -58,19 +58,25 @@ Note: REAL/LREAL conform to IEC 60559 (IEEE 754).
 
 | Type | Size | Resolution | Range | Default | Literal Prefix | IEC Reference |
 |------|------|------------|-------|---------|----------------|---------------|
-| TIME | 32 bits | milliseconds | Implementation-defined (typically ~24d20h31m23s647ms) | T#0s | T# or TIME# | Table 10, Section 6.3.1 |
-| LTIME | 64 bits | nanoseconds | ~106751d23h47m16s | LTIME#0ns | LTIME# | Table 10 (Ed. 3+), Section 6.3.1 |
+| TIME | 32 bits (signed) | milliseconds | -24d20h31m23s648ms to +24d20h31m23s647ms | T#0s | T# or TIME# | Table 10, Section 6.3.1 |
+| LTIME | 64 bits (signed) | nanoseconds | ~±106751d23h47m16s | LTIME#0ns | LTIME# | Table 10 (Ed. 3+), Section 6.3.1 |
+
+**Note:** TIME and LTIME are **signed** types, supporting negative durations (e.g., `T#-250ms`).
 
 ### Date and Time Types (IEC 61131-3 Table 10)
 
 | Type | Size | Resolution | Range | Default | Literal Prefix | IEC Reference |
 |------|------|------------|-------|---------|----------------|---------------|
-| DATE | 32 bits | 1 day | 1970-01-01 to 2106-02-07 | D#1970-01-01 | D# or DATE# | Table 10, Section 6.3.1 |
+| DATE | 32 bits | 1 day | Implementation-defined | D#1970-01-01 | D# or DATE# | Table 10, Section 6.3.1 |
 | TIME_OF_DAY (TOD) | 32 bits | 1 ms | 00:00:00.000 to 23:59:59.999 | TOD#00:00:00 | TOD# or TIME_OF_DAY# | Table 10, Section 6.3.1 |
-| DATE_AND_TIME (DT) | 32 bits | 1 second | 1970-01-01-00:00:00 to 2106-02-07-06:28:15 | DT#1970-01-01-00:00:00 | DT# or DATE_AND_TIME# | Table 10, Section 6.3.1 |
-| LDATE | 64 bits | nanoseconds | 1970-01-01 to 2262-04-11 | LDATE#1970-01-01 | LDATE# | Table 10 (Ed. 3+) |
+| DATE_AND_TIME (DT) | 32 bits | 1 second | Implementation-defined | DT#1970-01-01-00:00:00 | DT# or DATE_AND_TIME# | Table 10, Section 6.3.1 |
+| LDATE | 64 bits | nanoseconds | Implementation-defined | LDATE#1970-01-01 | LDATE# | Table 10 (Ed. 3+) |
 | LTIME_OF_DAY (LTOD) | 64 bits | nanoseconds | 00:00:00.0 to 23:59:59.999999999 | LTOD#00:00:00 | LTOD# or LTIME_OF_DAY# | Table 10 (Ed. 3+) |
-| LDATE_AND_TIME (LDT) | 64 bits | nanoseconds | 1970-01-01-00:00:00 to 2262-04-11-23:47:16 | LDT#1970-01-01-00:00:00 | LDT# or LDATE_AND_TIME# | Table 10 (Ed. 3+) |
+| LDATE_AND_TIME (LDT) | 64 bits | nanoseconds | Implementation-defined | LDT#1970-01-01-00:00:00 | LDT# or LDATE_AND_TIME# | Table 10 (Ed. 3+) |
+
+**Note:** DATE, DT, LDATE, LDT ranges are **implementation-defined** per IEC 61131-3.
+Common implementations use Unix epoch (1970-01-01) with unsigned 32-bit seconds for DATE/DT
+(range: 1970-01-01 to 2106-02-07). Some vendors (e.g., Fernhill) support 1601-01-01 to 9999-12-31.
 
 ### String Types (IEC 61131-3 Table 10)
 
@@ -267,7 +273,7 @@ END_TYPE
 | DWORD | P2 | 32 bits | 0 to 4,294,967,295 | 6.3.1 |
 | LWORD | P3 | 64 bits | 0 to 2^64-1 | 6.3.1 |
 | **Derived Types** |
-| ARRAY | P2 | - | Single/multi-dimensional | 6.4.4.1 |
+| ARRAY | ✅ Impl | - | Single-dimensional (24 tests) | 6.4.4.1 |
 | STRUCT | P2 | - | Named fields | 6.4.4.2 |
 | Enumeration | P2 | - | Named constants | 6.4.4.3 |
 | Subrange | P3 | - | Constrained range | 6.4.4.4 |
@@ -352,7 +358,7 @@ END_TYPE
 - [x] 0.1 + 0.2 != 0.3 (IEEE 754 precision documented in bounds.test.ts)
 
 ### Coercion
-Note: Type coercion in assignment is limited - see GUARDRAILS.md for details.
+**Implementation Note:** Type coercion in assignment is limited in this implementation.
 The interpreter stores values based on their runtime type (integer vs non-integer),
 not the declared variable type. Type coercion works in expressions but not in
 direct assignments like `realVar := intVar`.
@@ -383,11 +389,10 @@ direct assignments like `realVar := intVar`.
 - [ ] Negative duration: T#-250ms
 
 ### Arithmetic
-**Note:** TIME arithmetic assignment is not supported due to interpreter design limitation. See GUARDRAILS.md for details.
-- [ ] ~~TIME + TIME~~ - Not implemented (results stored as INT, not TIME)
-- [ ] ~~TIME - TIME~~ - Not implemented
-- [ ] ~~TIME * INT (scaling)~~ - Not implemented
-- [ ] ~~TIME / INT (scaling)~~ - Not implemented
+- [x] TIME + TIME (1s + 500ms = 1500ms)
+- [x] TIME - TIME (5s - 2s = 3000ms)
+- [x] TIME * INT (scaling: 1s * 3 = 3000ms)
+- [x] TIME / INT (scaling: 6s / 2 = 3000ms)
 
 ### Comparison
 - [x] TIME = TIME
@@ -398,7 +403,6 @@ direct assignments like `realVar := intVar`.
 - [x] T#0ms (zero time) - parses to 0
 - Note: Negative time (T#-1s) not supported - parses incorrectly as subtraction
 - [x] Very large time (T#24h) - 86400000ms, no overflow
-- Note: TIME arithmetic not implemented - see GUARDRAILS.md
 
 ---
 
