@@ -1,42 +1,15 @@
 /**
  * Mobile Layout Styles
- *
- * Precision Engineering Aesthetic:
- * - Deep technical blue-gray palette
- * - Geometric, grid-based composition
- * - Monospace typography for technical elements
- * - Smooth mechanical animations
- * - High-contrast cyan accents
+ * Uses Tailwind CSS theme variables for consistency
  *
  * Phase 3: Mobile Layout
  */
 
 /* ============================================================================
-   Custom Properties
+   Custom Properties (Mobile-specific)
    ========================================================================= */
 
 :root {
-  /* Precision Engineering Color Palette */
-  --mobile-bg-base: #1a1d29;
-  --mobile-bg-surface: #222633;
-  --mobile-bg-elevated: #2a2f3d;
-  --mobile-border: #2a3441;
-  --mobile-border-accent: #3a4555;
-
-  --mobile-accent-primary: #00d4ff;
-  --mobile-accent-secondary: #ffb627;
-  --mobile-accent-success: #00ff88;
-  --mobile-accent-error: #ff4757;
-
-  --mobile-text-primary: #e4e7eb;
-  --mobile-text-secondary: #9ba3af;
-  --mobile-text-tertiary: #6b7280;
-
-  /* Technical indicator colors */
-  --mobile-status-running: var(--mobile-accent-success);
-  --mobile-status-paused: var(--mobile-accent-secondary);
-  --mobile-status-stopped: var(--mobile-text-tertiary);
-
   /* Layout metrics - scaled down 15% for mobile (Phase 5 refinement) */
   --mobile-toolbar-height: 40px;
   --mobile-tabbar-height: 48px;
@@ -57,9 +30,9 @@
   inset: 0;
   display: flex;
   flex-direction: column;
-  background: var(--mobile-bg-base);
-  color: var(--mobile-text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
 
   /* Safe area handling for notched devices */
   padding-top: env(safe-area-inset-top);
@@ -97,16 +70,6 @@
   transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Alternative: Hide tab bar completely when keyboard appears (cleaner editor) */
-/* Uncomment this and comment out the transform above if you prefer */
-/*
-.mobile-layout[data-keyboard="visible"] .bottom-tab-bar {
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 150ms ease-out;
-}
-*/
-
 /* Other views maintain their position when keyboard is visible */
 .mobile-layout[data-keyboard="visible"] .mobile-panel[data-view="ladder"],
 .mobile-layout[data-keyboard="visible"] .mobile-panel[data-view="debug"],
@@ -131,15 +94,15 @@
   align-items: center;
   gap: 8px;
   padding: 0 10px;
-  background: var(--mobile-bg-surface);
-  border-bottom: 1px solid var(--mobile-border);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
   position: relative;
   z-index: 100;
 
   /* Technical grid accent */
   box-shadow:
-    inset 0 -1px 0 var(--mobile-border-accent),
-    0 1px 0 rgba(0, 212, 255, 0.05);
+    inset 0 -1px 0 var(--color-border-subtle),
+    0 1px 0 var(--color-accent-muted);
 }
 
 .mobile-menu-btn {
@@ -149,9 +112,9 @@
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px solid var(--mobile-border);
+  border: 1px solid var(--color-border);
   border-radius: 5px;
-  color: var(--mobile-text-primary);
+  color: var(--color-foreground);
   cursor: pointer;
   transition: all var(--mobile-transition-fast);
   position: relative;
@@ -160,132 +123,71 @@
 
 .mobile-menu-btn:hover,
 .mobile-menu-btn:active {
-  background: var(--mobile-bg-elevated);
-  border-color: var(--mobile-accent-primary);
+  background: var(--color-elevated);
+  border-color: var(--color-accent);
 }
 
 .mobile-menu-btn.active {
-  background: var(--mobile-accent-primary);
-  border-color: var(--mobile-accent-primary);
-  color: var(--mobile-bg-base);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-background);
 }
 
 /* ============================================================================
-   Hamburger Icon - CRITICAL: DO NOT MODIFY WITHOUT TESTING ON MOBILE
-   ============================================================================
-
-   This hamburger icon implementation is designed to be bulletproof and prevent
-   common CSS cascade issues that cause the icon to break.
-
-   ARCHITECTURE:
-   - Parent (.mobile-menu-btn) uses flexbox centering (NO absolute positioning)
-   - Middle bar (.menu-icon) uses position: relative (NOT absolute)
-   - Top/bottom bars (::before/::after) use absolute positioning relative to .menu-icon
-
-   WHY THIS APPROACH:
-   - Flexbox centering is more reliable than absolute positioning
-   - !important on critical layout properties prevents cascade overrides
-   - Explicit display: block ensures pseudo-elements render
-   - Color fallbacks ensure visibility in all states
-
-   COMMON FAILURES TO AVOID:
-   - ❌ Using position: absolute on .menu-icon (breaks centering)
-   - ❌ Using transform: translate(-50%, -50%) on .menu-icon (conflicts with flex)
-   - ❌ Using bottom: -5px on ::after (use top: 5px instead)
-   - ❌ Omitting !important on critical properties (allows cascade overrides)
+   Hamburger Icon
    ========================================================================= */
 
 .menu-icon {
-  /* CRITICAL: Must be relative, not absolute. Parent flexbox handles centering. */
   position: relative !important;
-
-  /* CRITICAL: Must be block to render pseudo-elements */
   display: block !important;
-
-  /* Middle bar dimensions - DO NOT CHANGE WITHOUT ADJUSTING ::before/::after */
   width: 16px;
   height: 2px;
-
-  /* Middle bar color - visible in default state, transparent when active */
-  background: var(--mobile-text-primary);
+  background: var(--color-foreground);
   border-radius: 1px;
-
-  /* Smooth transitions for hover/active states */
   transition: all var(--mobile-transition-fast);
-
-  /* Defensive: Prevent any margin/padding that could offset the icon */
   margin: 0 !important;
   padding: 0 !important;
-
-  /* Defensive: Ensure no transforms in default state */
   transform: none;
 }
 
-/* Top and bottom bars of hamburger */
 .menu-icon::before,
 .menu-icon::after {
-  /* CRITICAL: Must be set for pseudo-elements to render */
   content: '' !important;
-
-  /* CRITICAL: Absolute positioning relative to .menu-icon parent */
   position: absolute !important;
-
-  /* Match middle bar dimensions */
   width: 16px;
   height: 2px;
-
-  /* Bar color - must match middle bar in default state */
-  background: var(--mobile-text-primary);
+  background: var(--color-foreground);
   border-radius: 1px;
-
-  /* CRITICAL: Align left edge with middle bar */
   left: 0;
-
-  /* Smooth transitions for animations */
   transition: all var(--mobile-transition-fast);
-
-  /* Defensive: Prevent any transforms in default state */
   transform: none;
 }
 
-/* Top bar position - 5px above middle bar */
 .menu-icon::before {
-  /* CRITICAL: Use top (not bottom) for predictable positioning */
   top: -5px;
 }
 
-/* Bottom bar position - 5px below middle bar */
 .menu-icon::after {
-  /* CRITICAL: Use top: 5px, NOT bottom: -5px (more reliable) */
   top: 5px;
 }
 
-/* ============================================================================
-   Active State (X Icon) - When menu is open
-   ========================================================================= */
-
-/* Hide middle bar when active */
+/* Active State (X Icon) */
 .mobile-menu-btn.active .menu-icon {
   background: transparent;
 }
 
-/* Change bar color to dark when menu is active (cyan background) */
 .mobile-menu-btn.active .menu-icon::before,
 .mobile-menu-btn.active .menu-icon::after {
-  background: var(--mobile-bg-base);
+  background: var(--color-background);
 }
 
-/* Rotate top bar 45deg and collapse to center */
 .mobile-menu-btn.active .menu-icon::before {
   transform: rotate(45deg);
-  /* CRITICAL: Collapse to center (0 = same as middle bar) */
   top: 0;
 }
 
-/* Rotate bottom bar -45deg and collapse to center */
 .mobile-menu-btn.active .menu-icon::after {
   transform: rotate(-45deg);
-  /* CRITICAL: Collapse to center (0 = same as middle bar) */
   top: 0;
 }
 
@@ -293,7 +195,7 @@
   flex: 1;
   min-width: 0;
   position: relative;
-  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 500;
   letter-spacing: -0.01em;
@@ -310,10 +212,10 @@
   gap: 6px;
   width: 100%;
   padding: 6px 10px;
-  background: var(--mobile-bg-elevated);
-  border: 1px solid var(--mobile-border);
-  border-radius: 6px;
-  color: var(--mobile-text-primary);
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-foreground);
   font-family: inherit;
   font-size: 11px;
   font-weight: 500;
@@ -322,8 +224,8 @@
 }
 
 .mobile-file-selector:active {
-  background: var(--mobile-bg-surface);
-  border-color: var(--mobile-accent-primary);
+  background: var(--color-surface);
+  border-color: var(--color-accent);
 }
 
 .file-selector-name {
@@ -334,11 +236,11 @@
 
 .file-selector-caret {
   font-size: 8px;
-  color: var(--mobile-text-tertiary);
+  color: var(--color-muted-foreground);
 }
 
 .dirty-dot {
-  color: var(--mobile-accent-secondary);
+  color: var(--color-warning);
   margin-left: 2px;
 }
 
@@ -347,13 +249,13 @@
   top: calc(100% + 6px);
   left: 0;
   right: 0;
-  background: var(--mobile-bg-surface);
-  border: 1px solid var(--mobile-border-accent);
-  border-radius: 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow:
     0 8px 24px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(0, 212, 255, 0.1);
+    0 0 0 1px var(--color-accent-muted);
   animation: slideDown var(--mobile-transition-base);
   z-index: 300;
   max-height: 60vh;
@@ -361,7 +263,7 @@
 }
 
 .file-dropdown-section {
-  border-bottom: 1px solid var(--mobile-border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .file-dropdown-section:last-child {
@@ -373,7 +275,7 @@
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--mobile-text-tertiary);
+  color: var(--color-muted-foreground);
 }
 
 .file-dropdown-item {
@@ -384,7 +286,7 @@
   padding: 10px 12px;
   background: transparent;
   border: none;
-  color: var(--mobile-text-primary);
+  color: var(--color-foreground);
   font-family: inherit;
   font-size: 12px;
   text-align: left;
@@ -394,12 +296,12 @@
 }
 
 .file-dropdown-item:active {
-  background: var(--mobile-bg-elevated);
+  background: var(--color-elevated);
 }
 
 .file-dropdown-item.active {
-  background: rgba(0, 212, 255, 0.1);
-  color: var(--mobile-accent-primary);
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
 }
 
 .file-item-icon {
@@ -416,7 +318,7 @@
 }
 
 .dirty-indicator {
-  color: var(--mobile-accent-secondary);
+  color: var(--color-warning);
   margin-left: 4px;
 }
 
@@ -425,10 +327,10 @@
   align-items: center;
   gap: 4px;
   padding: 3px 7px;
-  background: var(--mobile-bg-base);
-  border: 1px solid var(--mobile-border);
-  border-radius: 4px;
-  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -439,24 +341,24 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--mobile-text-tertiary);
+  background: var(--color-muted-foreground);
   transition: all var(--mobile-transition-fast);
   flex-shrink: 0;
 }
 
 .status-indicator.ready {
-  background: var(--mobile-accent-success);
-  box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+  background: var(--color-success);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-success) 40%, transparent);
 }
 
 .status-indicator.syncing {
-  background: var(--mobile-accent-secondary);
+  background: var(--color-warning);
   animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .status-indicator.error {
-  background: var(--mobile-accent-error);
-  box-shadow: 0 0 8px rgba(255, 71, 87, 0.4);
+  background: var(--color-destructive);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-destructive) 40%, transparent);
 }
 
 @keyframes pulse {
@@ -465,7 +367,7 @@
 }
 
 .status-text {
-  color: var(--mobile-text-secondary);
+  color: var(--color-muted);
   font-size: 8px;
   white-space: nowrap;
 }
@@ -480,19 +382,15 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(26, 29, 41, 0.8);
+  background: color-mix(in srgb, var(--color-background) 80%, transparent);
   backdrop-filter: blur(4px);
   z-index: 200;
   animation: fadeIn var(--mobile-transition-base);
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .mobile-menu {
@@ -501,13 +399,13 @@
   left: 10px;
   right: 10px;
   max-width: 280px;
-  background: var(--mobile-bg-surface);
-  border: 1px solid var(--mobile-border-accent);
-  border-radius: 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow:
     0 8px 24px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(0, 212, 255, 0.1);
+    0 0 0 1px var(--color-accent-muted);
   animation: slideDown var(--mobile-transition-base);
 }
 
@@ -530,8 +428,8 @@
   padding: 12px 14px;
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--mobile-border);
-  color: var(--mobile-text-primary);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-foreground);
   font-family: inherit;
   font-size: 13px;
   font-weight: 500;
@@ -546,8 +444,8 @@
 }
 
 .mobile-menu-item:active {
-  background: var(--mobile-bg-elevated);
-  color: var(--mobile-accent-primary);
+  background: var(--color-elevated);
+  color: var(--color-accent);
 }
 
 .menu-item-icon {
@@ -564,7 +462,7 @@
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: var(--mobile-bg-base);
+  background: var(--color-background);
 }
 
 .mobile-panel {
@@ -574,7 +472,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--mobile-bg-base);
+  background: var(--color-background);
 
   /* Initially hidden */
   opacity: 0;
@@ -597,12 +495,6 @@
   z-index: 10;
 }
 
-/* Panel-specific styles */
-.mobile-panel[data-view="ladder"],
-.mobile-panel[data-view="editor"] {
-  /* These panels are full-screen React Flow / CodeMirror */
-}
-
 /* ============================================================================
    Mobile Debug Panel
    ========================================================================= */
@@ -611,7 +503,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--mobile-bg-base);
+  background: var(--color-background);
   overflow: hidden;
 }
 
@@ -620,8 +512,8 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   padding: 10px;
-  background: var(--mobile-bg-surface);
-  border-bottom: 1px solid var(--mobile-border);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .sim-btn {
@@ -631,19 +523,17 @@
   justify-content: center;
   gap: 3px;
   height: 52px;
-  background: var(--mobile-bg-elevated);
-  border: 1px solid var(--mobile-border);
-  border-radius: 7px;
-  color: var(--mobile-text-primary);
-  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-foreground);
+  font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   cursor: pointer;
   transition: all var(--mobile-transition-fast);
-
-  /* Touch target */
   min-height: 44px;
 }
 
@@ -657,39 +547,39 @@
 }
 
 .sim-btn.run:not(:disabled):active {
-  background: rgba(0, 255, 136, 0.1);
-  border-color: var(--mobile-accent-success);
-  color: var(--mobile-accent-success);
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  border-color: var(--color-success);
+  color: var(--color-success);
 }
 
 .sim-btn.run.active {
-  background: rgba(0, 255, 136, 0.15);
-  border-color: var(--mobile-accent-success);
-  color: var(--mobile-accent-success);
+  background: color-mix(in srgb, var(--color-success) 15%, transparent);
+  border-color: var(--color-success);
+  color: var(--color-success);
   box-shadow:
-    0 0 0 1px rgba(0, 255, 136, 0.2),
-    inset 0 0 20px rgba(0, 255, 136, 0.05);
+    0 0 0 1px color-mix(in srgb, var(--color-success) 20%, transparent),
+    inset 0 0 20px color-mix(in srgb, var(--color-success) 5%, transparent);
 }
 
 .sim-btn.pause:not(:disabled):active {
-  background: rgba(255, 182, 39, 0.1);
-  border-color: var(--mobile-accent-secondary);
-  color: var(--mobile-accent-secondary);
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
 }
 
 .sim-btn.pause.active {
-  background: rgba(255, 182, 39, 0.15);
-  border-color: var(--mobile-accent-secondary);
-  color: var(--mobile-accent-secondary);
+  background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
   box-shadow:
-    0 0 0 1px rgba(255, 182, 39, 0.2),
-    inset 0 0 20px rgba(255, 182, 39, 0.05);
+    0 0 0 1px color-mix(in srgb, var(--color-warning) 20%, transparent),
+    inset 0 0 20px color-mix(in srgb, var(--color-warning) 5%, transparent);
 }
 
 .sim-btn.stop:not(:disabled):active {
-  background: rgba(255, 71, 87, 0.1);
-  border-color: var(--mobile-accent-error);
-  color: var(--mobile-accent-error);
+  background: color-mix(in srgb, var(--color-destructive) 10%, transparent);
+  border-color: var(--color-destructive);
+  color: var(--color-destructive);
 }
 
 .sim-icon {
@@ -701,8 +591,8 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1px;
-  background: var(--mobile-border);
-  border-bottom: 1px solid var(--mobile-border);
+  background: var(--color-border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .sim-status-item {
@@ -712,28 +602,28 @@
   justify-content: center;
   gap: 2px;
   padding: 8px 5px;
-  background: var(--mobile-bg-surface);
-  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  background: var(--color-surface);
+  font-family: var(--font-mono);
 }
 
 .sim-status-label {
   font-size: 8px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--mobile-text-tertiary);
+  color: var(--color-muted-foreground);
 }
 
 .sim-status-value {
   font-size: 11px;
   font-weight: 600;
-  color: var(--mobile-accent-primary);
+  color: var(--color-accent);
   letter-spacing: -0.01em;
 }
 
 .mobile-variable-watch {
   flex: 1;
   overflow: auto;
-  background: var(--mobile-bg-base);
+  background: var(--color-background);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -749,20 +639,16 @@
   left: 0;
   right: 0;
   max-height: 40vh;
-  background: var(--mobile-bg-surface);
-  border-top: 2px solid var(--mobile-accent-error);
+  background: var(--color-surface);
+  border-top: 2px solid var(--color-destructive);
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
   animation: slideUp var(--mobile-transition-base);
   z-index: 50;
 }
 
 @keyframes slideUp {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 /* ============================================================================

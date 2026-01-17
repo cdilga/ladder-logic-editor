@@ -1,14 +1,12 @@
 /**
  * Properties Panel Styles
- *
- * Unified color palette matching the rest of the app.
- * Collapsible accordion-style panel.
+ * Uses Tailwind CSS theme variables
  */
 
 .properties-panel {
   display: flex;
   flex-direction: column;
-  background: var(--bg-surface, #252526);
+  background: var(--color-surface);
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -27,20 +25,20 @@
   align-items: center;
   gap: 6px;
   padding: 8px 10px;
-  background: var(--bg-elevated, #2d2d2d);
-  border-bottom: 1px solid var(--border, #333);
+  background: var(--color-elevated);
+  border-bottom: 1px solid var(--color-border);
   cursor: pointer;
   user-select: none;
   transition: background 0.15s;
 }
 
 .properties-header:hover {
-  background: var(--bg-hover, #383838);
+  background: var(--color-toolbar);
 }
 
 .properties-chevron {
   font-size: 10px;
-  color: var(--text-muted, #808080);
+  color: var(--color-muted-foreground);
   width: 12px;
   text-align: center;
 }
@@ -48,13 +46,13 @@
 .properties-title {
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-secondary, #d4d4d4);
+  color: var(--color-foreground);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .properties-badge {
-  color: var(--accent-primary, #007acc);
+  color: var(--color-accent);
   font-size: 14px;
   line-height: 1;
   margin-left: auto;
@@ -69,7 +67,7 @@
 
 .properties-empty {
   padding: 12px 10px;
-  color: var(--text-muted, #808080);
+  color: var(--color-muted-foreground);
   font-size: 11px;
   text-align: center;
   font-style: italic;
@@ -87,8 +85,8 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--accent-primary, #007acc);
-  background: rgba(0, 122, 204, 0.15);
+  color: var(--color-accent);
+  background: var(--color-accent-muted);
   padding: 2px 8px;
   border-radius: 3px;
 }
@@ -103,26 +101,26 @@
 }
 
 .property-row:hover {
-  background: var(--bg-hover, #333);
+  background: var(--color-elevated);
 }
 
 .property-label {
   font-size: 11px;
-  color: var(--text-muted, #808080);
+  color: var(--color-muted);
   flex-shrink: 0;
 }
 
 .property-value {
   font-size: 11px;
-  color: var(--text-primary, #d4d4d4);
+  color: var(--color-foreground);
   text-align: right;
   word-break: break-word;
 }
 
 .property-value.mono {
-  font-family: 'SF Mono', 'Consolas', monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
-  color: var(--accent-code, #9cdcfe);
+  color: var(--color-info);
 }
 
 /* ============================================================================

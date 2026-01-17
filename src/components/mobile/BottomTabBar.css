@@ -1,8 +1,6 @@
 /**
  * Bottom Tab Bar Styles
- *
- * Precision-engineered tab navigation with sliding indicator.
- * Touch-optimized with 56px height and smooth mechanical animations.
+ * Uses Tailwind CSS theme variables for consistency
  *
  * Phase 3: Mobile Layout
  */
@@ -20,14 +18,14 @@
   padding-bottom: var(--mobile-safe-bottom);
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  background: var(--mobile-bg-surface);
-  border-top: 1px solid var(--mobile-border);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
   z-index: 100;
 
   /* Technical grid accent - subtle cyan glow */
   box-shadow:
-    inset 0 1px 0 var(--mobile-border-accent),
-    0 -1px 0 rgba(0, 212, 255, 0.05),
+    inset 0 1px 0 var(--color-border-subtle),
+    0 -1px 0 var(--color-accent-muted),
     0 -3px 16px rgba(0, 0, 0, 0.2);
 }
 
@@ -39,7 +37,7 @@
   left: 0;
   right: 0;
   height: var(--mobile-safe-bottom);
-  background: var(--mobile-bg-surface);
+  background: var(--color-surface);
   pointer-events: none;
 }
 
@@ -56,11 +54,11 @@
   background: linear-gradient(
     90deg,
     transparent,
-    var(--mobile-accent-primary) 20%,
-    var(--mobile-accent-primary) 80%,
+    var(--color-accent) 20%,
+    var(--color-accent) 80%,
     transparent
   );
-  box-shadow: 0 0 10px rgba(0, 212, 255, 0.6);
+  box-shadow: var(--shadow-glow);
   transition: transform var(--mobile-transition-indicator);
   will-change: transform;
 }
@@ -79,8 +77,8 @@
   height: var(--mobile-tabbar-height);
   background: transparent;
   border: none;
-  color: var(--mobile-text-tertiary);
-  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  color: var(--color-muted-foreground);
+  font-family: var(--font-mono);
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.03em;
@@ -100,7 +98,7 @@
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(0, 212, 255, 0.03),
+    var(--color-accent-muted),
     transparent 50%
   );
   opacity: 0;
@@ -112,7 +110,7 @@
 }
 
 .tab-button.active {
-  color: var(--mobile-accent-primary);
+  color: var(--color-accent);
 }
 
 .tab-button.active::before {
@@ -129,7 +127,7 @@
 }
 
 .tab-button.active .tab-icon {
-  filter: drop-shadow(0 0 6px rgba(0, 212, 255, 0.4));
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-accent) 40%, transparent));
   transform: translateY(-1px);
 }
 
@@ -143,7 +141,7 @@
 
 .tab-button.active .tab-label {
   font-weight: 700;
-  text-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--color-accent) 30%, transparent);
 }
 
 /* ============================================================================
@@ -151,7 +149,7 @@
    ========================================================================= */
 
 .tab-button:focus-visible {
-  outline: 2px solid var(--mobile-accent-primary);
+  outline: 2px solid var(--color-accent);
   outline-offset: -2px;
   z-index: 1;
 }
@@ -196,11 +194,5 @@
 
 /* Hide tab bar when keyboard is visible (optional behavior) */
 .mobile-layout[data-keyboard="visible"] .bottom-tab-bar {
-  /* Option 1: Slide up with keyboard */
-  /* transform: translateY(calc(-1 * var(--keyboard-height))); */
-
-  /* Option 2: Hide completely (cleaner for editor) */
-  /* display: none; */
-
   /* Current: Stay visible */
 }

@@ -1,5 +1,6 @@
 /**
  * File Tabs Styles
+ * Uses Tailwind CSS theme variables
  */
 
 .file-tabs {
@@ -29,11 +30,11 @@
   align-items: center;
   gap: 4px;
   padding: 6px 8px;
-  background: var(--bg-elevated, #2a2f3d);
+  background: var(--color-elevated);
   border: none;
   border-bottom: 2px solid transparent;
-  border-radius: 4px 4px 0 0;
-  color: var(--text-secondary, #9ba3af);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  color: var(--color-muted);
   font-size: 12px;
   cursor: pointer;
   white-space: nowrap;
@@ -42,22 +43,22 @@
 }
 
 .file-tab:hover {
-  background: var(--bg-surface, #222633);
-  color: var(--text-primary, #e4e7eb);
+  background: var(--color-surface);
+  color: var(--color-foreground);
 }
 
 .file-tab.active {
-  background: var(--bg-surface, #222633);
-  border-bottom-color: var(--accent-primary, #00d4ff);
-  color: var(--text-primary, #e4e7eb);
+  background: var(--color-surface);
+  border-bottom-color: var(--color-accent);
+  color: var(--color-foreground);
 }
 
 .file-tab.dirty .file-tab-name {
-  color: var(--accent-secondary, #ffb627);
+  color: var(--color-warning);
 }
 
 .file-tab.dirty.active .file-tab-name {
-  color: var(--accent-secondary, #ffb627);
+  color: var(--color-warning);
 }
 
 .file-tab-name {
@@ -67,7 +68,7 @@
 }
 
 .dirty-indicator {
-  color: var(--accent-secondary, #ffb627);
+  color: var(--color-warning);
   margin-left: 2px;
 }
 
@@ -81,7 +82,7 @@
   background: transparent;
   border: none;
   border-radius: 3px;
-  color: var(--text-muted, #6b7280);
+  color: var(--color-muted-foreground);
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
@@ -94,8 +95,8 @@
 }
 
 .file-tab-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary, #e4e7eb);
+  background: var(--color-accent-muted);
+  color: var(--color-foreground);
 }
 
 .file-tab-new {
@@ -107,8 +108,8 @@
   padding: 0;
   background: transparent;
   border: none;
-  border-radius: 4px;
-  color: var(--text-muted, #6b7280);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted-foreground);
   font-size: 16px;
   cursor: pointer;
   transition: all 0.15s;
@@ -116,6 +117,6 @@
 }
 
 .file-tab-new:hover {
-  background: var(--bg-elevated, #2a2f3d);
-  color: var(--text-primary, #e4e7eb);
+  background: var(--color-elevated);
+  color: var(--color-foreground);
 }

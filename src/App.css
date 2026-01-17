@@ -1,5 +1,6 @@
 /**
  * Application Global Styles
+ * Uses Tailwind CSS variables from index.css @theme
  */
 
 * {
@@ -12,23 +13,20 @@ html, body, #root {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  /* Prevent overscroll/rubber-band on all devices */
   overscroll-behavior: none;
 }
 
-/* Mobile scroll prevention - Phase 1 Foundation */
-/* CRITICAL: Prevent pull-to-refresh and other touch gestures on mobile */
+/* Mobile scroll prevention */
 @media (max-width: 768px) {
   html, body, #root {
-    /* Disable pinch-zoom and double-tap-zoom while allowing single taps and scrolling in designated areas */
     touch-action: manipulation;
   }
 }
 
 body {
-  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #1e1e1e;
-  color: #d4d4d4;
+  font-family: var(--font-sans);
+  background: var(--color-background);
+  color: var(--color-foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -45,27 +43,27 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e1e1e;
+  background: var(--color-background);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #424242;
+  background: var(--color-toolbar);
   border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4f4f4f;
+  background: var(--color-border);
 }
 
 /* Selection */
 ::selection {
-  background: #264f78;
-  color: #ffffff;
+  background: var(--color-accent-muted);
+  color: var(--color-foreground);
 }
 
 /* Focus outlines */
 :focus-visible {
-  outline: 2px solid #007acc;
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 

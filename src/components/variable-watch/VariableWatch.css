@@ -1,14 +1,12 @@
 /**
  * Variable Watch Panel Styles
- *
- * Unified color palette matching the rest of the app.
- * Collapsible accordion-style panel.
+ * Uses Tailwind CSS theme variables
  */
 
 .variable-watch {
   display: flex;
   flex-direction: column;
-  background: var(--bg-surface, #252526);
+  background: var(--color-surface);
   overflow: hidden;
   flex: 1;
   min-height: 0;
@@ -29,20 +27,20 @@
   align-items: center;
   gap: 6px;
   padding: 8px 10px;
-  background: var(--bg-elevated, #2d2d2d);
-  border-bottom: 1px solid var(--border, #333);
+  background: var(--color-elevated);
+  border-bottom: 1px solid var(--color-border);
   cursor: pointer;
   user-select: none;
   transition: background 0.15s;
 }
 
 .watch-header:hover {
-  background: var(--bg-hover, #383838);
+  background: var(--color-toolbar);
 }
 
 .watch-chevron {
   font-size: 10px;
-  color: var(--text-muted, #808080);
+  color: var(--color-muted-foreground);
   width: 12px;
   text-align: center;
 }
@@ -50,14 +48,14 @@
 .watch-title {
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-secondary, #d4d4d4);
+  color: var(--color-foreground);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .watch-badge {
-  background: var(--accent-primary, #007acc);
-  color: white;
+  background: var(--color-accent);
+  color: var(--color-background);
   font-size: 9px;
   padding: 1px 5px;
   border-radius: 8px;
@@ -66,23 +64,23 @@
 
 .watch-status {
   font-size: 10px;
-  color: var(--text-muted, #808080);
+  color: var(--color-muted-foreground);
   margin-left: 4px;
 }
 
 .watch-status.running {
-  color: var(--accent-success, #27ae60);
+  color: var(--color-success);
 }
 
 .watch-status.paused {
-  color: var(--accent-warning, #f1c40f);
+  color: var(--color-warning);
 }
 
 /* Tabs */
 .watch-tabs {
   display: flex;
-  background: var(--bg-surface, #252526);
-  border-bottom: 1px solid var(--border, #333);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .watch-tab {
@@ -90,21 +88,21 @@
   padding: 6px 4px;
   background: transparent;
   border: none;
-  color: var(--text-muted, #808080);
+  color: var(--color-muted-foreground);
   font-size: 10px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .watch-tab:hover {
-  background: var(--bg-hover, #333);
-  color: var(--text-primary, #d4d4d4);
+  background: var(--color-elevated);
+  color: var(--color-foreground);
 }
 
 .watch-tab.active {
-  background: var(--bg-surface, #252526);
-  color: var(--text-primary, #d4d4d4);
-  border-bottom: 2px solid var(--accent-primary, #007acc);
+  background: var(--color-surface);
+  color: var(--color-foreground);
+  border-bottom: 2px solid var(--color-accent);
 }
 
 /* Content */
@@ -119,7 +117,7 @@
   align-items: center;
   justify-content: center;
   height: 60px;
-  color: var(--text-muted, #606060);
+  color: var(--color-muted-foreground);
   font-size: 11px;
   font-style: italic;
 }
@@ -136,31 +134,31 @@
   flex-direction: column;
   gap: 4px;
   padding: 8px;
-  background: var(--bg-elevated, #2d2d2d);
-  border-radius: 4px;
+  background: var(--color-elevated);
+  border-radius: var(--radius-sm);
   font-size: 11px;
 }
 
 .item-name {
-  color: var(--accent-code, #9cdcfe);
-  font-family: 'SF Mono', 'Consolas', monospace;
+  color: var(--color-info);
+  font-family: var(--font-mono);
   font-weight: 500;
 }
 
 .item-type {
-  color: var(--accent-type, #569cd6);
+  color: var(--color-accent);
   font-size: 10px;
 }
 
 .item-value {
-  color: var(--accent-value, #b5cea8);
+  color: var(--color-success);
   cursor: pointer;
   padding: 2px 4px;
   border-radius: 2px;
 }
 
 .item-value:hover {
-  background: var(--bg-hover, #333);
+  background: var(--color-toolbar);
 }
 
 /* Boolean Toggle */
@@ -173,7 +171,7 @@
 .bool-toggle {
   padding: 4px 8px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 10px;
   font-weight: 600;
   cursor: pointer;
@@ -181,13 +179,13 @@
 }
 
 .bool-toggle.on {
-  background: #27ae60;
-  color: white;
+  background: var(--color-success);
+  color: var(--color-background);
 }
 
 .bool-toggle.off {
-  background: #404040;
-  color: #808080;
+  background: var(--color-toolbar);
+  color: var(--color-muted);
 }
 
 .bool-toggle.small {
@@ -205,17 +203,17 @@
 .number-input {
   width: 80px;
   padding: 4px 6px;
-  background: #1e1e1e;
-  border: 1px solid #007acc;
+  background: var(--color-background);
+  border: 1px solid var(--color-accent);
   border-radius: 2px;
-  color: #d4d4d4;
+  color: var(--color-foreground);
   font-size: 11px;
-  font-family: 'SF Mono', 'Consolas', monospace;
+  font-family: var(--font-mono);
 }
 
 .number-input:focus {
   outline: none;
-  border-color: #0098ff;
+  border-color: var(--color-accent-hover);
 }
 
 /* Timer Item */
@@ -237,14 +235,14 @@
 
 .timer-bar {
   height: 6px;
-  background: #404040;
+  background: var(--color-toolbar);
   border-radius: 3px;
   overflow: hidden;
 }
 
 .timer-progress {
   height: 100%;
-  background: #007acc;
+  background: var(--color-accent);
   transition: width 0.1s linear;
 }
 
@@ -252,15 +250,15 @@
   display: flex;
   justify-content: space-between;
   font-size: 10px;
-  color: #808080;
+  color: var(--color-muted);
 }
 
 .timer-q {
-  color: #f44747;
+  color: var(--color-destructive);
 }
 
 .timer-q.active {
-  color: #27ae60;
+  color: var(--color-success);
   font-weight: 600;
 }
 
@@ -276,8 +274,8 @@
 }
 
 .counter-value {
-  font-family: 'SF Mono', 'Consolas', monospace;
-  color: #b5cea8;
+  font-family: var(--font-mono);
+  color: var(--color-success);
 }
 
 .counter-controls {
@@ -288,37 +286,37 @@
 .counter-btn {
   flex: 1;
   padding: 4px 8px;
-  background: #404040;
+  background: var(--color-toolbar);
   border: none;
   border-radius: 2px;
-  color: #d4d4d4;
+  color: var(--color-foreground);
   font-size: 10px;
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .counter-btn:hover {
-  background: #505050;
+  background: var(--color-elevated);
 }
 
 .counter-btn.reset {
-  background: #e74c3c;
-  color: white;
+  background: var(--color-destructive);
+  color: var(--color-background);
 }
 
 .counter-btn.reset:hover {
-  background: #c0392b;
+  background: var(--color-accent-secondary);
 }
 
 .counter-outputs {
   display: flex;
   gap: 12px;
   font-size: 10px;
-  color: #808080;
+  color: var(--color-muted);
 }
 
 .counter-output.active {
-  color: #27ae60;
+  color: var(--color-success);
   font-weight: 600;
 }
 
@@ -354,7 +352,7 @@
   right: 4px;
   width: 6px;
   height: 6px;
-  background: #007acc;
+  background: var(--color-accent);
   border-radius: 50%;
 }
 
@@ -377,8 +375,8 @@
 .properties-node-type {
   padding: 8px;
   margin-bottom: 8px;
-  background: #252526;
-  border-radius: 4px;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -389,7 +387,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #007acc;
+  color: var(--color-accent);
 }
 
 .property-row {
@@ -398,7 +396,7 @@
   align-items: flex-start;
   padding: 8px;
   gap: 8px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .property-row:last-child {
@@ -406,25 +404,25 @@
 }
 
 .property-row:hover {
-  background: #2d2d2d;
+  background: var(--color-elevated);
 }
 
 .property-label {
   font-size: 11px;
-  color: #808080;
+  color: var(--color-muted);
   flex-shrink: 0;
 }
 
 .property-value {
   font-size: 11px;
-  color: #d4d4d4;
+  color: var(--color-foreground);
   text-align: right;
   word-break: break-word;
 }
 
 .property-value.mono {
-  font-family: 'SF Mono', 'Consolas', monospace;
-  color: #9cdcfe;
+  font-family: var(--font-mono);
+  color: var(--color-info);
 }
 
 /* ============================================================================
@@ -435,7 +433,7 @@
   .variable-watch {
     width: 100%;
     border-left: none;
-    border-top: 1px solid #252526;
+    border-top: 1px solid var(--color-border-subtle);
   }
 
   .variable-watch.collapsed {
