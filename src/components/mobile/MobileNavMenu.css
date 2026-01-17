@@ -32,7 +32,7 @@
 .mobile-nav-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(26, 29, 41, 0.7);
+  background: color-mix(in srgb, var(--color-background) 70%, transparent);
   backdrop-filter: blur(3px);
   z-index: -1;
   animation: backdropFadeIn 200ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -57,8 +57,8 @@
   height: 56px;
   border-radius: 50%;
   border: none;
-  background: linear-gradient(135deg, #FF9500 0%, #FF7A00 100%);
-  color: #1a1d29;
+  background: linear-gradient(135deg, var(--color-accent-warm) 0%, var(--color-accent-warm-hover) 100%);
+  color: var(--color-background);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -67,10 +67,10 @@
 
   /* Industrial shadow with amber glow */
   box-shadow:
-    0 4px 12px rgba(255, 149, 0, 0.4),
-    0 8px 24px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    0 4px 12px color-mix(in srgb, var(--color-accent-warm) 40%, transparent),
+    0 8px 24px color-mix(in srgb, var(--color-background) 30%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 20%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, black 20%, transparent);
 
   /* Smooth transitions */
   transition: all 280ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -84,12 +84,12 @@
 }
 
 .mobile-nav-fab.open {
-  background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
   box-shadow:
-    0 4px 12px rgba(0, 212, 255, 0.5),
-    0 8px 24px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    0 4px 12px color-mix(in srgb, var(--color-accent) 50%, transparent),
+    0 8px 24px color-mix(in srgb, var(--color-background) 30%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 20%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, black 20%, transparent);
   transform: rotate(180deg);
 }
 
@@ -138,7 +138,7 @@
   inset: -4px;
   width: calc(100% + 8px);
   height: calc(100% + 8px);
-  color: #FF9500;
+  color: var(--color-accent-warm);
   opacity: 0;
   transform: rotate(0deg);
   transition: all 280ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -167,7 +167,7 @@
   position: absolute;
   inset: -8px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 149, 0, 0.4) 0%, transparent 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent-warm) 40%, transparent) 0%, transparent 70%);
   opacity: 0;
   animation: glowPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   pointer-events: none;
@@ -220,8 +220,8 @@
 
   /* Shadow */
   box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    0 2px 8px color-mix(in srgb, var(--color-background) 80%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
 
   /* Prevent tap highlight */
   -webkit-tap-highlight-color: transparent;
@@ -277,7 +277,7 @@
 }
 
 .mobile-nav-action:active .mobile-nav-action-icon {
-  filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.6));
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--color-accent) 60%, transparent));
 }
 
 /* Icon styling */
@@ -310,7 +310,7 @@
    ========================================================================= */
 
 .mobile-nav-fab:focus-visible {
-  outline: 3px solid rgba(255, 149, 0, 0.6);
+  outline: 3px solid color-mix(in srgb, var(--color-accent-warm) 60%, transparent);
   outline-offset: 3px;
 }
 

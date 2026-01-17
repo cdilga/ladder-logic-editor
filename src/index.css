@@ -26,6 +26,10 @@
   /* Secondary accent - warm contrast */
   --color-accent-secondary: #ff6b6b;
 
+  /* Tertiary accent - amber/orange for special interactive elements */
+  --color-accent-warm: #ff9500;
+  --color-accent-warm-hover: #ff7a00;
+
   /* Semantic - vibrant versions */
   --color-success: #3fb950;
   --color-warning: #d29922;
@@ -39,6 +43,14 @@
   --color-node-ctu: #f87171;
   --color-node-ctd: #a78bfa;
   --color-node-ctud: #fb923c;
+
+  /* Syntax highlighting - editor colors */
+  --color-syntax-keyword: #569cd6;
+  --color-syntax-control: #c586c0;
+  --color-syntax-type: #4ec9b0;
+  --color-syntax-string: #ce9178;
+  --color-syntax-literal: #dcdcaa;
+  --color-syntax-comment: #6a9955;
 
   /* Fonts */
   --font-sans: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;

@@ -100,7 +100,7 @@
   white-space: nowrap;
   pointer-events: none;
   z-index: 10001;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-background) 70%, transparent);
 
   /* Animation */
   animation: tooltip-fade-in 150ms ease-out;

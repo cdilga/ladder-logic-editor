@@ -62,7 +62,7 @@
 .help-menu-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(26, 29, 41, 0.6);
+  background: color-mix(in srgb, var(--color-background) 60%, transparent);
   backdrop-filter: blur(2px);
   z-index: 199;
   animation: helpBackdropFadeIn 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -91,8 +91,8 @@
   border-radius: 8px;
   overflow: hidden;
   box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(0, 212, 255, 0.08);
+    0 8px 24px color-mix(in srgb, var(--color-background) 70%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--color-accent) 8%, transparent);
   animation: helpMenuSlideDown 180ms cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 200;
 }

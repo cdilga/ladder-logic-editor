@@ -51,7 +51,7 @@
   background: var(--color-elevated);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-background) 70%, transparent);
   z-index: 100;
   overflow: hidden;
 }

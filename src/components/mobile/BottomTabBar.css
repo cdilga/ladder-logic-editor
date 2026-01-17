@@ -26,7 +26,7 @@
   box-shadow:
     inset 0 1px 0 var(--color-border-subtle),
     0 -1px 0 var(--color-accent-muted),
-    0 -3px 16px rgba(0, 0, 0, 0.2);
+    0 -3px 16px color-mix(in srgb, var(--color-background) 70%, transparent);
 }
 
 /* Safe area handling */

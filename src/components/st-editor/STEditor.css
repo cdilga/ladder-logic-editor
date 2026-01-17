@@ -102,20 +102,20 @@
 
 /* Syntax Highlighting */
 .st-editor .tok-keyword {
-  color: #569cd6;
+  color: var(--color-syntax-keyword);
   font-weight: bold;
 }
 
 .st-editor .tok-controlKeyword {
-  color: #c586c0;
+  color: var(--color-syntax-control);
 }
 
 .st-editor .tok-definitionKeyword {
-  color: #569cd6;
+  color: var(--color-syntax-keyword);
 }
 
 .st-editor .tok-typeName {
-  color: #4ec9b0;
+  color: var(--color-syntax-type);
 }
 
 .st-editor .tok-variableName {
@@ -127,19 +127,19 @@
 }
 
 .st-editor .tok-string {
-  color: #ce9178;
+  color: var(--color-syntax-string);
 }
 
 .st-editor .tok-bool {
-  color: #569cd6;
+  color: var(--color-syntax-keyword);
 }
 
 .st-editor .tok-literal {
-  color: #dcdcaa;
+  color: var(--color-syntax-literal);
 }
 
 .st-editor .tok-comment {
-  color: #6a9955;
+  color: var(--color-syntax-comment);
   font-style: italic;
 }
 
@@ -148,7 +148,7 @@
 }
 
 .st-editor .tok-logicOperator {
-  color: #569cd6;
+  color: var(--color-syntax-keyword);
 }
 
 .st-editor .tok-compareOperator {
@@ -182,22 +182,22 @@
 
 .st-editor .cm-completionIcon-keyword::after {
   content: 'K';
-  color: #c586c0;
+  color: var(--color-syntax-control);
 }
 
 .st-editor .cm-completionIcon-type::after {
   content: 'T';
-  color: #4ec9b0;
+  color: var(--color-syntax-type);
 }
 
 .st-editor .cm-completionIcon-snippet::after {
   content: 'S';
-  color: #dcdcaa;
+  color: var(--color-syntax-literal);
 }
 
 .st-editor .cm-completionIcon-constant::after {
   content: 'C';
-  color: #569cd6;
+  color: var(--color-syntax-keyword);
 }
 
 /* Autocomplete Info Panel (extended documentation) */
@@ -230,7 +230,7 @@
   overflow: auto;
   font-size: 13px;
   line-height: 1.5;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--color-background) 80%, transparent);
 }
 
 .st-hover-tooltip .doc-signature {
@@ -243,7 +243,7 @@
 }
 
 .st-hover-tooltip .doc-signature code {
-  color: #4ec9b0;
+  color: var(--color-syntax-type);
 }
 
 .st-hover-tooltip .doc-description {

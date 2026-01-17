@@ -28,7 +28,7 @@
   background: var(--bg-secondary, #2d2d2d);
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-background) 70%, transparent);
   z-index: 10000;
   overflow: hidden;
 }
