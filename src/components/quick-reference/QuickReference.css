@@ -160,7 +160,7 @@
 }
 
 .quick-reference__item code {
-  color: #4ec9b0;
+  color: var(--color-syntax-type);
   font-family: var(--font-mono);
   font-size: 11px;
 }
@@ -196,7 +196,7 @@
   display: block;
   font-size: 15px;
   font-weight: 600;
-  color: #4ec9b0;
+  color: var(--color-syntax-type);
   font-family: var(--font-mono);
   margin-bottom: 6px;
 }
@@ -246,7 +246,7 @@
 }
 
 .quick-reference__detail-section .param-type {
-  color: #4ec9b0;
+  color: var(--color-syntax-type);
 }
 
 .quick-reference__detail-section .param-desc {

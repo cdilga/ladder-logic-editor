@@ -25,7 +25,7 @@
   left: 0;
   margin-top: 4px;
   min-width: 260px;
-  background: var(--bg-secondary, #2d2d2d);
+  background: var(--color-surface);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: 0 4px 12px color-mix(in srgb, var(--color-background) 70%, transparent);

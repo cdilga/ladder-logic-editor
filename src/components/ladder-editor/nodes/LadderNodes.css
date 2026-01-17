@@ -110,7 +110,7 @@
 /* Edge detection contacts */
 .contact-node.p .contact-symbol,
 .contact-node.n .contact-symbol {
-  color: #dcdcaa;
+  color: var(--color-syntax-literal);
 }
 
 /* ============================================================================
@@ -148,7 +148,7 @@
 
 /* Set coil */
 .coil-node.set .coil-symbol {
-  color: #4ec9b0;
+  color: var(--color-syntax-type);
 }
 
 /* Reset coil */
@@ -159,7 +159,7 @@
 /* Transition coils */
 .coil-node.positive .coil-symbol,
 .coil-node.negative .coil-symbol {
-  color: #dcdcaa;
+  color: var(--color-syntax-literal);
 }
 
 /* ============================================================================
@@ -235,8 +235,8 @@
 }
 
 .timer-value.active {
-  color: #4ec9b0;
-  background: color-mix(in srgb, #4ec9b0 15%, var(--color-background));
+  color: var(--color-syntax-type);
+  background: color-mix(in srgb, var(--color-syntax-type) 15%, var(--color-background));
 }
 
 .timer-preset {
@@ -393,7 +393,7 @@
 .comparator-operator {
   font-size: 12px;
   font-weight: bold;
-  color: #dcdcaa;
+  color: var(--color-syntax-literal);
   padding: 0 2px;
 }
 
