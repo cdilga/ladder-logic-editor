@@ -426,6 +426,98 @@
 }
 
 /* ============================================================================
+   AB-Style Variable Table (BOOL and NUM tabs)
+   ============================================================================ */
+
+.ab-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+
+.ab-th {
+  padding: 4px 6px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-muted-foreground);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 0.4px;
+}
+
+.ab-row:nth-child(even) {
+  background: var(--color-elevated);
+}
+
+.ab-row:hover {
+  background: var(--color-toolbar);
+}
+
+.ab-td {
+  padding: 3px 6px;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
+  vertical-align: middle;
+}
+
+.ab-name {
+  font-family: var(--font-mono);
+  color: var(--color-info);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.ab-alias {
+  color: var(--color-foreground);
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+}
+
+.ab-mono {
+  font-family: var(--font-mono);
+  color: var(--color-muted);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.ab-dir {
+  font-size: 9px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ab-dir.in {
+  color: var(--color-info);
+}
+
+.ab-dir.out {
+  color: var(--color-success);
+}
+
+.ab-type {
+  font-family: var(--font-mono);
+  color: var(--color-accent);
+  font-size: 9px;
+}
+
+.ab-val {
+  white-space: nowrap;
+}
+
+/* Column width hints */
+.ab-th-name  { min-width: 80px; }
+.ab-th-alias { min-width: 60px; }
+.ab-th-addr  { min-width: 52px; }
+.ab-th-modbus { min-width: 52px; }
+.ab-th-dir   { min-width: 28px; }
+.ab-th-type  { min-width: 32px; }
+.ab-th-val   { min-width: 56px; }
+
+/* ============================================================================
    Mobile Layout Override (Phase 5)
    ========================================================================= */
 

@@ -11,6 +11,7 @@ import { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import type { NodeProps } from 'reactflow';
 import type { CounterNodeData } from '../../../models/ladder-elements';
+import { useSimulationStore } from '../../../store';
 
 import './LadderNodes.css';
 
@@ -19,6 +20,7 @@ export const CounterNode = memo(function CounterNode({
   selected,
 }: NodeProps<CounterNodeData>) {
   const { instanceName, counterType, presetValue } = data;
+  const isPowered = useSimulationStore((state) => state.poweredNodeIds.has(data.id));
 
   // CTUD has both count up and count down inputs
   const isCTUD = counterType === 'CTUD';
@@ -28,7 +30,7 @@ export const CounterNode = memo(function CounterNode({
     <div
       className={`ladder-node counter-node ${counterType.toLowerCase()} ${
         selected ? 'selected' : ''
-      }`}
+      } ${isPowered ? 'powered' : ''}`}
     >
       {/* Input handles (left side) */}
       {/* Main power input - use 'power-in' for compatibility with layout */}

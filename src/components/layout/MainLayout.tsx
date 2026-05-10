@@ -18,22 +18,28 @@ import { TutorialLightbulb } from '../onboarding';
 import { HelpMenu } from '../help-menu';
 import {
   useEditorStore,
+  useProjectStore,
   useSimulationStore,
   useUIStore,
   scheduleEditorAutoSave,
 } from '../../store';
 import { downloadSTFile } from '../../services/file-service';
+import { useLiveBridge } from '../../hooks/useLiveBridge';
 import {
   runScanCycle,
   initializeVariables,
   createRuntimeState,
+  evaluatePowerFlow,
   type RuntimeState,
   type SimulationStoreInterface,
 } from '../../interpreter';
 import { transformSTToLadder, type TransformResult } from '../../transformer';
+import type { LadderIR } from '../../transformer/ladder-ir';
+import type { DiagramLayout } from '../../transformer/layout';
 import type { STAST } from '../../transformer/ast';
 import type { LadderNode, LadderEdge } from '../../models/ladder-elements';
 
+import { PrintView } from '../print-view/PrintView';
 import './MainLayout.css';
 
 export function MainLayout() {
@@ -72,6 +78,29 @@ export function MainLayout() {
   const updateTimer = useSimulationStore((state) => state.updateTimer);
   const timers = useSimulationStore((state) => state.timers);
 
+  // Live bridge
+  const { liveStatus, liveError, toggleLive, stopLive } = useLiveBridge();
+
+  // Manifest import
+  const loadManifest = useProjectStore((state) => state.loadManifest);
+  const manifestInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleManifestFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target?.result as string);
+        loadManifest(parsed);
+      } catch {
+        console.warn('Failed to parse manifest JSON');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }, [loadManifest]);
+
   // Ref to track animation frame
   const animationFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
@@ -79,6 +108,8 @@ export function MainLayout() {
   // Interpreter state refs
   const currentASTRef = useRef<STAST | null>(null);
   const runtimeStateRef = useRef<RuntimeState | null>(null);
+  const currentIRRef = useRef<LadderIR | null>(null);
+  const currentLayoutRef = useRef<DiagramLayout | null>(null);
 
   // Simulation loop
   useEffect(() => {
@@ -111,6 +142,14 @@ export function MainLayout() {
           // Get fresh store reference for each cycle
           const store = useSimulationStore.getState() as SimulationStoreInterface;
           runScanCycle(ast, store, runtimeState);
+
+          // Evaluate power flow after scan cycle
+          const ir = currentIRRef.current;
+          const layout = currentLayoutRef.current;
+          if (ir && layout) {
+            const { poweredNodeIds, poweredEdgeIds } = evaluatePowerFlow(ir, store, runtimeState, layout);
+            useSimulationStore.getState().setPowerFlow(poweredNodeIds, poweredEdgeIds);
+          }
         } else {
           // Fallback: just update timers manually if no AST
           Object.keys(timers).forEach((timerName) => {
@@ -156,7 +195,9 @@ export function MainLayout() {
   const handleStop = useCallback(() => {
     stopSimulation();
     resetSimulation();
-  }, [stopSimulation, resetSimulation]);
+    useSimulationStore.getState().setPowerFlow(new Set(), new Set());
+    stopLive();
+  }, [stopSimulation, resetSimulation, stopLive]);
 
   // Auto-save when files change
   useEffect(() => {
@@ -213,6 +254,9 @@ export function MainLayout() {
           initializeVariables(newAST, store);
           runtimeStateRef.current = createRuntimeState(newAST);
         }
+        // Store IR and layout for power flow evaluator
+        if (result.intermediates?.ir) currentIRRef.current = result.intermediates.ir;
+        if (result.intermediates?.layout) currentLayoutRef.current = result.intermediates.layout;
       } else {
         setSyncStatus('error');
         setErrorCount(result.errors.length);
@@ -281,6 +325,26 @@ export function MainLayout() {
         <div className="toolbar-separator" />
 
         <div className="toolbar-group">
+          <input
+            ref={manifestInputRef}
+            type="file"
+            accept=".json"
+            style={{ display: 'none' }}
+            onChange={handleManifestFile}
+          />
+          <button
+            className="toolbar-btn"
+            title="Load variable manifest JSON to add aliases and Modbus addresses"
+            onClick={() => manifestInputRef.current?.click()}
+          >
+            <span className="toolbar-icon">📋</span>
+            <span className="toolbar-label">Manifest</span>
+          </button>
+        </div>
+
+        <div className="toolbar-separator" />
+
+        <div className="toolbar-group">
           <FileTabs />
         </div>
 
@@ -313,6 +377,24 @@ export function MainLayout() {
           >
             <span className="toolbar-icon">⏹️</span>
             <span className="toolbar-label">Stop</span>
+          </button>
+        </div>
+
+        <div className="toolbar-separator" />
+
+        {/* Live PLC bridge button */}
+        <div className="toolbar-group">
+          <button
+            className={`toolbar-btn ${liveStatus === 'live' ? 'active' : ''} ${liveStatus === 'error' ? 'error' : ''}`}
+            title={liveStatus === 'error' ? `Live error: ${liveError}` : liveStatus === 'live' ? 'Live — click to disconnect' : liveStatus === 'connecting' ? 'Connecting to PLC…' : 'Connect to live PLC (requires manifest with Modbus addresses)'}
+            onClick={toggleLive}
+          >
+            <span className="toolbar-icon">
+              {liveStatus === 'live' ? '🔴' : liveStatus === 'connecting' ? '🟡' : liveStatus === 'error' ? '⚠️' : '📡'}
+            </span>
+            <span className="toolbar-label">
+              {liveStatus === 'live' ? 'Live ●' : liveStatus === 'connecting' ? 'Connecting…' : liveStatus === 'error' ? 'Error' : 'Live'}
+            </span>
           </button>
         </div>
 
@@ -397,6 +479,9 @@ export function MainLayout() {
           <HelpMenu />
         </div>
       </div>
+
+      {/* PDF Export print view — hidden on screen, shown on print */}
+      <PrintView />
     </div>
   );
 }

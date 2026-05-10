@@ -32,3 +32,6 @@ export {
 
 // Program runner
 export { runScanCycle, executeOneStatement, getTotalStatementCount } from './program-runner';
+
+// Power flow
+export { evaluatePowerFlow, type PowerFlowResult } from './power-flow-evaluator';

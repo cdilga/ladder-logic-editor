@@ -4,32 +4,32 @@
 
 // Primitive data types
 export type PLCPrimitiveType =
-  | 'BOOL'
-  | 'INT'
-  | 'DINT'
-  | 'UINT'
-  | 'REAL'
-  | 'TIME'
-  | 'STRING';
+  | "BOOL"
+  | "INT"
+  | "DINT"
+  | "UINT"
+  | "REAL"
+  | "TIME"
+  | "STRING";
 
 // Function block types
 export type PLCFunctionBlockType =
-  | 'TON'   // On-delay timer
-  | 'TOF'   // Off-delay timer
-  | 'TP'    // Pulse timer
-  | 'CTU'   // Count up
-  | 'CTD'   // Count down
-  | 'CTUD'; // Count up/down
+  | "TON"   // On-delay timer
+  | "TOF"   // Off-delay timer
+  | "TP"    // Pulse timer
+  | "CTU"   // Count up
+  | "CTD"   // Count down
+  | "CTUD"; // Count up/down
 
 export type PLCDataType = PLCPrimitiveType | PLCFunctionBlockType;
 
 // Variable scope (IEC 61131-3)
 export type VariableScope =
-  | 'VAR'
-  | 'VAR_INPUT'
-  | 'VAR_OUTPUT'
-  | 'VAR_IN_OUT'
-  | 'VAR_TEMP';
+  | "VAR"
+  | "VAR_INPUT"
+  | "VAR_OUTPUT"
+  | "VAR_IN_OUT"
+  | "VAR_TEMP";
 
 // Time value representation
 export interface TimeValue {
@@ -47,7 +47,7 @@ export function parseTimeLiteral(literal: string): TimeValue {
   const result: TimeValue = {};
 
   // Remove prefix
-  const value = literal.replace(/^(T#|TIME#)/i, '');
+  const value = literal.replace(/^(T#|TIME#)/i, "");
 
   // Match each component
   const dayMatch = value.match(/(\d+)d/i);
@@ -112,32 +112,63 @@ export function msToTimeLiteral(ms: number): string {
   return `T#${seconds}s${remainingMs}ms`;
 }
 
-// Variable declaration
+// Variable declaration — v4 schema with full PLC mapping metadata
 export interface VariableDeclaration {
+  // Core IEC 61131-3 fields
   name: string;
   dataType: PLCDataType;
   scope: VariableScope;
   initialValue?: string;
   comment?: string;
-  address?: string; // I/O address like %IX0.0, %QX0.0
+  address?: string;          // IEC hardware address (%IX0.0, %QX0.0)
+
+  // Physical wiring and mapping metadata
+  alias?: string;            // Human-readable label — "E-stop NC Contact", "VFD Run Command"
+  modbusAddress?: string;    // Coil/register from Modbus config — "COIL:3", "HR:1"
+  retain?: boolean;          // TRUE if variable survives power cycle
+  terminalLabel?: string;    // Physical terminal ID on panel — "TB1-3", "VFD-FWD"
+  sourceDevice?: string;     // Device that drives/reads this — "GS10 VFD", "E-stop", "Ignition"
+  direction?: 'IN' | 'OUT'; // Wire direction for wiring diagram (derived from scope)
+}
+
+// Wiring manifest — output of Phase 1 Ralph Loop research
+export interface VariableManifest {
+  generatedAt: string;
+  sourceFiles: string[];
+  variables: VariableDeclaration[];
+  wiringNotes: string[];
+  gaps: ManifestGap[];
+}
+
+export interface ManifestGap {
+  variableName: string;
+  missingFields: string[];
+  note: string;
 }
 
 // Default values for data types
 export function getDefaultValue(dataType: PLCDataType): string {
   switch (dataType) {
-    case 'BOOL':
-      return 'FALSE';
-    case 'INT':
-    case 'DINT':
-    case 'UINT':
-      return '0';
-    case 'REAL':
-      return '0.0';
-    case 'TIME':
-      return 'T#0ms';
-    case 'STRING':
+    case "BOOL":
+      return "FALSE";
+    case "INT":
+    case "DINT":
+    case "UINT":
+      return "0";
+    case "REAL":
+      return "0.0";
+    case "TIME":
+      return "T#0ms";
+    case "STRING":
       return "''";
     default:
-      return '';
+      return "";
   }
+}
+
+// Derive wire direction from IEC scope
+export function scopeToDirection(scope: VariableScope): "IN" | "OUT" | undefined {
+  if (scope === "VAR_INPUT") return "IN";
+  if (scope === "VAR_OUTPUT") return "OUT";
+  return undefined;
 }

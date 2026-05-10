@@ -23,11 +23,21 @@ import { loadFromLocalStorage } from '../services/file-service';
 // State Interface
 // ============================================================================
 
+export interface ManifestEntry {
+  alias?: string;
+  modbusAddress?: string;
+  direction?: 'IN' | 'OUT';
+  address?: string;
+}
+
 interface ProjectState {
   // Project data
   project: LadderProject | null;
   currentProgramId: string | null;
   isDirty: boolean;
+
+  // Manifest metadata: keyed by variable name, populated by loadManifest
+  manifestMetadata: Record<string, ManifestEntry>;
 
   // File state
   filePath: string | null;
@@ -62,6 +72,7 @@ interface ProjectState {
   addGlobalVariable: (variable: VariableDeclaration) => void;
   updateGlobalVariable: (name: string, variable: Partial<VariableDeclaration>) => void;
   removeGlobalVariable: (name: string) => void;
+  loadManifest: (manifest: { variables: Array<{ name: string; alias?: string | null; modbusAddress?: string | null; direction?: 'IN' | 'OUT'; address?: string | null }> }) => void;
 
   // Configuration actions
   setConfiguration: (config: ProjectConfiguration) => void;
@@ -77,6 +88,7 @@ export const useProjectStore = create<ProjectState>()(
     project: null,
     currentProgramId: null,
     isDirty: false,
+    manifestMetadata: {},
     filePath: null,
     lastTransformResult: null,
     transformedNodes: [],
@@ -344,6 +356,19 @@ export const useProjectStore = create<ProjectState>()(
         },
         isDirty: true,
       });
+    },
+
+    loadManifest: (manifest) => {
+      const metadata: Record<string, ManifestEntry> = {};
+      for (const entry of manifest.variables) {
+        metadata[entry.name] = {
+          ...(entry.alias != null && { alias: entry.alias }),
+          ...(entry.modbusAddress != null && { modbusAddress: entry.modbusAddress }),
+          ...(entry.direction != null && { direction: entry.direction }),
+          ...(entry.address != null && { address: entry.address }),
+        };
+      }
+      set({ manifestMetadata: metadata });
     },
 
     // Configuration

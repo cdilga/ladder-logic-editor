@@ -51,13 +51,36 @@ interface EditorState {
 // Default Templates
 // ============================================================================
 
-const BLANK_TEMPLATE = `PROGRAM Main
-VAR
-  // Declare variables here
+const BLANK_TEMPLATE = `PROGRAM ConveyorPhase1
+VAR_INPUT
+    DI_02 : BOOL;
+    DI_00 : BOOL;
+    DI_01 : BOOL;
 END_VAR
-
-  // Write your ladder logic here
-
+VAR_OUTPUT
+    DO_02 : BOOL;
+    dir_fwd : BOOL;
+    dir_rev : BOOL;
+END_VAR
+VAR
+    e_stop_active : BOOL;
+    vfd_cmd : INT;
+    vfd_freq : INT;
+    poll_timer : TON;
+END_VAR
+e_stop_active := NOT DI_02;
+DO_02 := NOT e_stop_active;
+dir_fwd := DI_00 AND NOT DI_01;
+dir_rev := NOT DI_00 AND DI_01;
+IF dir_fwd AND NOT e_stop_active THEN
+    vfd_cmd := 18;
+ELSIF dir_rev AND NOT e_stop_active THEN
+    vfd_cmd := 20;
+ELSE
+    vfd_cmd := 1;
+END_IF;
+vfd_freq := 300;
+poll_timer(IN := NOT poll_timer.Q, PT := T#500ms);
 END_PROGRAM
 `;
 

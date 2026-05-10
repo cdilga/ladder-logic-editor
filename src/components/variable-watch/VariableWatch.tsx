@@ -7,7 +7,8 @@
  */
 
 import { memo, useCallback, useState } from 'react';
-import { useSimulationStore } from '../../store';
+import { useSimulationStore, useProjectStore } from '../../store';
+import type { ManifestEntry } from '../../store/project-store';
 import type { TimerState, CounterState } from '../../store/simulation-store';
 import type { LadderNode, LadderNodeData } from '../../models/ladder-elements';
 
@@ -27,6 +28,9 @@ export const VariableWatch = memo(function VariableWatch({
   // Only show properties tab when selectedNode prop is explicitly provided (mobile layout)
   const showPropertiesTab = selectedNode !== undefined && selectedNode !== null;
   const [activeTab, setActiveTab] = useState<'booleans' | 'numbers' | 'timers' | 'counters' | 'properties'>('booleans');
+
+  // Manifest metadata (alias/address/Modbus loaded via Manifest button)
+  const manifestMetadata = useProjectStore((state) => state.manifestMetadata);
 
   // Simulation state
   const booleans = useSimulationStore((state) => state.booleans);
@@ -117,6 +121,7 @@ export const VariableWatch = memo(function VariableWatch({
         {activeTab === 'booleans' && (
           <BooleanVariables
             variables={booleans}
+            metadata={manifestMetadata}
             onToggle={(name) => setBool(name, !booleans[name])}
           />
         )}
@@ -124,6 +129,7 @@ export const VariableWatch = memo(function VariableWatch({
           <NumberVariables
             integers={integers}
             reals={reals}
+            metadata={manifestMetadata}
             onSetInt={setInt}
             onSetReal={setReal}
           />
@@ -158,11 +164,13 @@ export const VariableWatch = memo(function VariableWatch({
 
 interface BooleanVariablesProps {
   variables: Record<string, boolean>;
+  metadata: Record<string, ManifestEntry>;
   onToggle: (name: string) => void;
 }
 
 const BooleanVariables = memo(function BooleanVariables({
   variables,
+  metadata,
   onToggle,
 }: BooleanVariablesProps) {
   const entries = Object.entries(variables);
@@ -172,19 +180,40 @@ const BooleanVariables = memo(function BooleanVariables({
   }
 
   return (
-    <div className="watch-list">
-      {entries.map(([name, value]) => (
-        <div key={name} className="watch-item bool-item">
-          <span className="item-name">{name}</span>
-          <button
-            className={`bool-toggle ${value ? 'on' : 'off'}`}
-            onClick={() => onToggle(name)}
-          >
-            {value ? 'TRUE' : 'FALSE'}
-          </button>
-        </div>
-      ))}
-    </div>
+    <table className="ab-table">
+      <thead>
+        <tr>
+          <th className="ab-th ab-th-name">Name</th>
+          <th className="ab-th ab-th-alias">Alias</th>
+          <th className="ab-th ab-th-addr">AT Addr</th>
+          <th className="ab-th ab-th-modbus">Modbus</th>
+          <th className="ab-th ab-th-dir">Dir</th>
+          <th className="ab-th ab-th-val">Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {entries.map(([name, value]) => {
+          const m = metadata[name];
+          return (
+            <tr key={name} className="ab-row">
+              <td className="ab-td ab-name">{name}</td>
+              <td className="ab-td ab-alias" title={m?.alias ?? undefined}>{m?.alias ?? '—'}</td>
+              <td className="ab-td ab-mono">{m?.address ?? '—'}</td>
+              <td className="ab-td ab-mono">{m?.modbusAddress ?? '—'}</td>
+              <td className={`ab-td ab-dir ${m?.direction?.toLowerCase() ?? ''}`}>{m?.direction ?? '—'}</td>
+              <td className="ab-td ab-val">
+                <button
+                  className={`bool-toggle ${value ? 'on' : 'off'}`}
+                  onClick={() => onToggle(name)}
+                >
+                  {value ? 'TRUE' : 'FALSE'}
+                </button>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 });
 
@@ -195,6 +224,7 @@ const BooleanVariables = memo(function BooleanVariables({
 interface NumberVariablesProps {
   integers: Record<string, number>;
   reals: Record<string, number>;
+  metadata: Record<string, ManifestEntry>;
   onSetInt: (name: string, value: number) => void;
   onSetReal: (name: string, value: number) => void;
 }
@@ -202,6 +232,7 @@ interface NumberVariablesProps {
 const NumberVariables = memo(function NumberVariables({
   integers,
   reals,
+  metadata,
   onSetInt,
   onSetReal,
 }: NumberVariablesProps) {
@@ -212,39 +243,57 @@ const NumberVariables = memo(function NumberVariables({
     return <div className="watch-empty">No numeric variables</div>;
   }
 
+  const allEntries: [string, number, 'INT' | 'REAL'][] = [
+    ...intEntries.map(([n, v]) => [n, v, 'INT'] as [string, number, 'INT']),
+    ...realEntries.map(([n, v]) => [n, v, 'REAL'] as [string, number, 'REAL']),
+  ];
+
   return (
-    <div className="watch-list">
-      {intEntries.map(([name, value]) => (
-        <NumberInput
-          key={name}
-          name={name}
-          value={value}
-          type="INT"
-          onChange={(v) => onSetInt(name, Math.floor(v))}
-        />
-      ))}
-      {realEntries.map(([name, value]) => (
-        <NumberInput
-          key={name}
-          name={name}
-          value={value}
-          type="REAL"
-          onChange={(v) => onSetReal(name, v)}
-        />
-      ))}
-    </div>
+    <table className="ab-table">
+      <thead>
+        <tr>
+          <th className="ab-th ab-th-name">Name</th>
+          <th className="ab-th ab-th-alias">Alias</th>
+          <th className="ab-th ab-th-addr">AT Addr</th>
+          <th className="ab-th ab-th-modbus">Modbus</th>
+          <th className="ab-th ab-th-dir">Dir</th>
+          <th className="ab-th ab-th-type">Type</th>
+          <th className="ab-th ab-th-val">Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {allEntries.map(([name, value, type]) => {
+          const m = metadata[name];
+          return (
+            <tr key={name} className="ab-row">
+              <td className="ab-td ab-name">{name}</td>
+              <td className="ab-td ab-alias" title={m?.alias ?? undefined}>{m?.alias ?? '—'}</td>
+              <td className="ab-td ab-mono">{m?.address ?? '—'}</td>
+              <td className="ab-td ab-mono">{m?.modbusAddress ?? '—'}</td>
+              <td className={`ab-td ab-dir ${m?.direction?.toLowerCase() ?? ''}`}>{m?.direction ?? '—'}</td>
+              <td className="ab-td ab-type">{type}</td>
+              <td className="ab-td ab-val">
+                <NumberInput
+                  value={value}
+                  type={type}
+                  onChange={(v) => type === 'INT' ? onSetInt(name, Math.floor(v)) : onSetReal(name, v)}
+                />
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 });
 
 interface NumberInputProps {
-  name: string;
   value: number;
   type: 'INT' | 'REAL';
   onChange: (value: number) => void;
 }
 
 const NumberInput = memo(function NumberInput({
-  name,
   value,
   type,
   onChange,
@@ -260,32 +309,26 @@ const NumberInput = memo(function NumberInput({
     setEditing(false);
   }, [inputValue, type, onChange]);
 
-  return (
-    <div className="watch-item number-item">
-      <span className="item-name">{name}</span>
-      <span className="item-type">{type}</span>
-      {editing ? (
-        <input
-          type="number"
-          className="number-input"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onBlur={handleSubmit}
-          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-          autoFocus
-        />
-      ) : (
-        <span
-          className="item-value"
-          onClick={() => {
-            setInputValue(value.toString());
-            setEditing(true);
-          }}
-        >
-          {type === 'REAL' ? value.toFixed(2) : value}
-        </span>
-      )}
-    </div>
+  return editing ? (
+    <input
+      type="number"
+      className="number-input"
+      value={inputValue}
+      onChange={(e) => setInputValue(e.target.value)}
+      onBlur={handleSubmit}
+      onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+      autoFocus
+    />
+  ) : (
+    <span
+      className="item-value"
+      onClick={() => {
+        setInputValue(value.toString());
+        setEditing(true);
+      }}
+    >
+      {type === 'REAL' ? value.toFixed(2) : value}
+    </span>
   );
 });
 

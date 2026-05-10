@@ -53,6 +53,11 @@ export function OpenMenu() {
     setIsOpen(false);
   };
 
+  const handleExportPdf = () => {
+    window.print();
+    setIsOpen(false);
+  };
+
   const handleOpenLocalFile = async () => {
     try {
       const { programName, stCode } = await openSTFile();
@@ -115,6 +120,19 @@ export function OpenMenu() {
             <span className="option-text">
               <span className="option-title">Open Local File...</span>
               <span className="option-desc">Load .st file from disk</span>
+            </span>
+          </button>
+
+          <div className="open-menu-divider" />
+
+          <button
+            className="open-menu-option"
+            onClick={handleExportPdf}
+          >
+            <span className="option-icon">⬇</span>
+            <span className="option-text">
+              <span className="option-title">Export PDF…</span>
+              <span className="option-desc">Print ladder + CCW build guide</span>
             </span>
           </button>
         </div>

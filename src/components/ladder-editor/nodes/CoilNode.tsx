@@ -9,6 +9,7 @@ import { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import type { NodeProps } from 'reactflow';
 import type { CoilNodeData } from '../../../models/ladder-elements';
+import { useProjectStore, useSimulationStore } from '../../../store';
 
 import './LadderNodes.css';
 
@@ -17,6 +18,13 @@ export const CoilNode = memo(function CoilNode({
   selected,
 }: NodeProps<CoilNodeData>) {
   const { variable, coilType } = data;
+
+  const alias = useProjectStore((state) => {
+    if (!variable) return undefined;
+    return state.manifestMetadata[variable]?.alias;
+  });
+
+  const isPowered = useSimulationStore((state) => state.poweredNodeIds.has(data.id));
 
   // Determine symbol based on coil type
   const getSymbol = () => {
@@ -36,7 +44,7 @@ export const CoilNode = memo(function CoilNode({
 
   return (
     <div
-      className={`ladder-node coil-node ${coilType} ${selected ? 'selected' : ''}`}
+      className={`ladder-node coil-node ${coilType} ${selected ? 'selected' : ''} ${isPowered ? 'powered' : ''}`}
     >
       {/* Input handle (left side - receives power) */}
       <Handle
@@ -55,8 +63,11 @@ export const CoilNode = memo(function CoilNode({
         <div className="coil-right">)</div>
       </div>
 
-      {/* Variable name */}
-      <div className="node-label">{variable || '???'}</div>
+      {/* Variable name and alias */}
+      <div className="node-label">
+        <span className="node-var-name">{variable || '???'}</span>
+        {alias && <span className="node-alias" title={alias}>{alias}</span>}
+      </div>
 
       {/* Output handle (right side - to power rail) */}
       <Handle

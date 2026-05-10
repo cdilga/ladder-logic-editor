@@ -8,6 +8,15 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   base: '/',
   plugins: [react(), tailwindcss()],
+  server: {
+    proxy: {
+      '/jarvis': {
+        target: 'http://100.72.2.99:8765',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/jarvis/, ''),
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

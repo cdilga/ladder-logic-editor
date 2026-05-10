@@ -13,14 +13,26 @@ import ReactFlow, {
   addEdge,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   BackgroundVariant,
   type OnSelectionChangeParams,
 } from 'reactflow';
+
+function FitViewOnChange({ nodeCount }: { nodeCount: number }) {
+  const { fitView } = useReactFlow();
+  useEffect(() => {
+    if (nodeCount > 0) {
+      setTimeout(() => fitView({ duration: 300, padding: 0.12 }), 50);
+    }
+  }, [nodeCount, fitView]);
+  return null;
+}
 import type { Node, Connection } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 import { ladderNodeTypes } from './nodes';
 import type { LadderNode, LadderEdge } from '../../models/ladder-elements';
+import { useSimulationStore } from '../../store';
 import { useIsMobile } from '../../hooks';
 
 import './LadderCanvas.css';
@@ -72,6 +84,23 @@ export function LadderCanvas({
   useEffect(() => {
     setEdges(initialEdges);
   }, [initialEdges, setEdges]);
+
+  // Color edges based on power flow state
+  const poweredEdgeIds = useSimulationStore((state) => state.poweredEdgeIds);
+  useEffect(() => {
+    const style = getComputedStyle(document.documentElement);
+    const successColor = style.getPropertyValue('--color-success').trim() || '#4ec9b0';
+    setEdges((prev) =>
+      prev.map((e) => ({
+        ...e,
+        style: {
+          ...e.style,
+          stroke: poweredEdgeIds.has(e.id) ? successColor : themeColors.edge,
+          strokeWidth: poweredEdgeIds.has(e.id) ? 3 : 2,
+        },
+      }))
+    );
+  }, [poweredEdgeIds, setEdges, themeColors.edge]);
 
   // Handle new connections
   const onConnect = useCallback(
@@ -186,6 +215,7 @@ export function LadderCanvas({
             size={1}
             color={themeColors.grid}
           />
+          <FitViewOnChange nodeCount={nodes.length} />
           {!isMobile && <Controls />}
           {!isMobile && (
             <MiniMap

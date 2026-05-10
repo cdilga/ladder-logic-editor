@@ -32,12 +32,13 @@ export const TimerNode = memo(function TimerNode({
 
   // Get timer runtime state from simulation store
   const timerState = useSimulationStore((state) => state.getTimer(instanceName));
+  const isPowered = useSimulationStore((state) => state.poweredNodeIds.has(data.id));
 
   return (
     <div
       className={`ladder-node timer-node ${timerType.toLowerCase()} ${
         selected ? 'selected' : ''
-      }`}
+      } ${isPowered ? 'powered' : ''}`}
     >
       {/* Input handles (left side) */}
       {/* Main power input - use 'power-in' for compatibility with layout */}

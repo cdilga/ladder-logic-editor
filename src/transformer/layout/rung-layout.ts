@@ -115,6 +115,8 @@ export interface RungLayout {
   edges: LayoutEdge[];
   width: number;
   height: number;
+  leftRailId: string;
+  rightRailId: string;
 }
 
 // ============================================================================
@@ -223,7 +225,7 @@ export function layoutRung(rung: LadderRungIR, baseY: number): RungLayout {
   leftRail.height = totalHeight;
   rightRail.height = totalHeight;
 
-  return { nodes, edges, width: totalWidth, height: totalHeight };
+  return { nodes, edges, width: totalWidth, height: totalHeight, leftRailId, rightRailId };
 }
 
 // ============================================================================
@@ -270,6 +272,7 @@ function layoutSingleContact(
   rungIndex: number
 ): NetworkLayoutResult {
   const id = generateNodeId(rungId);
+  contact.nodeId = id;
   const node: LayoutNode = {
     id,
     x,
@@ -402,6 +405,7 @@ function layoutComparator(
   rungIndex: number
 ): NetworkLayoutResult {
   const id = generateNodeId(rungId);
+  comparator.nodeId = id;
   const node: LayoutNode = {
     id,
     x,
@@ -508,6 +512,7 @@ function layoutCoil(
   rungIndex: number
 ): OutputLayoutResult {
   const id = generateNodeId(rungId);
+  coil.nodeId = id;
   const node: LayoutNode = {
     id,
     x,
@@ -533,6 +538,7 @@ function layoutTimer(
   rungIndex: number
 ): OutputLayoutResult {
   const id = generateNodeId(rungId);
+  timer.nodeId = id;
   const node: LayoutNode = {
     id,
     x,
@@ -559,6 +565,7 @@ function layoutCounter(
   rungIndex: number
 ): OutputLayoutResult {
   const id = generateNodeId(rungId);
+  counter.nodeId = id;
   const node: LayoutNode = {
     id,
     x,

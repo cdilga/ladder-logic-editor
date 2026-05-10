@@ -10,6 +10,7 @@ import { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import type { NodeProps } from 'reactflow';
 import type { PowerRailNodeData } from '../../../models/ladder-elements';
+import { useSimulationStore } from '../../../store';
 
 import './LadderNodes.css';
 
@@ -19,12 +20,13 @@ export const PowerRailNode = memo(function PowerRailNode({
 }: NodeProps<PowerRailNodeData>) {
   const { railType } = data;
   const isLeft = railType === 'left';
+  const isPowered = useSimulationStore((state) => state.poweredNodeIds.has(data.id));
 
   return (
     <div
       className={`ladder-node power-rail-node ${railType} ${
         selected ? 'selected' : ''
-      }`}
+      } ${isPowered ? 'powered' : ''}`}
     >
       {/* Rail line */}
       <div className="rail-line" />

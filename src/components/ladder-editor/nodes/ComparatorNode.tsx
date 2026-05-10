@@ -9,6 +9,7 @@ import { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import type { NodeProps } from 'reactflow';
 import type { ComparatorNodeData } from '../../../models/ladder-elements';
+import { useSimulationStore } from '../../../store';
 
 import './LadderNodes.css';
 
@@ -17,6 +18,7 @@ export const ComparatorNode = memo(function ComparatorNode({
   selected,
 }: NodeProps<ComparatorNodeData>) {
   const { operator, leftOperand, rightOperand } = data;
+  const isPowered = useSimulationStore((state) => state.poweredNodeIds.has(data.id));
 
   // Get display symbol for operator
   const getOperatorSymbol = () => {
@@ -40,7 +42,7 @@ export const ComparatorNode = memo(function ComparatorNode({
 
   return (
     <div
-      className={`ladder-node comparator-node ${selected ? 'selected' : ''}`}
+      className={`ladder-node comparator-node ${selected ? 'selected' : ''} ${isPowered ? 'powered' : ''}`}
     >
       {/* Input handle (left side - receives power) */}
       <Handle

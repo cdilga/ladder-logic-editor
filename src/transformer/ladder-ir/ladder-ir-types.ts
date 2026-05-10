@@ -76,6 +76,7 @@ export interface ContactElement {
   contactType: ContactType;
   /** Reference back to source AST for roundtrip */
   sourceExpr?: STExpression;
+  nodeId?: string;
 }
 
 export type ComparatorOp = 'EQ' | 'NE' | 'GT' | 'GE' | 'LT' | 'LE';
@@ -86,6 +87,7 @@ export interface ComparatorElement {
   leftOperand: string;
   rightOperand: string;
   sourceExpr?: STExpression;
+  nodeId?: string;
 }
 
 /**
@@ -109,6 +111,7 @@ export interface CoilOutput {
   type: 'coil';
   variable: string;
   coilType: 'standard' | 'set' | 'reset';
+  nodeId?: string;
 }
 
 export type TimerType = 'TON' | 'TOF' | 'TP';
@@ -120,6 +123,7 @@ export interface TimerOutput {
   presetTime: string; // e.g., "T#5s"
   /** The input network that drives the timer's IN pin */
   inputNetwork: ContactNetwork;
+  nodeId?: string;
 }
 
 export type CounterType = 'CTU' | 'CTD' | 'CTUD';
@@ -131,6 +135,7 @@ export interface CounterOutput {
   presetValue: number;
   /** The input network that drives the counter's CU/CD pin */
   inputNetwork: ContactNetwork;
+  nodeId?: string;
 }
 
 /**

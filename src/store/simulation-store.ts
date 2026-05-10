@@ -146,6 +146,11 @@ interface SimulationState {
   // Bulk operations
   setVariables: (vars: Record<string, boolean | number>) => void;
   clearAll: () => void;
+
+  // Power flow animation
+  poweredNodeIds: Set<string>;
+  poweredEdgeIds: Set<string>;
+  setPowerFlow: (nodeIds: Set<string>, edgeIds: Set<string>) => void;
 }
 
 // ============================================================================
@@ -226,6 +231,8 @@ export const useSimulationStore = create<SimulationState>()(
     counters: {},
     edgeDetectors: {},
     bistables: {},
+    poweredNodeIds: new Set<string>(),
+    poweredEdgeIds: new Set<string>(),
 
     // Control actions
     start: () => set({ status: 'running' }),
@@ -249,7 +256,13 @@ export const useSimulationStore = create<SimulationState>()(
         counters: {},
         edgeDetectors: {},
         bistables: {},
+        poweredNodeIds: new Set<string>(),
+        poweredEdgeIds: new Set<string>(),
       });
+    },
+
+    setPowerFlow: (nodeIds: Set<string>, edgeIds: Set<string>) => {
+      set({ poweredNodeIds: nodeIds, poweredEdgeIds: edgeIds });
     },
 
     step: () => {

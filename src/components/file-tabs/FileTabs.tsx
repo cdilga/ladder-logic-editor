@@ -39,10 +39,13 @@ export function FileTabs() {
     <div className="file-tabs">
       <div className="file-tabs-list">
         {filesArray.map((file: OpenFile) => (
-          <button
+          <div
             key={file.id}
+            role="tab"
+            tabIndex={0}
             className={`file-tab ${file.id === activeFileId ? 'active' : ''} ${file.isDirty ? 'dirty' : ''}`}
             onClick={() => setActiveFile(file.id)}
+            onKeyDown={(e) => e.key === 'Enter' || e.key === ' ' ? setActiveFile(file.id) : undefined}
             title={file.name}
           >
             <span className="file-tab-name">
@@ -56,7 +59,7 @@ export function FileTabs() {
             >
               ×
             </button>
-          </button>
+          </div>
         ))}
       </div>
       <button
